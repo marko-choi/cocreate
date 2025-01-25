@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selection and Comment Tool</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div id="container">
+        <img id="backgroundImage"
+        <!-- Link to a url for the image. -->
+            src="rendering.jpg" 
+            alt="Background">
+        <canvas id="drawingCanvas"></canvas>
+        <!-- Replace your existing tooltip HTML with this -->
+        <div id="tooltip" class="feedback-tooltip">
+            <div class="feedback-header">
+                <div class="header-text">
+                    <h3>Provide Feedback</h3>
+                    <p>Rate your experience</p>
+                </div>
+            </div>
+
+            <div class="feedback-content">
+                <div class="rating-group">
+                    <div class="rating-header">
+                        <div class="label-with-tooltip">
+                            <span class="label-text">Functionality</span>
+                            <span class="tooltip-trigger">?
+                                <div class="tooltip-content">
+                                    <p><strong>Refers to the purpose/functionality of the selected element(s)</strong>
+                                    </p>
+
+                                </div>
+                            </span>
+                        </div>
+                        <div class="thumbs-group" id="functionIcons">
+                            <button class="thumb-button" data-value="1">
+                                <span class="material-icons">thumb_up</span>
+                            </button>
+                            <button class="thumb-button" data-value="-1">
+                                <span class="material-icons">thumb_down</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="rating-group">
+                    <div class="rating-header">
+                        <div class="label-with-tooltip">
+                            <span class="label-text">Aesthetics</span>
+                            <span class="tooltip-trigger">?
+                                <div class="tooltip-content">
+                                    <p><strong>Refers to the look and feel of the selected element(s).</strong></p>
+                                </div>
+                            </span>
+                        </div>
+                        <div class="thumbs-group" id="aestheticIcons">
+                            <button class="thumb-button" data-value="1">
+                                <span class="material-icons">thumb_up</span>
+                            </button>
+                            <button class="thumb-button" data-value="-1">
+                                <span class="material-icons">thumb_down</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="comment-section">
+                    <label class="comment-label">Additional Comments</label>
+                    <textarea id="commentInput" class="comment-textarea"
+                        placeholder="Share your thoughts..."></textarea>
+                </div>
+            </div>
+
+            <div class="feedback-footer">
+                <button class="delete-button" id="cancelComment">
+                    <span class="material-icons">delete</span>
+                    Delete
+                </button>
+                <button class="save-button" id="saveComment" disabled>
+                    <span class="material-icons">save</span>
+                    Save Feedback
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const container = document.getElementById('container');
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const tooltip = document.getElementById('tooltip');
+        const commentInput = document.getElementById('commentInput');
+        const saveComment = document.getElementById('saveComment');
+        const cancelComment = document.getElementById('cancelComment');
+        const functionIcons = document.getElementById('functionIcons');
+        const aestheticIcons = document.getElementById('aestheticIcons');
+
+        let isSelecting = false;
+        let selectionStart = { x: 0, y: 0 };
+        let selectionEnd = { x: 0, y: 0 };
+        let selections = [];
+        let currentEditIndex = null;
+
+        canvas.width = container.offsetWidth;
+        canvas.height = container.offsetHeight;
+
+        canvas.addEventListener('mousedown', (e) => {
+            // If there's an active edit (tooltip shown), prevent new selection
+            if (currentEditIndex !== null) {
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            selectionStart = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            isSelecting = true;
+        });
+
+        // Also update mousemove to respect this lock
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isSelecting || currentEditIndex !== null) return;
+
+            const rect = canvas.getBoundingClientRect();
+            selectionEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            redrawSelections();
+            const x = Math.min(selectionStart.x, selectionEnd.x);
+            const y = Math.min(selectionStart.y, selectionEnd.y);
+            const width = Math.abs(selectionEnd.x - selectionStart.x);
+            const height = Math.abs(selectionEnd.y - selectionStart.y);
+            drawSelection(x, y, width, height, 'rgba(200, 200, 200, 0.3)', 'white', 2);
+        });
+
+        // canvas.addEventListener('mouseup', (e) => {
+        //     const rect = canvas.getBoundingClientRect();
+        //     selectionEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+        //     const x = Math.min(selectionStart.x, selectionEnd.x);
+        //     const y = Math.min(selectionStart.y, selectionEnd.y);
+        //     const width = Math.abs(selectionEnd.x - selectionStart.x);
+        //     const height = Math.abs(selectionEnd.y - selectionStart.y);
+
+        //     if (isSelecting) {
+        //         selections.push({
+        //             start: { x, y },
+        //             end: { x: x + width, y: y + height },
+        //             functionValue: null,
+        //             aestheticValue: null,
+        //             comment: ''
+        //         });
+        //         showTooltip(x + width / 2, y + height / 2, selections.length - 1);
+        //         isSelecting = false;
+        //     }
+        // });
+
+        function drawSelection(x, y, width, height, fillStyle, strokeStyle, lineWidth) {
+            ctx.fillStyle = fillStyle;
+            ctx.strokeStyle = strokeStyle;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(x + 10, y);
+            ctx.arcTo(x + width, y, x + width, y + 10, 10);
+            ctx.arcTo(x + width, y + height, x + width - 10, y + height, 10);
+            ctx.arcTo(x, y + height, x, y + height - 10, 10);
+            ctx.arcTo(x, y, x + 10, y, 10);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+        }
+
+        // Update your existing JavaScript event handlers
+
+        function handleIconClick(event, type) {
+            const button = event.target.closest('.thumb-button');
+            if (!button) return;
+
+            const group = button.closest('.thumbs-group');
+            const allButtons = group.querySelectorAll('.thumb-button');
+
+            // Remove previous selections
+            allButtons.forEach(btn => {
+                btn.classList.remove('selected-up', 'selected-down');
+            });
+
+            const value = parseInt(button.getAttribute('data-value'));
+
+            // If clicking the same button, deselect it
+            if (selections[currentEditIndex][type] === value) {
+                selections[currentEditIndex][type] = null;
+            } else {
+                // Otherwise, select the new value
+                selections[currentEditIndex][type] = value;
+                button.classList.add(value === 1 ? 'selected-up' : 'selected-down');
+            }
+
+            // Enable save button only if both ratings are selected
+            saveComment.disabled = !selections[currentEditIndex].functionValue ||
+                !selections[currentEditIndex].aestheticValue;
+        }
+
+        // Update the showTooltip function to properly reset states for new selections
+        function showTooltip(x, y, index) {
+            currentEditIndex = index;
+            const selection = selections[index];
+
+            // Reset UI state
+            commentInput.value = selection.comment || '';
+
+            // Reset all buttons to unselected state first
+            const functionButtons = functionIcons.querySelectorAll('.thumb-button');
+            const aestheticButtons = aestheticIcons.querySelectorAll('.thumb-button');
+
+            functionButtons.forEach(btn => {
+                btn.classList.remove('selected-up', 'selected-down');
+            });
+            aestheticButtons.forEach(btn => {
+                btn.classList.remove('selected-up', 'selected-down');
+            });
+
+            // Only restore previous selections if they exist
+            if (selection.functionValue !== null) {
+                const functionBtn = functionIcons.querySelector(`[data-value="${selection.functionValue}"]`);
+                if (functionBtn) {
+                    functionBtn.classList.add(selection.functionValue === 1 ? 'selected-up' : 'selected-down');
+                }
+            }
+
+            if (selection.aestheticValue !== null) {
+                const aestheticBtn = aestheticIcons.querySelector(`[data-value="${selection.aestheticValue}"]`);
+                if (aestheticBtn) {
+                    aestheticBtn.classList.add(selection.aestheticValue === 1 ? 'selected-up' : 'selected-down');
+                }
+            }
+
+            // Disable save button for new selections until both ratings are provided
+            saveComment.disabled = !selection.functionValue || !selection.aestheticValue;
+
+            // Make tooltip visible to get its dimensions
+            tooltip.style.display = 'block';
+
+            // Get viewport and tooltip dimensions
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const tooltipRect = tooltip.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+
+            // Calculate the relative position within the container
+            let tooltipX = x - tooltipRect.width / 2;
+            let tooltipY = y - tooltipRect.height / 2;
+
+            // Get absolute position in viewport
+            const absoluteX = containerRect.left + tooltipX;
+            const absoluteY = containerRect.top + tooltipY;
+
+            // Adjust horizontal position if needed
+            if (absoluteX < 0) {
+                tooltipX = -containerRect.left + 10; // 10px margin from left
+            } else if (absoluteX + tooltipRect.width > viewportWidth) {
+                tooltipX = viewportWidth - containerRect.left - tooltipRect.width - 10; // 10px margin from right
+            }
+
+            // Adjust vertical position if needed
+            if (absoluteY < 0) {
+                tooltipY = -containerRect.top + 10; // 10px margin from top
+            } else if (absoluteY + tooltipRect.height > viewportHeight) {
+                tooltipY = viewportHeight - containerRect.top - tooltipRect.height - 10; // 10px margin from bottom
+            }
+
+            // Apply the calculated position
+            tooltip.style.left = `${tooltipX}px`;
+            tooltip.style.top = `${tooltipY}px`;
+        }
+
+        // Update the canvas mouseup event listener to ensure new selections are properly initialized
+        canvas.addEventListener('mouseup', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            selectionEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+            const x = Math.min(selectionStart.x, selectionEnd.x);
+            const y = Math.min(selectionStart.y, selectionEnd.y);
+            const width = Math.abs(selectionEnd.x - selectionStart.x);
+            const height = Math.abs(selectionEnd.y - selectionStart.y);
+
+            if (isSelecting && width > 0 && height > 0) {
+                // Create new selection with explicitly null values
+                selections.push({
+                    start: { x, y },
+                    end: { x: x + width, y: y + height },
+                    functionValue: null,
+                    aestheticValue: null,
+                    comment: ''
+                });
+                showTooltip(x + width / 2, y + height / 2, selections.length - 1);
+                isSelecting = false;
+            }
+        });
+
+        // Update the event listeners
+        functionIcons.addEventListener('click', (event) => handleIconClick(event, 'functionValue'));
+        aestheticIcons.addEventListener('click', (event) => handleIconClick(event, 'aestheticValue'));
+
+        // The rest of your existing canvas and selection code remains the same
+        saveComment.addEventListener('click', () => {
+            const selection = selections[currentEditIndex];
+            selection.comment = commentInput.value.trim();
+            redrawSelections();
+            tooltip.style.display = 'none';
+            currentEditIndex = null;
+        });
+
+        cancelComment.addEventListener('click', () => {
+            if (currentEditIndex !== null) {
+                selections.splice(currentEditIndex, 1);
+                redrawSelections();
+                tooltip.style.display = 'none';
+                currentEditIndex = null;
+            }
+        });
+
+        function redrawSelections() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            container.querySelectorAll('.remove, .edit').forEach(btn => btn.remove());
+            selections.forEach((selection, index) => {
+                const x = selection.start.x;
+                const y = selection.start.y;
+                const width = selection.end.x - selection.start.x;
+                const height = selection.end.y - selection.start.y;
+                drawSelection(x, y, width, height, 'rgba(200, 200, 200, 0.3)', 'white', 2);
+
+                const removeBtn = document.createElement('span');
+                removeBtn.className = 'material-icons remove';
+                removeBtn.textContent = 'delete';
+                removeBtn.style.left = `${x + width - 10}px`;
+                removeBtn.style.top = `${y - 15}px`;
+                removeBtn.onclick = () => {
+                    selections.splice(index, 1);
+                    redrawSelections();
+                };
+                container.appendChild(removeBtn);
+
+                const editBtn = document.createElement('span');
+                editBtn.className = 'material-icons edit';
+                editBtn.textContent = 'edit';
+                editBtn.style.left = `${x + width - 45}px`;
+                editBtn.style.top = `${y - 15}px`;
+                editBtn.onclick = () => {
+                    showTooltip(x + width / 2, y + height / 2, index);
+                };
+                container.appendChild(editBtn);
+            });
+        }
+    </script>
+</body>
+
+</html>
