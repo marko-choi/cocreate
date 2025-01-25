@@ -1,7 +1,8 @@
 import { Delete, Edit } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import Tooltip from "./Tooltip";
+import Tooltip from "../tooltip/Tooltip";
+import "./canvas.css";
 
 interface Selection {
   start: { x: number; y: number };
@@ -19,9 +20,6 @@ const Canvas: React.FC = () => {
   const [selections, setSelections] = useState<Selection[]>([]);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
-  const [hoveredSelectionIndex, setHoveredSelectionIndex] = useState<number | null>(null);
-
-  const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -137,7 +135,7 @@ const Canvas: React.FC = () => {
     setSelectionEnd(null);
   };
 
-  // Rest of the component remains the same as in the original code...
+
   const handleEdit = (index: number) => {
     setActiveSelectionIndex(index);
     const selection = selections[index];
@@ -152,44 +150,29 @@ const Canvas: React.FC = () => {
     setActiveSelectionIndex(null);
   };
 
-  useEffect(() => {
-    // continuously update my mouse coordinates
-    const handleMouseMove = (e: MouseEvent) => {
-      setMouseCoordinates([e.clientX, e.clientY]);
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
+    
+  // Continuously updates mouse coordinates
+  // useEffect(() => {
+  //   const handleMouseMove = (e: MouseEvent) => {
+  //     setMouseCoordinates([e.clientX, e.clientY]);
+  //   };
+  //   window.addEventListener("mousemove", handleMouseMove);
+  //   return () => window.removeEventListener("mousemove", handleMouseMove);
+  // }, []);
 
   return (
-    <div style={{ position: "relative", width: "800px", height: "600px" }}>
-      <p style={{ position: "absolute", top: 0, left: 0, zIndex: 999 }}>
-        Coordinates: {mouseCoordinates?.join(", ") || "N/A"}
-      </p>
+    <div className="canvas-container">
       <img
         src="./rendering.jpg"
         alt="Rendering"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 0,
-        }}
+        className="rendering-image"
       />
       <canvas
         ref={canvasRef}
         width={800}
         height={600}
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          zIndex: 1,
-          cursor: "crosshair",
-        }}
+        className="canvas"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -211,46 +194,18 @@ const Canvas: React.FC = () => {
               width,
               height,
             }}
-            onMouseEnter={() => setHoveredSelectionIndex(index)}
-            onMouseLeave={() => setHoveredSelectionIndex(null)}
           >
-            <div
-              style={{
-                position: "absolute",
-                top: -20,
-                right: 0,
-                display: "flex",
-                gap: "8px",
-                pointerEvents: "auto",
-                zIndex: 999,
-              }}
-            >
+            <div className="selection-tooltip-box"> 
               <IconButton 
                 size="small"
-                style={{
-                  padding: "4px",
-                  color: "green",
-                  cursor: "pointer",
-                  background: "white",
-                  borderRadius: "50%",
-                  width: "24px",
-                  height: "24px",
-                }}
+                className="edit-button"
                 onClick={() => handleEdit(index)}
               >
                 <Edit />
               </IconButton>
               <IconButton 
                 size="small"
-                style={{
-                  padding: "4px",
-                  color: "red",
-                  cursor: "pointer",
-                  background: "white",
-                  borderRadius: "50%",
-                  width: "24px",
-                  height: "24px",
-                }}
+                className="delete-button"
                 onClick={() => handleDelete(index)}
               >
                 <Delete />
