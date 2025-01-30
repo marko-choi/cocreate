@@ -4,15 +4,9 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/cocreate/',  // This matches your GitHub repo name
+  base: '/cocreate/',
   build: {
-    outDir: 'dist',
-    sourcemap: true,
-    // Ensure proper chunks and asset handling
-    rollupOptions: {
-      output: {
-        manualChunks: undefined
-      }
-    }
+     outDir: '../cocreate-qualtrics', // output directory for build
+     assetsDir: 'static',  // place assets in a static folder under cocreate-qualtrics
   }
 })
