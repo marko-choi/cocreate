@@ -13803,6 +13803,7 @@ const Tooltip = (props) => {
   );
 };
 const DEFAULT_IMAGE_SRC = "./rendering.jpg";
+const MAX_IMAGE_WIDTH = 800;
 const Canvas = () => {
   const canvasRef = reactExports.useRef(null);
   const [isSelecting, setIsSelecting] = reactExports.useState(false);
@@ -13812,16 +13813,35 @@ const Canvas = () => {
   const [tooltipPosition, setTooltipPosition] = reactExports.useState(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = reactExports.useState(null);
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
+  const [canvasWidth, setCanvasWidth] = reactExports.useState(MAX_IMAGE_WIDTH);
+  const [canvasHeight, setCanvasHeight] = reactExports.useState(600);
   reactExports.useEffect(() => {
     localStorage.removeItem("cocreate-canvasSelections");
   }, []);
   reactExports.useEffect(() => {
     localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
   }, [selections]);
+  const setCanvasDimensions = (img) => {
+    const maxWidth2 = MAX_IMAGE_WIDTH;
+    const imgWidth = img.width;
+    const imgHeight = img.height;
+    const aspectRatio = imgWidth / imgHeight;
+    const width2 = Math.min(maxWidth2, imgWidth);
+    const height2 = Math.min(imgHeight, aspectRatio * width2);
+    setCanvasWidth(width2);
+    setCanvasHeight(height2);
+  };
   reactExports.useEffect(() => {
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
+      questionBodyImage.onload = () => setCanvasDimensions(questionBodyImage);
+    } else {
+      const defaultImage = document.querySelector("img");
+      if (defaultImage && defaultImage instanceof HTMLImageElement) {
+        setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
+        defaultImage.onload = () => setCanvasDimensions(defaultImage);
+      }
     }
   }, []);
   reactExports.useEffect(() => {
@@ -13923,15 +13943,16 @@ const Canvas = () => {
       {
         src: imageSrc,
         alt: "Rendering",
-        className: "rendering-image"
+        className: "rendering-image",
+        style: { maxWidth: MAX_IMAGE_WIDTH, width: "100%", height: "auto" }
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "canvas",
       {
         ref: canvasRef,
-        width: 800,
-        height: 600,
+        width: canvasWidth,
+        height: canvasHeight,
         className: "canvas",
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,

@@ -13,6 +13,7 @@ interface Selection {
 }
 
 const DEFAULT_IMAGE_SRC = "./rendering.jpg";
+const MAX_IMAGE_WIDTH = 800;
 
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -23,6 +24,8 @@ const Canvas: React.FC = () => {
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
+  const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
+  const [canvasHeight, setCanvasHeight] = useState<number>(600);
 
   // Clear selections from localStorage when component mounts
   useEffect(() => {
@@ -35,10 +38,34 @@ const Canvas: React.FC = () => {
   }, [selections]);
 
 
+  // Set canvas size based on image dimensions
+  const setCanvasDimensions = (img: HTMLImageElement) => {
+    const maxWidth = MAX_IMAGE_WIDTH;
+    const imgWidth = img.width;
+    const imgHeight = img.height;
+    
+    const aspectRatio = imgWidth / imgHeight;
+    const width = Math.min(maxWidth, imgWidth);
+    const height = Math.min(imgHeight, aspectRatio * width);
+    
+    setCanvasWidth(width);
+    setCanvasHeight(height);
+  };
+
   useEffect(() => {
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
+      
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
+      questionBodyImage.onload = () => setCanvasDimensions(questionBodyImage);
+
+    } else {
+      
+      const defaultImage = document.querySelector("img");
+      if (defaultImage && defaultImage instanceof HTMLImageElement) {
+        setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
+        defaultImage.onload = () => setCanvasDimensions(defaultImage);
+      }
     }
   }, []);
 
@@ -188,11 +215,12 @@ const Canvas: React.FC = () => {
         src={imageSrc}
         alt="Rendering"
         className="rendering-image"
+        style={{ maxWidth: MAX_IMAGE_WIDTH, width: "100%", height: "auto" }}
       />
       <canvas
         ref={canvasRef}
-        width={800}
-        height={600}
+        width={canvasWidth}
+        height={canvasHeight}
         className="canvas"
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
