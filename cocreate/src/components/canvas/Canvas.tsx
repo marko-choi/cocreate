@@ -24,9 +24,19 @@ const Canvas: React.FC = () => {
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
 
+  // Clear selections from localStorage when component mounts
+  useEffect(() => {
+    localStorage.removeItem('cocreate-canvasSelections');
+  }, []);
+
+  // Save selections to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('cocreate-canvasSelections', JSON.stringify(selections));
+  }, [selections]);
+
+
   useEffect(() => {
     const questionBodyImage = document.querySelector(".QuestionText img");
-
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
     }
