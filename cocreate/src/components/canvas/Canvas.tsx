@@ -25,7 +25,7 @@ const Canvas: React.FC = () => {
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
-  const [canvasHeight, setCanvasHeight] = useState<number>(600);
+  const [canvasHeight, setCanvasHeight] = useState<number>(534);
 
   // Clear selections from localStorage when component mounts
   useEffect(() => {
