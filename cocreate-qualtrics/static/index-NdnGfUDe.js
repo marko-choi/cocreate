@@ -8523,11 +8523,11 @@ var length = 0;
 var position = 0;
 var character = 0;
 var characters = "";
-function node(value, root2, parent, type, props, children, length2) {
-  return { value, root: root2, parent, type, props, children, line, column, length: length2, return: "" };
+function node(value, root, parent, type, props, children, length2) {
+  return { value, root, parent, type, props, children, line, column, length: length2, return: "" };
 }
-function copy(root2, props) {
-  return assign(node("", null, null, "", null, null, 0), root2, { length: -root2.length }, props);
+function copy(root, props) {
+  return assign(node("", null, null, "", null, null, 0), root, { length: -root.length }, props);
 }
 function char() {
   return character;
@@ -8654,7 +8654,7 @@ function identifier(index) {
 function compile(value) {
   return dealloc(parse("", null, null, null, [""], value = alloc(value), 0, [0], value));
 }
-function parse(value, root2, parent, rule, rules, rulesets, pseudo, points, declarations) {
+function parse(value, root, parent, rule, rules, rulesets, pseudo, points, declarations) {
   var index = 0;
   var offset = 0;
   var length2 = pseudo;
@@ -8701,7 +8701,7 @@ function parse(value, root2, parent, rule, rules, rulesets, pseudo, points, decl
         switch (peek()) {
           case 42:
           case 47:
-            append(comment(commenter(next(), caret()), root2, parent), declarations);
+            append(comment(commenter(next(), caret()), root, parent), declarations);
             break;
           default:
             characters2 += "/";
@@ -8730,10 +8730,10 @@ function parse(value, root2, parent, rule, rules, rulesets, pseudo, points, decl
             characters2 += ";";
           // { rule/at-rule
           default:
-            append(reference = ruleset(characters2, root2, parent, index, offset, rules, points, type, props = [], children = [], length2), rulesets);
+            append(reference = ruleset(characters2, root, parent, index, offset, rules, points, type, props = [], children = [], length2), rulesets);
             if (character2 === 123)
               if (offset === 0)
-                parse(characters2, root2, reference, reference, props, rulesets, length2, points, children);
+                parse(characters2, root, reference, reference, props, rulesets, length2, points, children);
               else
                 switch (atrule === 99 && charat(characters2, 3) === 110 ? 100 : atrule) {
                   // d l m s
@@ -8782,7 +8782,7 @@ function parse(value, root2, parent, rule, rules, rulesets, pseudo, points, decl
     }
   return rulesets;
 }
-function ruleset(value, root2, parent, index, offset, rules, points, type, props, children, length2) {
+function ruleset(value, root, parent, index, offset, rules, points, type, props, children, length2) {
   var post = offset - 1;
   var rule = offset === 0 ? rules : [""];
   var size = sizeof(rule);
@@ -8790,13 +8790,13 @@ function ruleset(value, root2, parent, index, offset, rules, points, type, props
     for (var x = 0, y = substr(value, post + 1, post = abs(j = points[i])), z = value; x < size; ++x)
       if (z = trim(j > 0 ? rule[x] + " " + y : replace(y, /&\f/g, rule[x])))
         props[k++] = z;
-  return node(value, root2, parent, offset === 0 ? RULESET : type, props, children, length2);
+  return node(value, root, parent, offset === 0 ? RULESET : type, props, children, length2);
 }
-function comment(value, root2, parent) {
-  return node(value, root2, parent, COMMENT, from(char()), substr(value, 2, -2), 0);
+function comment(value, root, parent) {
+  return node(value, root, parent, COMMENT, from(char()), substr(value, 2, -2), 0);
 }
-function declaration(value, root2, parent, length2) {
-  return node(value, root2, parent, DECLARATION, substr(value, 0, length2), substr(value, length2 + 1, -1), length2);
+function declaration(value, root, parent, length2) {
+  return node(value, root, parent, DECLARATION, substr(value, 0, length2), substr(value, length2 + 1, -1), length2);
 }
 function serialize(children, callback) {
   var output = "";
@@ -11660,7 +11660,7 @@ function shouldSkipGeneratingVar(keys) {
 }
 const excludeVariablesFromRoot = (cssVarPrefix) => [...[...Array(25)].map((_, index) => `--${cssVarPrefix ? `${cssVarPrefix}-` : ""}overlays-${index}`), `--${cssVarPrefix ? `${cssVarPrefix}-` : ""}palette-AppBar-darkBg`, `--${cssVarPrefix ? `${cssVarPrefix}-` : ""}palette-AppBar-darkColor`];
 const defaultGetSelector = (theme) => (colorScheme, css2) => {
-  const root2 = theme.rootSelector || ":root";
+  const root = theme.rootSelector || ":root";
   const selector = theme.colorSchemeSelector;
   let rule = selector;
   if (selector === "class") {
@@ -11681,33 +11681,33 @@ const defaultGetSelector = (theme) => (colorScheme, css2) => {
       });
       if (rule === "media") {
         return {
-          [root2]: css2,
+          [root]: css2,
           [`@media (prefers-color-scheme: dark)`]: {
-            [root2]: excludedVariables
+            [root]: excludedVariables
           }
         };
       }
       if (rule) {
         return {
           [rule.replace("%s", colorScheme)]: excludedVariables,
-          [`${root2}, ${rule.replace("%s", colorScheme)}`]: css2
+          [`${root}, ${rule.replace("%s", colorScheme)}`]: css2
         };
       }
       return {
-        [root2]: {
+        [root]: {
           ...css2,
           ...excludedVariables
         }
       };
     }
     if (rule && rule !== "media") {
-      return `${root2}, ${rule.replace("%s", String(colorScheme))}`;
+      return `${root}, ${rule.replace("%s", String(colorScheme))}`;
     }
   } else if (colorScheme) {
     if (rule === "media") {
       return {
         [`@media (prefers-color-scheme: ${String(colorScheme)})`]: {
-          [root2]: css2
+          [root]: css2
         }
       };
     }
@@ -11715,7 +11715,7 @@ const defaultGetSelector = (theme) => (colorScheme, css2) => {
       return rule.replace("%s", String(colorScheme));
     }
   }
-  return root2;
+  return root;
 };
 function assignNode(obj, keys) {
   keys.forEach((k) => {
@@ -13994,11 +13994,6 @@ const App = () => {
     /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {})
   ] });
 };
-const root = document.getElementById("root");
-if (root) {
-  clientExports.createRoot(root).render(
-    /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
-  );
-} else {
-  console.error("No root element found");
-}
+clientExports.createRoot(document.getElementById("root")).render(
+  /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
+);
