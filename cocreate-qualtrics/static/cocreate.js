@@ -13813,6 +13813,12 @@ const Canvas = () => {
   const [activeSelectionIndex, setActiveSelectionIndex] = reactExports.useState(null);
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
   reactExports.useEffect(() => {
+    localStorage.removeItem("cocreate-canvasSelections");
+  }, []);
+  reactExports.useEffect(() => {
+    localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
+  }, [selections]);
+  reactExports.useEffect(() => {
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
