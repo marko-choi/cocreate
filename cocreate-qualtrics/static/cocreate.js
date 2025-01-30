@@ -13802,6 +13802,7 @@ const Tooltip = (props) => {
     }
   );
 };
+const DEFAULT_IMAGE_SRC = "./rendering.jpg";
 const Canvas = () => {
   const canvasRef = reactExports.useRef(null);
   const [isSelecting, setIsSelecting] = reactExports.useState(false);
@@ -13810,6 +13811,13 @@ const Canvas = () => {
   const [selections, setSelections] = reactExports.useState([]);
   const [tooltipPosition, setTooltipPosition] = reactExports.useState(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = reactExports.useState(null);
+  const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
+  reactExports.useEffect(() => {
+    const questionBodyImage = document.querySelector(".QuestionText img");
+    if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
+      setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
+    }
+  }, []);
   reactExports.useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas == null ? void 0 : canvas.getContext("2d");
@@ -13907,7 +13915,7 @@ const Canvas = () => {
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
       {
-        src: "./rendering.jpg",
+        src: imageSrc,
         alt: "Rendering",
         className: "rendering-image"
       }
