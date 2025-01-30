@@ -1,8 +1,8 @@
 Qualtrics.SurveyEngine.addOnload(function() {
 
 	const resources = [
-			'https://marko-choi.github.io/cocreate/cocreate-qualtrics/static/index-p0RC0Jtr.js',
-			'https://marko-choi.github.io/cocreate/cocreate-qualtrics/static/index-BDiMeRyN.css'
+			'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate.js',
+			'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-BDiMeRyN.css'
 	];
 
 	function loadResource(url, type) {
@@ -25,31 +25,33 @@ Qualtrics.SurveyEngine.addOnload(function() {
 			});
 	}
 
-async function loadReactApp() {
-	try {
-		
-		await loadResource(resources[0], 'script'); // Load your React App
-		await loadResource(resources[1], 'link');   // Load CSS
+	async function loadReactApp() {
+		try {
+			
+			await loadResource(resources[2], 'script'); // Load React App
+			await loadResource(resources[3], 'link');   // Load CSS
+			
+			const questionImage = document.querySelector('.QuestionText img')
+			if (questionImage) {
+				questionImage.style.display = 'none';
+			}
 
-		const questionBody = document.querySelector('.QuestionBody');
-		if (questionBody) {
+			const questionBody = document.querySelector('.QuestionBody');
+			if (questionBody) {
+				
+				let appContainer = document.createElement('div');
+				appContainer.id = 'root';
+				questionBody.appendChild(appContainer);
+				
+				console.log('React app loaded!');
+			} else {
+				console.error("Unable to find the QuestionBody container.")
+			}
 			
-			let appContainer = document.createElement('div');
-			appContainer.id = 'root';
-			questionBody.appendChild(appContainer);
-			
-			console.log('React app loaded!');
-			
-		} else {
-			
-			console.error("Unable to find the QuestionBody container.")
+		} catch (error) {
+			console.error('Error loading resources:', error);
 		}
-		
-	} catch (error) {
-		
-		console.error('Error loading resources:', error);
 	}
-}
 
 	loadReactApp();
 });
@@ -61,4 +63,11 @@ Qualtrics.SurveyEngine.addOnReady(function() {
 
 Qualtrics.SurveyEngine.addOnUnload(function() {
 	/* JavaScript to run when the page is unloaded */
+
+const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
+if (selections) {
+	console.log('Selections data:', selections);
+} else {
+	console.error('No selections data found in localStorage.');
+}
 });
