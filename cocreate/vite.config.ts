@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [react()],
   base: '/cocreate/',
   build: {
-    minify: false,
     outDir: '../cocreate-qualtrics', // output directory for build
     assetsDir: 'static',  // place assets in a static folder under cocreate-qualtrics
   }
