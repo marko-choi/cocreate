@@ -28,8 +28,8 @@ Qualtrics.SurveyEngine.addOnload(function() {
 	async function loadReactApp() {
 		try {
 			
-			await loadResource(resources[2], 'script'); // Load React App
-			await loadResource(resources[3], 'link');   // Load CSS
+			await loadResource(resources[0], 'script'); // Load React App
+			await loadResource(resources[1], 'link');   // Load CSS
 			
 			const questionImage = document.querySelector('.QuestionText img')
 			if (questionImage) {
