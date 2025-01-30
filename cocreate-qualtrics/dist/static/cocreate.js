@@ -13814,7 +13814,7 @@ const Canvas = () => {
   const [activeSelectionIndex, setActiveSelectionIndex] = reactExports.useState(null);
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = reactExports.useState(MAX_IMAGE_WIDTH);
-  const [canvasHeight, setCanvasHeight] = reactExports.useState(600);
+  const [canvasHeight, setCanvasHeight] = reactExports.useState(534);
   reactExports.useEffect(() => {
     localStorage.removeItem("cocreate-canvasSelections");
   }, []);
