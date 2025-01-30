@@ -13836,6 +13836,7 @@ const Canvas = () => {
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       questionBodyImage.onload = () => setCanvasDimensions(questionBodyImage);
+      setCanvasDimensions(questionBodyImage);
     } else {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {

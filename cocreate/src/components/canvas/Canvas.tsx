@@ -47,7 +47,7 @@ const Canvas: React.FC = () => {
     const aspectRatio = imgWidth / imgHeight;
     const width = Math.min(maxWidth, imgWidth);
     const height = Math.min(imgHeight, aspectRatio * width);
-    
+
     setCanvasWidth(width);
     setCanvasHeight(height);
   };
@@ -58,6 +58,7 @@ const Canvas: React.FC = () => {
       
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       questionBodyImage.onload = () => setCanvasDimensions(questionBodyImage);
+      setCanvasDimensions(questionBodyImage);
 
     } else {
       
