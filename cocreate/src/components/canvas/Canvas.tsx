@@ -44,7 +44,7 @@ const Canvas: React.FC = () => {
     const imgWidth = img.width;
     const imgHeight = img.height;
     
-    const aspectRatio = imgWidth / imgHeight;
+    const aspectRatio = imgHeight / imgWidth;
     const width = Math.min(maxWidth, imgWidth);
     const height = Math.min(imgHeight, aspectRatio * width);
 

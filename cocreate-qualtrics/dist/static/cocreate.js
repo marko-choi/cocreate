@@ -13825,7 +13825,7 @@ const Canvas = () => {
     const maxWidth2 = MAX_IMAGE_WIDTH;
     const imgWidth = img.width;
     const imgHeight = img.height;
-    const aspectRatio = imgWidth / imgHeight;
+    const aspectRatio = imgHeight / imgWidth;
     const width2 = Math.min(maxWidth2, imgWidth);
     const height2 = Math.min(imgHeight, aspectRatio * width2);
     setCanvasWidth(width2);
