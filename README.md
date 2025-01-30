@@ -4,5 +4,5 @@ CoCreate is an annotation tool designed to facilitate image annotation, labeling
 
 ## Modules
 
-- cocreate: The main module that provides the annotation tool.
-- cocreate-qualtrics: A module that integrates CoCreate with Qualtrics.
+- `cocreate`: The main module that provides the annotation tool.
+- `cocreate-qualtrics`: A module that integrates CoCreate with Qualtrics. Hosts the bundled javascript and css.
