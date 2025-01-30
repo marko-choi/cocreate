@@ -1,6 +1,7 @@
 .canvas-container {
   position: relative;
-  max-width: 800px;
+  width: 800px;
+  height: 534px;
 }
 
 .rendering-image {
