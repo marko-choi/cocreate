@@ -12,6 +12,8 @@ interface Selection {
   comment?: string;
 }
 
+const DEFAULT_IMAGE_SRC = "./rendering.jpg";
+
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
@@ -20,6 +22,15 @@ const Canvas: React.FC = () => {
   const [selections, setSelections] = useState<Selection[]>([]);
   const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
+  const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
+
+  useEffect(() => {
+    const questionBodyImage = document.querySelector(".QuestionText img");
+
+    if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
+      setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
+    }
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -164,7 +175,7 @@ const Canvas: React.FC = () => {
   return (
     <div className="canvas-container">
       <img
-        src="./rendering.jpg"
+        src={imageSrc}
         alt="Rendering"
         className="rendering-image"
       />

@@ -8,6 +8,7 @@ export default defineConfig({
   build: {
     minify: false,
     outDir: '../cocreate-qualtrics', // output directory for build
+    entryFileNames: 'assets/js/cocreate.js',
     assetsDir: 'static',  // place assets in a static folder under cocreate-qualtrics
   }
 })
