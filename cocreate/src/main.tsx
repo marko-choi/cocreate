@@ -26,7 +26,7 @@ mountApp();
 
 // Qualtrics Entrypoint
 
-function loadResource(url: string, type: string) {
+export function loadResource(url: string, type: string) {
   return new Promise((resolve, reject) => {
     let element;
 
@@ -50,7 +50,7 @@ function loadResource(url: string, type: string) {
 }
 
 
-async function loadReactApp() {
+export async function loadReactApp() {
   try {
     
     // await loadResource(resources[0], 'script'); // Load React App
