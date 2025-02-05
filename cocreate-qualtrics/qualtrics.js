@@ -1,9 +1,13 @@
+
+const resources = [
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate.js',
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-BDiMeRyN.css'
+];
+
 Qualtrics.SurveyEngine.addOnload(function() {
 
-	const resources = [
-			'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate.js',
-			'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-BDiMeRyN.css'
-	];
+	let questionId = this.getQuestionInfo()
+	console.log(questionId)
 
 	function loadResource(url, type) {
 			return new Promise((resolve, reject) => {
