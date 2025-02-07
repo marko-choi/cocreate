@@ -38,6 +38,8 @@ const Canvas: React.FC = () => {
   }, [selections]);
 
 
+
+
   // Set canvas size based on image dimensions
   const setCanvasDimensions = (img: HTMLImageElement) => {
     const maxWidth = MAX_IMAGE_WIDTH;
@@ -150,9 +152,9 @@ const Canvas: React.FC = () => {
   
     const rect = canvas.getBoundingClientRect();
     const currentEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-  
+
+    // Update the selection
     setSelectionEnd(currentEnd);
-  
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawSelections(ctx);
   
@@ -163,8 +165,19 @@ const Canvas: React.FC = () => {
       
     // Draw the current selection being created
     drawSelection(ctx, x, y, width, height);
-    // checkIfMouseIsInsideCanvas(e);
+    checkIfMouseIsInsideCanvas(e);
   };
+
+  const handleMouseLeave = () => {
+    if (!isSelecting || !canvasRef.current) return;
+
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  }
 
   const checkIfMouseIsInsideCanvas = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -190,7 +203,7 @@ const Canvas: React.FC = () => {
 
       const { width, height } = canvasElement.getBoundingClientRect();
       if (!canCreatePictureSelection(width, height)) return;
-      
+
       const newSelection: Selection = {
         start: { x: 0, y: 0 },
         end: { x: width, y: height },
@@ -273,6 +286,7 @@ const Canvas: React.FC = () => {
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
+        onMouseLeave={handleMouseLeave}
       />
       {/* Render selections div elements (same as original code) */}
       {selections.map((selection, index) => {
