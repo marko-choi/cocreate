@@ -1,5 +1,5 @@
 const resources = [
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate.js',
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CEcsbSgp.css'
 ];
 
@@ -42,7 +42,9 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	
 	try {
 
+		console.log("loading script")
 		await loadResource(resources[0], 'script'); // Load React App
+		console.log("loading css")
 		await loadResource(resources[1], 'link');   // Load CSS
 
 		const questionImage = document.querySelector('.QuestionText img')
@@ -57,6 +59,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			questionBody.appendChild(appContainer);
 
 			const rootDiv = document.querySelector('#root');
+			console.log(rootDiv)
 			if (rootDiv) {
 				rootDiv.style.display = 'flex';
 				rootDiv.style.alignItems = 'center';
@@ -74,23 +77,40 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	}
 }
 
+function handleDataSubmission(qualtricsSurveyEngine, type) {
+	if (type == "next") {
+		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
+		const questionInfo = qualtricsSurveyEngine.getQuestionInfo()
+		const questionBody = qualtricsSurveyEngine.getQuestionContainer()
+		const questionId = questionInfo.QuestionID
+
+		if (selections) {
+			console.log('Selections data:', selections);
+		} else {
+			console.error('No selections data found in localStorage.');
+		}
+
+		// Extract image as a png image
+		const canvas = document.querySelector('canvas')
+		if (canvas) {
+			const imageData = canvas.toDataURL("image/png")
+			Qualtrics.qualtricsSurveyEngine.setEmbeddedData("image", "imageData");
+		} else {
+			Qualtrics.qualtricsSurveyEngine.setEmbeddedData("image", null);
+		}
+
+		// Store question ID and selections
+		qualtricsSurveyEngine.setEmbeddedData("questionId", questionId)
+		qualtricsSurveyEngine.setEmbeddedData("selectionsData", JSON.stringify(selections))
+
+	}
+}
 
 Qualtrics.SurveyEngine.addOnload(function() {
 	loadReactApp(this);
 });
 
 
-Qualtrics.SurveyEngine.addOnReady(function() {
-	/* JavaScript to run when the page is fully displayed */
-});
-
-Qualtrics.SurveyEngine.addOnUnload(function() {
-	/* JavaScript to run when the page is unloaded */
-
-const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
-if (selections) {
-	console.log('Selections data:', selections);
-} else {
-	console.error('No selections data found in localStorage.');
-}
+Qualtrics.SurveyEngine.addOnPageSubmit(function(type) {
+	handleDataSubmission(this, type)
 });
