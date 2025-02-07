@@ -31,14 +31,22 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	console.log("QuestionBody:", questionData)
 	questionBody.style.overflow = 'visible';
 	questionBody.style.padding = '0px';
+	questionBody.style.paddingBottom = '0px !important';
+
+	let questionText = document.querySelector('.QuestionText')
+	questionText.style.padding = '0px';
 	
 	let questionContainerInner = document.querySelector(".SkinInner")
 	questionContainerInner.style.width = '100%'
 	questionContainerInner.style.paddingTop = '0px'
 	
-	
 	let questionSkinContainer = document.querySelector(".Skin #Questions")
 	questionSkinContainer.style.overflow = 'visible';
+
+	let questionButton = document.querySelector('#Buttons')
+	questionButton.style.paddingTop = '0px';
+	quesitonButton.style.paddingBottom = '0px';
+
 	
 	try {
 
