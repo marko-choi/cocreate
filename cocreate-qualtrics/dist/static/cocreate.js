@@ -14582,7 +14582,8 @@ const Tooltip = (props) => {
                 padding: "8px 12px",
                 cursor: "pointer",
                 textTransform: "none",
-                fontFamily: "inherit"
+                fontFamily: "inherit",
+                fontSize: "12px"
               },
               startIcon: /* @__PURE__ */ jsxRuntimeExports.jsx(Delete, {}),
               children: "Delete"
@@ -14601,7 +14602,8 @@ const Tooltip = (props) => {
                 padding: "6px 10px",
                 cursor: isSaveEnabled ? "pointer" : "not-allowed",
                 textTransform: "none",
-                fontFamily: "inherit"
+                fontFamily: "inherit",
+                fontSize: "12px"
               },
               startIcon: /* @__PURE__ */ jsxRuntimeExports.jsx(Save, {}),
               children: "Save Feedback"
@@ -14835,21 +14837,78 @@ const Canvas = () => {
   ] });
 };
 const App = () => {
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("h3", { style: { color: "white" }, children: "CoCreate" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {})
-  ] });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {}) });
 };
 function mountApp() {
   const rootElement = document.getElementById("root");
-  console.log("Checking for root element");
   if (rootElement) {
     clientExports.createRoot(rootElement).render(
       /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
     );
     console.log("React app mounted!");
-  } else {
-    setTimeout(mountApp, 50);
   }
 }
 mountApp();
+function loadResource(url, type) {
+  return new Promise((resolve, reject) => {
+    let element = null;
+    if (type === "script") {
+      element = document.createElement("script");
+      element.src = url;
+      element.async = true;
+      element.onload = () => resolve;
+      element.onerror = (e) => reject(e);
+    } else if (type === "link") {
+      element = document.createElement("link");
+      element.href = url;
+      element.rel = "stylesheet";
+      element.onload = () => resolve;
+      element.onerror = (e) => reject(e);
+    }
+    document.head.appendChild(element);
+  });
+}
+async function loadReactApp(qualtricsSurveyEngine, resources) {
+  let questionData = qualtricsSurveyEngine.getQuestionInfo();
+  let questionBody = qualtricsSurveyEngine.getQuestionContainer();
+  console.log("QuestionBody:", questionData);
+  questionBody.style.overflow = "visible";
+  questionBody.style.padding = "0px";
+  let questionContainerInner = document.querySelector(".SkinInner");
+  if (questionContainerInner) {
+    questionContainerInner.style.width = "100%";
+    questionContainerInner.style.paddingTop = "0px";
+  }
+  let questionSkinContainer = document.querySelector(".Skin #Questions");
+  if (questionSkinContainer) {
+    questionSkinContainer.style.overflow = "visible";
+  }
+  try {
+    await loadResource(resources[0], "script");
+    await loadResource(resources[1], "link");
+    const questionImage = document.querySelector(".QuestionText img");
+    if (questionImage) {
+      questionImage.style.display = "none";
+    }
+    if (questionBody) {
+      let appContainer = document.createElement("div");
+      appContainer.id = "root";
+      questionBody.appendChild(appContainer);
+      const rootDiv = document.querySelector("#root");
+      if (rootDiv) {
+        rootDiv.style.display = "flex";
+        rootDiv.style.alignItems = "center";
+        rootDiv.style.justifyContent = "center";
+        rootDiv.style.overflow = "visible";
+      }
+      console.log("React app loaded!");
+    } else {
+      console.error("Unable to find the QuestionBody container.");
+    }
+  } catch (error) {
+    console.error("Error loading resources:", error);
+  }
+}
+if (typeof window !== "undefined") {
+  window.loadReactApp = loadReactApp;
+}
