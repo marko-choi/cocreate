@@ -14841,11 +14841,14 @@ const App = () => {
 };
 function mountApp() {
   const rootElement = document.getElementById("root");
+  console.log("Checking for root element");
   if (rootElement) {
     clientExports.createRoot(rootElement).render(
       /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
     );
     console.log("React app mounted!");
+  } else {
+    setTimeout(mountApp, 50);
   }
 }
 mountApp();
