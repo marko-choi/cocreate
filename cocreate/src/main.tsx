@@ -124,6 +124,7 @@ export async function loadReactApp(
 }
 
 if (typeof window !== 'undefined') {
+  console.log("Binding loadReactApp to window");
   (window as any).loadReactApp = loadReactApp;
 }
 // ================================================================================================
