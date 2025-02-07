@@ -177,6 +177,7 @@ const Canvas: React.FC = () => {
     setSelectionStart(null);
     setSelectionEnd(null);
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    redrawSelections(ctx); 
   }
 
   const checkIfMouseIsInsideCanvas = (e: React.MouseEvent) => {

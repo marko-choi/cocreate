@@ -14562,7 +14562,8 @@ const Tooltip = (props) => {
                   padding: "8px",
                   border: "1px solid #ccc",
                   borderRadius: "4px",
-                  resize: "none"
+                  resize: "none",
+                  fontSize: "11px"
                 }
               }
             )
@@ -14731,6 +14732,7 @@ const Canvas = () => {
     setSelectionStart(null);
     setSelectionEnd(null);
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    redrawSelections(ctx);
   };
   const checkIfMouseIsInsideCanvas = (e) => {
     const canvas = canvasRef.current;

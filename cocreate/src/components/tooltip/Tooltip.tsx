@@ -160,6 +160,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
               border: "1px solid #ccc",
               borderRadius: "4px",
               resize: "none",
+              fontSize: "11px",
             }}
           />
         </div>
