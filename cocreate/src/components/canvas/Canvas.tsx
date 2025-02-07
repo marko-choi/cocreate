@@ -163,7 +163,23 @@ const Canvas: React.FC = () => {
       
     // Draw the current selection being created
     drawSelection(ctx, x, y, width, height);
+    // checkIfMouseIsInsideCanvas(e);
   };
+
+  const checkIfMouseIsInsideCanvas = (e: React.MouseEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      handleMouseUp();
+      return true
+    }
+    return false;
+  }
 
   const handleMouseUp = () => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
@@ -173,11 +189,15 @@ const Canvas: React.FC = () => {
       if (!canvasElement) return;
 
       const { width, height } = canvasElement.getBoundingClientRect();
+      if (!canCreatePictureSelection(width, height)) return;
+      
       const newSelection: Selection = {
         start: { x: 0, y: 0 },
         end: { x: width, y: height },
       };
+      
       setSelections((prev) => [...prev, newSelection]);
+
     } else {
       const newSelection: Selection = {
         start: selectionStart,
@@ -196,6 +216,20 @@ const Canvas: React.FC = () => {
     setSelectionStart(null);
     setSelectionEnd(null);
   };
+
+  const canCreatePictureSelection = (width: number, height: number) => {
+    // Only creates a selection if selections array does not contain a picture-wide selection
+    let pictureWideSelection = selections.filter(selection => {
+      return (
+        selection.start.x === 0 && 
+        selection.start.y === 0 && 
+        selection.end.x === width && 
+        selection.end.y === height
+      );
+    });
+    if (pictureWideSelection.length !== 0) return false;
+    return true;
+  }
 
 
   const handleEdit = (index: number) => {
