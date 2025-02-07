@@ -12,10 +12,11 @@ interface TooltipProps {
   };
   onSave: (updatedSelection: any) => void;
   onDelete: () => void;
+  annotation?: boolean;  // New prop for read-only state
 }
 
 const Tooltip: React.FC<TooltipProps> = (props) => {
-  const { x, y, selection, onSave, onDelete } = props;
+  const { x, y, selection, onSave, onDelete, annotation } = props;
   const [functionValue, setFunctionValue] = useState(selection.functionValue || "");
   const [aestheticValue, setAestheticValue] = useState(selection.aestheticValue || "");
   const [comment, setComment] = useState(selection.comment || "");
@@ -26,18 +27,22 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
   }, [functionValue, aestheticValue]);
 
   const handleFunctionValue = (value: string) => {
-    if (functionValue === value) {
-      setFunctionValue("");
-    } else {
-      setFunctionValue(value);
+    if (!annotation) { // Allow changes only if not in read-only mode
+      if (functionValue === value) {
+        setFunctionValue("");
+      } else {
+        setFunctionValue(value);
+      }
     }
   }
 
   const handleAestheticValue = (value: string) => {
-    if (aestheticValue === value) {
-      setAestheticValue("");
-    } else {
-      setAestheticValue(value);
+    if (!annotation) { // Allow changes only if not in read-only mode
+      if (aestheticValue === value) {
+        setAestheticValue("");
+      } else {
+        setAestheticValue(value);
+      }
     }
   }
 
@@ -82,6 +87,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
           <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
             <IconButton
               onClick={() => handleFunctionValue("good")}
+              disabled={annotation} // Disable if in read-only mode
               style={{
                 background: functionValue === "good" ? "#4CAF50" : "#d5d5d5",
                 color: "white",
@@ -89,13 +95,14 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
                 borderRadius: "100%",
                 width: "32px",
                 height: "32px",
-                cursor: "pointer",
+                cursor: annotation ? "not-allowed" : "pointer",
               }}
             >
               <ThumbUp fontSize="small" />
             </IconButton>
             <IconButton
               onClick={() => handleFunctionValue("bad")}
+              disabled={annotation} // Disable if in read-only mode
               style={{
                 background: functionValue === "bad" ? "#F44336" : "#d5d5d5",
                 color: "white",
@@ -103,7 +110,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
                 borderRadius: "100%",
                 width: "32px",
                 height: "32px",
-                cursor: "pointer",
+                cursor: annotation ? "not-allowed" : "pointer",
               }}
             >
               <ThumbDown fontSize="small" />
@@ -117,6 +124,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
           <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
             <IconButton
               onClick={() => handleAestheticValue("good")}
+              disabled={annotation} // Disable if in read-only mode
               style={{
                 background: aestheticValue === "good" ? "#4CAF50" : "#d5d5d5",
                 color: "white",
@@ -124,13 +132,14 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
                 borderRadius: "100%",
                 width: "32px",
                 height: "32px",
-                cursor: "pointer",
+                cursor: annotation ? "not-allowed" : "pointer",
               }}
             >
               <ThumbUp fontSize="small" />
             </IconButton>
             <IconButton
               onClick={() => handleAestheticValue("bad")}
+              disabled={annotation} // Disable if in read-only mode
               style={{
                 background: aestheticValue === "bad" ? "#F44336" : "#d5d5d5",
                 color: "white",
@@ -138,7 +147,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
                 borderRadius: "100%",
                 width: "32px",
                 height: "32px",
-                cursor: "pointer",
+                cursor: annotation ? "not-allowed" : "pointer",
               }}
             >
               <ThumbDown fontSize="small" />
@@ -153,6 +162,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
+            disabled={annotation} // Disable if in read-only mode
             style={{
               width: "100%",
               marginTop: "4px",
@@ -161,6 +171,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
               borderRadius: "4px",
               resize: "none",
               fontSize: "11px",
+              cursor: annotation ? "not-allowed" : "text",
             }}
           />
         </div>
@@ -172,13 +183,14 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <Button
           onClick={onDelete}
+          disabled={annotation} // Disable if in read-only mode
           style={{
             background: "#F44336",
             color: "white",
             border: "none",
             borderRadius: "4px",
             padding: "8px 12px",
-            cursor: "pointer",
+            cursor: annotation ? "not-allowed" : "pointer",
             textTransform: "none",
             fontFamily: "inherit",
             fontSize: "11px",
@@ -189,14 +201,14 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
         </Button>
         <Button
           onClick={handleSave}
-          disabled={!isSaveEnabled}
+          disabled={annotation || !isSaveEnabled}
           style={{
-            background: isSaveEnabled ? "#4CAF50" : "rgb(76, 175, 80, 0.5)",
+            background: isSaveEnabled && !annotation ? "#4CAF50" : "rgb(76, 175, 80, 0.5)",
             color: "white",
             border: "none",
             borderRadius: "4px",
             padding: "6px 10px",
-            cursor: isSaveEnabled ? "pointer" : "not-allowed",
+            cursor: annotation || !isSaveEnabled ? "not-allowed" : "pointer",
             textTransform: "none",
             fontFamily: "inherit",
             fontSize: "11px",
