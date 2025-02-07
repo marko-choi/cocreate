@@ -122,11 +122,24 @@ const Canvas: React.FC = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    removeEmptyFeedback();
+
     const rect = canvas.getBoundingClientRect();
     setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setIsSelecting(true);
   };
+
+  const removeEmptyFeedback = () => {
+    if (activeSelectionIndex !== null) {
+      const selection = selections[activeSelectionIndex];
+      if (!selection.functionValue && !selection.aestheticValue) {
+        setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
+        setTooltipPosition(null);
+        setActiveSelectionIndex(null);
+      }
+    }
+  }
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isSelecting || !selectionStart || !canvasRef.current) return;
@@ -147,7 +160,7 @@ const Canvas: React.FC = () => {
     const y = Math.min(selectionStart.y, currentEnd.y);
     const width = Math.abs(currentEnd.x - selectionStart.x);
     const height = Math.abs(currentEnd.y - selectionStart.y);
-  
+      
     // Draw the current selection being created
     drawSelection(ctx, x, y, width, height);
   };

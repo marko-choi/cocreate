@@ -180,7 +180,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
             cursor: "pointer",
             textTransform: "none",
             fontFamily: "inherit",
-            fontSize: "12px",
+            fontSize: "11px",
           }}
           startIcon={<Delete />}
         >
@@ -198,7 +198,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
             cursor: isSaveEnabled ? "pointer" : "not-allowed",
             textTransform: "none",
             fontFamily: "inherit",
-            fontSize: "12px",
+            fontSize: "11px",
           }}
           startIcon={<Save />}
         >
