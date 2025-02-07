@@ -14583,7 +14583,7 @@ const Tooltip = (props) => {
                 cursor: "pointer",
                 textTransform: "none",
                 fontFamily: "inherit",
-                fontSize: "12px"
+                fontSize: "11px"
               },
               startIcon: /* @__PURE__ */ jsxRuntimeExports.jsx(Delete, {}),
               children: "Delete"
@@ -14603,7 +14603,7 @@ const Tooltip = (props) => {
                 cursor: isSaveEnabled ? "pointer" : "not-allowed",
                 textTransform: "none",
                 fontFamily: "inherit",
-                fontSize: "12px"
+                fontSize: "11px"
               },
               startIcon: /* @__PURE__ */ jsxRuntimeExports.jsx(Save, {}),
               children: "Save Feedback"
@@ -14691,10 +14691,21 @@ const Canvas = () => {
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    removeEmptyFeedback();
     const rect = canvas.getBoundingClientRect();
     setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setIsSelecting(true);
+  };
+  const removeEmptyFeedback = () => {
+    if (activeSelectionIndex !== null) {
+      const selection = selections[activeSelectionIndex];
+      if (!selection.functionValue && !selection.aestheticValue) {
+        setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
+        setTooltipPosition(null);
+        setActiveSelectionIndex(null);
+      }
+    }
   };
   const handleMouseMove = (e) => {
     if (!isSelecting || !selectionStart || !canvasRef.current) return;
@@ -14711,6 +14722,27 @@ const Canvas = () => {
     const width2 = Math.abs(currentEnd.x - selectionStart.x);
     const height2 = Math.abs(currentEnd.y - selectionStart.y);
     drawSelection(ctx, x, y, width2, height2);
+    checkIfMouseIsInsideCanvas(e);
+  };
+  const handleMouseLeave = () => {
+    if (!isSelecting || !canvasRef.current) return;
+    const ctx = canvasRef.current.getContext("2d");
+    if (!ctx) return;
+    setSelectionStart(null);
+    setSelectionEnd(null);
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+  };
+  const checkIfMouseIsInsideCanvas = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      handleMouseUp();
+      return true;
+    }
+    return false;
   };
   const handleMouseUp = () => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
@@ -14718,6 +14750,7 @@ const Canvas = () => {
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
       const { width: width2, height: height2 } = canvasElement.getBoundingClientRect();
+      if (!canCreatePictureSelection(width2, height2)) return;
       const newSelection = {
         start: { x: 0, y: 0 },
         end: { x: width2, y: height2 }
@@ -14737,6 +14770,13 @@ const Canvas = () => {
     setIsSelecting(false);
     setSelectionStart(null);
     setSelectionEnd(null);
+  };
+  const canCreatePictureSelection = (width2, height2) => {
+    let pictureWideSelection = selections.filter((selection) => {
+      return selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2;
+    });
+    if (pictureWideSelection.length !== 0) return false;
+    return true;
   };
   const handleEdit = (index) => {
     setActiveSelectionIndex(index);
@@ -14769,7 +14809,8 @@ const Canvas = () => {
         className: "canvas",
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
-        onMouseUp: handleMouseUp
+        onMouseUp: handleMouseUp,
+        onMouseLeave: handleMouseLeave
       }
     ),
     selections.map((selection, index) => {
