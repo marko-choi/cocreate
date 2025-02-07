@@ -11,7 +11,7 @@ export default defineConfig({
     assetsDir: 'static',  // place assets in a static folder under cocreate-qualtrics
     rollupOptions: {  
       output: {
-        entryFileNames: 'static/cocreate.js',
+        entryFileNames: 'static/cocreate-new.js',
       }
     }
   }
