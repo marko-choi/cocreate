@@ -4,7 +4,7 @@ const resources = [
 ];
 
 
-export function loadResource(url, type) {
+function loadResource(url, type) {
 	return new Promise((resolve, reject) => {
 		let element;
 		if (type === 'script') {
@@ -24,7 +24,7 @@ export function loadResource(url, type) {
 	});
 }
 
-export async function loadReactApp(qualtricsSurveyEngine) {
+async function loadReactApp(qualtricsSurveyEngine) {
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionBody = qualtricsSurveyEngine.getQuestionContainer()
@@ -77,7 +77,7 @@ export async function loadReactApp(qualtricsSurveyEngine) {
 	}
 }
 
-export function handleDataSubmission(qualtricsSurveyEngine, type) {
+function handleDataSubmission(qualtricsSurveyEngine, type) {
 	if (type == "next") {
 		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
 		const questionInfo = qualtricsSurveyEngine.getQuestionInfo()
