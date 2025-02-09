@@ -112,9 +112,9 @@ function handleDataSubmission(qualtricsSurveyEngine, type) {
 		const canvas = document.querySelector('canvas')
 		if (canvas) {
 			const imageData = canvas.toDataURL("image/png")
-			Qualtrics.qualtricsSurveyEngine.setEmbeddedData("image", imageData);
+			qualtricsSurveyEngine.setEmbeddedData("image", imageData);
 		} else {
-			Qualtrics.qualtricsSurveyEngine.setEmbeddedData("image", null);
+			qualtricsSurveyEngine.setEmbeddedData("image", null);
 		}
 
 		// Store question ID and selections
