@@ -15,12 +15,13 @@ interface TooltipProps {
   setSelections: React.Dispatch<React.SetStateAction<Selection[]>>;
   setTooltipPosition: React.Dispatch<React.SetStateAction<SelectionCoordinates | null>>;
   setActiveSelectionIndex: React.Dispatch<React.SetStateAction<number | null>>;
+  setIsEnteringFeedback: React.Dispatch<React.SetStateAction<boolean>>;
   onDelete: () => void;
   annotation?: boolean;  // New prop for read-only state
 }
 
 const Tooltip: React.FC<TooltipProps> = (props) => {
-  const { index, x, y, selection, setSelections, setTooltipPosition, setActiveSelectionIndex, onDelete, annotation } = props;
+  const { index, x, y, selection, setSelections, setTooltipPosition,setIsEnteringFeedback, setActiveSelectionIndex, onDelete, annotation } = props;
   const [functionValue, setFunctionValue] = useState(selection.functionValue || "");
   const [aestheticValue, setAestheticValue] = useState(selection.aestheticValue || "");
   const [comment, setComment] = useState(selection.comment || "");
@@ -67,6 +68,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
       saveChanges();
       setTooltipPosition(null);
       setActiveSelectionIndex(null);
+      setIsEnteringFeedback(false);
   };
 
   useEffect(() => {
@@ -95,6 +97,9 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
         width: "250px",
       }}
     >
+      <div>
+        {index}
+      </div>
       {/* Header */}
       <div style={{ marginBottom: "12px" }}>
         <strong style={{ display: "block", marginBottom: "4px" }}>Provide Feedback</strong>

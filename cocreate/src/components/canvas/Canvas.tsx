@@ -29,6 +29,9 @@ const Canvas: React.FC = () => {
   const [selections, setSelections] = useState<Selection[]>([]);
   const [tooltipPosition, setTooltipPosition] = useState<Point | null>(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
+  const [isEnteringFeedback, setIsEnteringFeedback] = useState(false);
+  const [allowPictureSelection, setAllowPictureSelection] = useState(true);
+
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
   const [canvasHeight, setCanvasHeight] = useState<number>(534);
@@ -42,9 +45,6 @@ const Canvas: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('cocreate-canvasSelections', JSON.stringify(selections));
   }, [selections]);
-
-
-
 
   // Set canvas size based on image dimensions
   const setCanvasDimensions = (img: HTMLImageElement) => {
@@ -129,9 +129,16 @@ const Canvas: React.FC = () => {
   const handleMouseDown = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-
+    
     removeEmptyFeedback();
-    console.log(selections);
+
+    if (isEnteringFeedback) {
+      setActiveSelectionIndex(null);
+      setIsEnteringFeedback(false);
+      return;
+    }
+
+    setActiveSelectionIndex(null);
     registerSelection(e, canvas);
   };
 
@@ -150,7 +157,7 @@ const Canvas: React.FC = () => {
         !selection.aestheticValue &&
         !selection.comment
       ) {
-        console.log("Removing empty feedback:" + activeSelectionIndex + JSON.stringify(selection));
+        console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
         setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
         setActiveSelectionIndex(null);
@@ -159,7 +166,7 @@ const Canvas: React.FC = () => {
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isSelecting || !selectionStart || !canvasRef.current) return;
+    if (!isSelecting || !selectionStart || !canvasRef.current || isEnteringFeedback) return;
   
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
@@ -240,13 +247,18 @@ const Canvas: React.FC = () => {
     return false;
   }
 
+
   const handleMouseUp = () => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
 
     let sameXCoordinate = selectionStart.x === selectionEnd.x;
     let sameYCoordinate = selectionStart.y === selectionEnd.y;
 
-    if (sameXCoordinate && sameYCoordinate) {
+    if (
+      sameXCoordinate && sameYCoordinate && 
+      !isEnteringFeedback && allowPictureSelection
+    ) {
+      console.log("Creating picture-wide selection");
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
 
@@ -255,14 +267,19 @@ const Canvas: React.FC = () => {
         return;
       }
       createPictureSelection(width, height);
+      setAllowPictureSelection(false);
     } else {
       createNewSelection(selectionStart, selectionEnd);
+      setIsEnteringFeedback(true);
     }
 
     const x = Math.max(selectionStart.x, selectionEnd.x);
     const y = Math.max(selectionStart.y, selectionEnd.y);
 
-    setTooltipPosition({ x, y });
+    setTooltipPosition({ 
+      x: x - 100, 
+      y: y - 100 
+    });
     setActiveSelectionIndex(selections.length);
 
     setIsSelecting(false);
@@ -307,6 +324,7 @@ const Canvas: React.FC = () => {
 
   const handleEdit = (index: number) => {
     setActiveSelectionIndex(index);
+    setIsEnteringFeedback(true);
     const selection = selections[index];
     const x = Math.min(selection.start.x, selection.end.x);
     const y = Math.min(selection.start.y, selection.end.y);
@@ -317,87 +335,103 @@ const Canvas: React.FC = () => {
     setSelections((prev) => prev.filter((_, i) => i !== index));
     setTooltipPosition(null);
     setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
   };
 
-  // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
+  const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
     
   // Continuously updates mouse coordinates
-  // useEffect(() => {
-  //   const handleMouseMove = (e: MouseEvent) => {
-  //     setMouseCoordinates([e.clientX, e.clientY]);
-  //   };
-  //   window.addEventListener("mousemove", handleMouseMove);
-  //   return () => window.removeEventListener("mousemove", handleMouseMove);
-  // }, []);
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMouseCoordinates([e.clientX, e.clientY]);
+    };
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, []);
 
   return (
-    <div className="canvas-container">
-      <img
-        src={imageSrc}
-        alt="Rendering"
-        className="rendering-image"
-        style={{ maxWidth: MAX_IMAGE_WIDTH, width: "100%", height: "auto" }}
-      />
-      <canvas
-        ref={canvasRef}
-        width={canvasWidth}
-        height={canvasHeight}
-        className="canvas"
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseLeave}
-      />
-      {/* Render selections div elements (same as original code) */}
-      {selections.map((selection, index) => {
-        const x = Math.min(selection.start.x, selection.end.x);
-        const y = Math.min(selection.start.y, selection.end.y);
-        const width = Math.abs(selection.end.x - selection.start.x);
-        const height = Math.abs(selection.end.y - selection.start.y);
-
-        return (
-          <div
-            key={index}
-            style={{
-              position: "absolute",
-              top: y,
-              left: x,
-              width,
-              height,
-            }}
-          >
-            <div className="selection-tooltip-box"> 
-              <IconButton 
-                size="small"
-                className="edit-button"
-                onClick={() => handleEdit(index)}
-              >
-                <Edit />
-              </IconButton>
-              <IconButton 
-                size="small"
-                className="delete-button"
-                onClick={() => handleDelete(index)}
-              >
-                <Delete />
-              </IconButton>
-            </div>
-          </div>
-        );
-      })}
-      {tooltipPosition && activeSelectionIndex !== null && (
-        <Tooltip
-          index={activeSelectionIndex}
-          x={tooltipPosition.x}
-          y={tooltipPosition.y}
-          selection={selections[activeSelectionIndex]}
-          setSelections={setSelections}
-          setActiveSelectionIndex={setActiveSelectionIndex}
-          setTooltipPosition={setTooltipPosition}
-          onDelete={() => handleDelete(activeSelectionIndex)}
+    <>
+      <div className="canvas-container">
+        <img
+          src={imageSrc}
+          alt="Rendering"
+          className="rendering-image"
+          style={{ maxWidth: MAX_IMAGE_WIDTH, width: "100%", height: "auto" }}
         />
-      )}
-    </div>
+        <canvas
+          ref={canvasRef}
+          width={canvasWidth}
+          height={canvasHeight}
+          className="canvas"
+          style={{
+            cursor: isEnteringFeedback ? "default" : "crosshair",
+          }}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
+        />
+        {/* Render selections div elements (same as original code) */}
+        {selections.map((selection, index) => {
+          const x = Math.min(selection.start.x, selection.end.x);
+          const y = Math.min(selection.start.y, selection.end.y);
+          const width = Math.abs(selection.end.x - selection.start.x);
+          const height = Math.abs(selection.end.y - selection.start.y);
+
+          return (
+            <div
+              key={index}
+              style={{
+                position: "absolute",
+                top: y,
+                left: x,
+                width,
+                height,
+              }}
+            >
+              <div className="selection-tooltip-box"> 
+                <IconButton 
+                  size="small"
+                  className="edit-button"
+                  onClick={() => handleEdit(index)}
+                >
+                  <Edit />
+                </IconButton>
+                <IconButton 
+                  size="small"
+                  className="delete-button"
+                  onClick={() => handleDelete(index)}
+                >
+                  <Delete />
+                </IconButton>
+              </div>
+            </div>
+          );
+        })}
+        {tooltipPosition && activeSelectionIndex !== null && (
+          <Tooltip
+            index={activeSelectionIndex}
+            x={tooltipPosition.x}
+            y={tooltipPosition.y}
+            selection={selections[activeSelectionIndex]}
+            setSelections={setSelections}
+            setActiveSelectionIndex={setActiveSelectionIndex}
+            setTooltipPosition={setTooltipPosition}
+            setIsEnteringFeedback={setIsEnteringFeedback}
+            onDelete={() => handleDelete(activeSelectionIndex)}
+          />
+        )}
+      </div>
+      <div>
+        <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
+        <br />
+        <span>Selections: {JSON.stringify(selections)}</span>
+        <br />
+        <span>Active Selection Index: {activeSelectionIndex}</span>
+        <br />
+        <span>isEnteringFeedback: {JSON.stringify(isEnteringFeedback)}</span>
+      </div>
+    </>
   );
 };
 
