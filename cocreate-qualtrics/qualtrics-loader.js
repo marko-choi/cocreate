@@ -61,9 +61,9 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	try {
 
 		console.log("loading script")
-		await loadResource(resources[0], 'script'); // Load React App
+		await loadResource(qualtricsResources[0], 'script'); // Load React App
 		console.log("loading css")
-		await loadResource(resources[1], 'link');   // Load CSS
+		await loadResource(qualtricsResources[1], 'link');   // Load CSS
 
 		const questionImage = document.querySelector('.QuestionText img')
 		if (questionImage) {
