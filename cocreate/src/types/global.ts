@@ -6,8 +6,8 @@ export interface Point {
 export interface Selection {
   start: Point;
   end: Point;
-  functionValue: number | null;
-  aestheticValue: number | null;
+  functionValue: string | null;
+  aestheticValue: string | null;
   comment: string;
 }
 

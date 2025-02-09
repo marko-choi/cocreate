@@ -3,10 +3,16 @@ import { IconButton } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import Tooltip from "../tooltip/Tooltip";
 import "./canvas.css";
+import { Point } from "../../types/global";
 
-interface Selection {
-  start: { x: number; y: number };
-  end: { x: number; y: number };
+export interface SelectionCoordinates {
+  x: number;
+  y: number;
+}
+
+export interface Selection {
+  start: SelectionCoordinates;
+  end: SelectionCoordinates;
   functionValue?: string;
   aestheticValue?: string;
   comment?: string;
@@ -18,10 +24,10 @@ const MAX_IMAGE_WIDTH = 800;
 const Canvas: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
-  const [selectionStart, setSelectionStart] = useState<{ x: number; y: number } | null>(null);
-  const [selectionEnd, setSelectionEnd] = useState<{ x: number; y: number } | null>(null);
+  const [selectionStart, setSelectionStart] = useState<Point | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<Point | null>(null);
   const [selections, setSelections] = useState<Selection[]>([]);
-  const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number } | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState<Point | null>(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
@@ -125,17 +131,26 @@ const Canvas: React.FC = () => {
     if (!canvas) return;
 
     removeEmptyFeedback();
+    console.log(selections);
+    registerSelection(e, canvas);
+  };
 
+  const registerSelection = (e: React.MouseEvent, canvas: HTMLCanvasElement) => {
     const rect = canvas.getBoundingClientRect();
     setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setIsSelecting(true);
-  };
+  }
 
   const removeEmptyFeedback = () => {
     if (activeSelectionIndex !== null) {
       const selection = selections[activeSelectionIndex];
-      if (!selection.functionValue && !selection.aestheticValue) {
+      if (
+        !selection.functionValue && 
+        !selection.aestheticValue &&
+        !selection.comment
+      ) {
+        console.log("Removing empty feedback:" + activeSelectionIndex + JSON.stringify(selection));
         setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
         setActiveSelectionIndex(null);
@@ -168,17 +183,47 @@ const Canvas: React.FC = () => {
     checkIfMouseIsInsideCanvas(e);
   };
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (e: React.MouseEvent) => {
     if (!isSelecting || !canvasRef.current) return;
 
-    const ctx = canvasRef.current.getContext("2d");
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    setSelectionStart(null);
-    setSelectionEnd(null);
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    redrawSelections(ctx); 
-  }
+    // Determine the mouse position relative to the canvas
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    // Clamp the mouse position to the canvas boundaries
+    const clampedX = Math.max(0, Math.min(mouseX, canvas.width));
+    const clampedY = Math.max(0, Math.min(mouseY, canvas.height));
+
+    // Set the selection end point to the clamped position
+    setSelectionEnd({ x: clampedX, y: clampedY });
+
+    // Draw the selection rectangle
+    if (selectionStart) {
+      const startX = selectionStart.x;
+      const startY = selectionStart.y;
+      const width = clampedX - startX;
+      const height = clampedY - startY;
+
+      // Clear the canvas and redraw existing selections if necessary
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      redrawSelections(ctx);
+
+      // Draw the new selection
+      drawSelection(ctx, startX, startY, width, height);
+      handleMouseUp();
+    }
+
+  // Reset selection state
+  setSelectionStart(null);
+  setSelectionEnd(null);
+};
+
+  
 
   const checkIfMouseIsInsideCanvas = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -198,26 +243,20 @@ const Canvas: React.FC = () => {
   const handleMouseUp = () => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
 
-    if (selectionStart.x === selectionEnd.x && selectionStart.y === selectionEnd.y) {
+    let sameXCoordinate = selectionStart.x === selectionEnd.x;
+    let sameYCoordinate = selectionStart.y === selectionEnd.y;
+
+    if (sameXCoordinate && sameYCoordinate) {
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
 
       const { width, height } = canvasElement.getBoundingClientRect();
-      if (!canCreatePictureSelection(width, height)) return;
-
-      const newSelection: Selection = {
-        start: { x: 0, y: 0 },
-        end: { x: width, y: height },
-      };
-      
-      setSelections((prev) => [...prev, newSelection]);
-
+      if (!canCreatePictureSelection(width, height)) {
+        return;
+      }
+      createPictureSelection(width, height);
     } else {
-      const newSelection: Selection = {
-        start: selectionStart,
-        end: selectionEnd,
-      };
-      setSelections((prev) => [...prev, newSelection]);  
+      createNewSelection(selectionStart, selectionEnd);
     }
 
     const x = Math.max(selectionStart.x, selectionEnd.x);
@@ -243,6 +282,26 @@ const Canvas: React.FC = () => {
     });
     if (pictureWideSelection.length !== 0) return false;
     return true;
+  }
+
+  const createNewSelection = (
+    selectionStart: SelectionCoordinates, 
+    selectionEnd: SelectionCoordinates
+  ) => {
+    const newSelection: Selection = {
+      start: selectionStart,
+      end: selectionEnd,
+    };
+    setSelections((prev) => [...prev, newSelection]);  
+  }
+
+  const createPictureSelection = (pictureWidth: number, pictureHeight: number) => {
+    console.log("Creating picture-wide selection");
+    const newSelection: Selection = {
+      start: { x: 0, y: 0 },
+      end: { x: pictureWidth, y: pictureHeight },
+    }; 
+    setSelections((prev) => [...prev, newSelection]);
   }
 
 
@@ -328,24 +387,13 @@ const Canvas: React.FC = () => {
       })}
       {tooltipPosition && activeSelectionIndex !== null && (
         <Tooltip
+          index={activeSelectionIndex}
           x={tooltipPosition.x}
           y={tooltipPosition.y}
           selection={selections[activeSelectionIndex]}
-          onSave={
-            ({ functionValue, aestheticValue, comment }) => {
-              setSelections((prev) => {
-                const newSelections = [...prev];
-                newSelections[activeSelectionIndex] = {
-                  ...newSelections[activeSelectionIndex],
-                  functionValue,
-                  aestheticValue,
-                  comment,
-                };
-                return newSelections;
-              });
-              setTooltipPosition(null);
-              setActiveSelectionIndex(null);
-          }}
+          setSelections={setSelections}
+          setActiveSelectionIndex={setActiveSelectionIndex}
+          setTooltipPosition={setTooltipPosition}
           onDelete={() => handleDelete(activeSelectionIndex)}
         />
       )}

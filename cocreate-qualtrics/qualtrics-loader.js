@@ -29,24 +29,34 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionBody = qualtricsSurveyEngine.getQuestionContainer()
 	console.log("QuestionBody:", questionData)
-	questionBody.style.overflow = 'visible';
-	questionBody.style.padding = '0px';
-	questionBody.style.paddingBottom = '0px !important';
+
+	if (questionBody) { 
+		questionBody.style.overflow = 'visible';
+		questionBody.style.padding = '0px';
+		questionBody.style.paddingBottom = '0px !important';
+	}
 
 	let questionText = document.querySelector('.QuestionText')
-	questionText.style.padding = '0px';
+	if (questionText) {
+		questionText.style.padding = '0px';
+	}
 	
 	let questionContainerInner = document.querySelector(".SkinInner")
-	questionContainerInner.style.width = '100%'
-	questionContainerInner.style.paddingTop = '0px'
+	if (questionContainerInner) {
+		questionContainerInner.style.width = '100%'
+		questionContainerInner.style.paddingTop = '0px'
+	}
 	
 	let questionSkinContainer = document.querySelector(".Skin #Questions")
-	questionSkinContainer.style.overflow = 'visible';
+	if (questionSkinContainer) {
+		questionSkinContainer.style.overflow = 'visible';
+	}
 
 	let questionButton = document.querySelector('#Buttons')
-	questionButton.style.paddingTop = '0px';
-	quesitonButton.style.paddingBottom = '0px';
-
+	if (questionButton) {
+		questionButton.style.paddingTop = '0px';
+		questionButton.style.paddingBottom = '0px';
+	}
 	
 	try {
 

@@ -1,8 +1,10 @@
 import { Delete, Save, ThumbDown, ThumbUp } from "@mui/icons-material";
 import { Button, Divider, IconButton } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import { Selection, SelectionCoordinates } from "../canvas/Canvas";
 
 interface TooltipProps {
+  index: number;
   x: number;
   y: number;
   selection: {
@@ -10,21 +12,19 @@ interface TooltipProps {
     aestheticValue?: string;
     comment?: string;
   };
-  onSave: (updatedSelection: any) => void;
+  setSelections: React.Dispatch<React.SetStateAction<Selection[]>>;
+  setTooltipPosition: React.Dispatch<React.SetStateAction<SelectionCoordinates | null>>;
+  setActiveSelectionIndex: React.Dispatch<React.SetStateAction<number | null>>;
   onDelete: () => void;
   annotation?: boolean;  // New prop for read-only state
 }
 
 const Tooltip: React.FC<TooltipProps> = (props) => {
-  const { x, y, selection, onSave, onDelete, annotation } = props;
+  const { index, x, y, selection, setSelections, setTooltipPosition, setActiveSelectionIndex, onDelete, annotation } = props;
   const [functionValue, setFunctionValue] = useState(selection.functionValue || "");
   const [aestheticValue, setAestheticValue] = useState(selection.aestheticValue || "");
   const [comment, setComment] = useState(selection.comment || "");
   const [isSaveEnabled, setIsSaveEnabled] = useState(false);
-
-  useEffect(() => {
-    setIsSaveEnabled(!!functionValue || !!aestheticValue);
-  }, [functionValue, aestheticValue]);
 
   const handleFunctionValue = (value: string) => {
     if (!annotation) { // Allow changes only if not in read-only mode
@@ -46,15 +46,39 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
     }
   }
 
+  const handleComment = (value: string) => {
+    setComment(value);
+  }
+
+  const saveChanges = () => {
+    setSelections((prev) => {
+      const newSelections = [...prev];
+      newSelections[index] = {
+        ...newSelections[index],
+        functionValue: functionValue ?? "",
+        aestheticValue: aestheticValue ?? "",
+        comment: comment ?? "",
+      };
+      return newSelections;
+    });
+  }
+
   const handleSave = () => {
-    if (isSaveEnabled) {
-      onSave({
-        functionValue,
-        aestheticValue,
-        comment,
-      });
-    }
+      saveChanges();
+      setTooltipPosition(null);
+      setActiveSelectionIndex(null);
   };
+
+  useEffect(() => {
+    setIsSaveEnabled(!!functionValue || !!aestheticValue);
+  }, [functionValue, aestheticValue]);
+
+  useEffect(() => {
+    if (functionValue || aestheticValue || comment) {
+      saveChanges();
+    }
+  }, [functionValue, aestheticValue, comment]);
+
 
   return (
     <div
@@ -160,7 +184,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
           <div>Additional Comments</div>
           <textarea
             value={comment}
-            onChange={(e) => setComment(e.target.value)}
+            onChange={(e) => handleComment(e.target.value)}
             rows={3}
             disabled={annotation} // Disable if in read-only mode
             style={{
