@@ -97,9 +97,6 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
         width: "250px",
       }}
     >
-      <div>
-        {index}
-      </div>
       {/* Header */}
       <div style={{ marginBottom: "12px" }}>
         <strong style={{ display: "block", marginBottom: "4px" }}>Provide Feedback</strong>

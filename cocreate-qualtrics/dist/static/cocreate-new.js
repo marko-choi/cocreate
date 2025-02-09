@@ -14421,37 +14421,58 @@ if (Divider) {
   Divider.muiSkipListHighlight = true;
 }
 const Tooltip = (props) => {
-  const { x, y, selection, onSave, onDelete } = props;
+  const { index, x, y, selection, setSelections, setTooltipPosition, setIsEnteringFeedback, setActiveSelectionIndex, onDelete, annotation } = props;
   const [functionValue, setFunctionValue] = reactExports.useState(selection.functionValue || "");
   const [aestheticValue, setAestheticValue] = reactExports.useState(selection.aestheticValue || "");
   const [comment2, setComment] = reactExports.useState(selection.comment || "");
   const [isSaveEnabled, setIsSaveEnabled] = reactExports.useState(false);
-  reactExports.useEffect(() => {
-    setIsSaveEnabled(!!functionValue || !!aestheticValue);
-  }, [functionValue, aestheticValue]);
   const handleFunctionValue = (value) => {
-    if (functionValue === value) {
-      setFunctionValue("");
-    } else {
-      setFunctionValue(value);
+    if (!annotation) {
+      if (functionValue === value) {
+        setFunctionValue("");
+      } else {
+        setFunctionValue(value);
+      }
     }
   };
   const handleAestheticValue = (value) => {
-    if (aestheticValue === value) {
-      setAestheticValue("");
-    } else {
-      setAestheticValue(value);
+    if (!annotation) {
+      if (aestheticValue === value) {
+        setAestheticValue("");
+      } else {
+        setAestheticValue(value);
+      }
     }
+  };
+  const handleComment = (value) => {
+    setComment(value);
+  };
+  const saveChanges = () => {
+    setSelections((prev2) => {
+      const newSelections = [...prev2];
+      newSelections[index] = {
+        ...newSelections[index],
+        functionValue: functionValue ?? "",
+        aestheticValue: aestheticValue ?? "",
+        comment: comment2 ?? ""
+      };
+      return newSelections;
+    });
   };
   const handleSave = () => {
-    if (isSaveEnabled) {
-      onSave({
-        functionValue,
-        aestheticValue,
-        comment: comment2
-      });
-    }
+    saveChanges();
+    setTooltipPosition(null);
+    setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
   };
+  reactExports.useEffect(() => {
+    setIsSaveEnabled(!!functionValue || !!aestheticValue);
+  }, [functionValue, aestheticValue]);
+  reactExports.useEffect(() => {
+    if (functionValue || aestheticValue || comment2) {
+      saveChanges();
+    }
+  }, [functionValue, aestheticValue, comment2]);
   return /* @__PURE__ */ jsxRuntimeExports.jsxs(
     "div",
     {
@@ -14481,6 +14502,7 @@ const Tooltip = (props) => {
                 IconButton,
                 {
                   onClick: () => handleFunctionValue("good"),
+                  disabled: annotation,
                   style: {
                     background: functionValue === "good" ? "#4CAF50" : "#d5d5d5",
                     color: "white",
@@ -14488,7 +14510,7 @@ const Tooltip = (props) => {
                     borderRadius: "100%",
                     width: "32px",
                     height: "32px",
-                    cursor: "pointer"
+                    cursor: annotation ? "not-allowed" : "pointer"
                   },
                   children: /* @__PURE__ */ jsxRuntimeExports.jsx(ThumbUp, { fontSize: "small" })
                 }
@@ -14497,6 +14519,7 @@ const Tooltip = (props) => {
                 IconButton,
                 {
                   onClick: () => handleFunctionValue("bad"),
+                  disabled: annotation,
                   style: {
                     background: functionValue === "bad" ? "#F44336" : "#d5d5d5",
                     color: "white",
@@ -14504,7 +14527,7 @@ const Tooltip = (props) => {
                     borderRadius: "100%",
                     width: "32px",
                     height: "32px",
-                    cursor: "pointer"
+                    cursor: annotation ? "not-allowed" : "pointer"
                   },
                   children: /* @__PURE__ */ jsxRuntimeExports.jsx(ThumbDown, { fontSize: "small" })
                 }
@@ -14518,6 +14541,7 @@ const Tooltip = (props) => {
                 IconButton,
                 {
                   onClick: () => handleAestheticValue("good"),
+                  disabled: annotation,
                   style: {
                     background: aestheticValue === "good" ? "#4CAF50" : "#d5d5d5",
                     color: "white",
@@ -14525,7 +14549,7 @@ const Tooltip = (props) => {
                     borderRadius: "100%",
                     width: "32px",
                     height: "32px",
-                    cursor: "pointer"
+                    cursor: annotation ? "not-allowed" : "pointer"
                   },
                   children: /* @__PURE__ */ jsxRuntimeExports.jsx(ThumbUp, { fontSize: "small" })
                 }
@@ -14534,6 +14558,7 @@ const Tooltip = (props) => {
                 IconButton,
                 {
                   onClick: () => handleAestheticValue("bad"),
+                  disabled: annotation,
                   style: {
                     background: aestheticValue === "bad" ? "#F44336" : "#d5d5d5",
                     color: "white",
@@ -14541,7 +14566,7 @@ const Tooltip = (props) => {
                     borderRadius: "100%",
                     width: "32px",
                     height: "32px",
-                    cursor: "pointer"
+                    cursor: annotation ? "not-allowed" : "pointer"
                   },
                   children: /* @__PURE__ */ jsxRuntimeExports.jsx(ThumbDown, { fontSize: "small" })
                 }
@@ -14554,8 +14579,9 @@ const Tooltip = (props) => {
               "textarea",
               {
                 value: comment2,
-                onChange: (e) => setComment(e.target.value),
+                onChange: (e) => handleComment(e.target.value),
                 rows: 3,
+                disabled: annotation,
                 style: {
                   width: "100%",
                   marginTop: "4px",
@@ -14563,7 +14589,8 @@ const Tooltip = (props) => {
                   border: "1px solid #ccc",
                   borderRadius: "4px",
                   resize: "none",
-                  fontSize: "11px"
+                  fontSize: "11px",
+                  cursor: annotation ? "not-allowed" : "text"
                 }
               }
             )
@@ -14575,13 +14602,14 @@ const Tooltip = (props) => {
             Button,
             {
               onClick: onDelete,
+              disabled: annotation,
               style: {
                 background: "#F44336",
                 color: "white",
                 border: "none",
                 borderRadius: "4px",
                 padding: "8px 12px",
-                cursor: "pointer",
+                cursor: annotation ? "not-allowed" : "pointer",
                 textTransform: "none",
                 fontFamily: "inherit",
                 fontSize: "11px"
@@ -14594,14 +14622,14 @@ const Tooltip = (props) => {
             Button,
             {
               onClick: handleSave,
-              disabled: !isSaveEnabled,
+              disabled: annotation || !isSaveEnabled,
               style: {
-                background: isSaveEnabled ? "#4CAF50" : "rgb(76, 175, 80, 0.5)",
+                background: isSaveEnabled && !annotation ? "#4CAF50" : "rgb(76, 175, 80, 0.5)",
                 color: "white",
                 border: "none",
                 borderRadius: "4px",
                 padding: "6px 10px",
-                cursor: isSaveEnabled ? "pointer" : "not-allowed",
+                cursor: annotation || !isSaveEnabled ? "not-allowed" : "pointer",
                 textTransform: "none",
                 fontFamily: "inherit",
                 fontSize: "11px"
@@ -14625,6 +14653,8 @@ const Canvas = () => {
   const [selections, setSelections] = reactExports.useState([]);
   const [tooltipPosition, setTooltipPosition] = reactExports.useState(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = reactExports.useState(null);
+  const [isEnteringFeedback, setIsEnteringFeedback] = reactExports.useState(false);
+  const [allowPictureSelection, setAllowPictureSelection] = reactExports.useState(true);
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = reactExports.useState(MAX_IMAGE_WIDTH);
   const [canvasHeight, setCanvasHeight] = reactExports.useState(534);
@@ -14693,6 +14723,15 @@ const Canvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     removeEmptyFeedback();
+    if (isEnteringFeedback) {
+      setActiveSelectionIndex(null);
+      setIsEnteringFeedback(false);
+      return;
+    }
+    setActiveSelectionIndex(null);
+    registerSelection(e, canvas);
+  };
+  const registerSelection = (e, canvas) => {
     const rect = canvas.getBoundingClientRect();
     setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
     setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
@@ -14701,7 +14740,9 @@ const Canvas = () => {
   const removeEmptyFeedback = () => {
     if (activeSelectionIndex !== null) {
       const selection = selections[activeSelectionIndex];
-      if (!selection.functionValue && !selection.aestheticValue) {
+      if (!selection.functionValue && !selection.aestheticValue && !selection.comment) {
+        checkForPictureSelection();
+        console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
         setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
         setActiveSelectionIndex(null);
@@ -14709,7 +14750,7 @@ const Canvas = () => {
     }
   };
   const handleMouseMove = (e) => {
-    if (!isSelecting || !selectionStart || !canvasRef.current) return;
+    if (!isSelecting || !selectionStart || !canvasRef.current || isEnteringFeedback) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
@@ -14725,14 +14766,29 @@ const Canvas = () => {
     drawSelection(ctx, x, y, width2, height2);
     checkIfMouseIsInsideCanvas(e);
   };
-  const handleMouseLeave = () => {
+  const handleMouseLeave = (e) => {
     if (!isSelecting || !canvasRef.current) return;
-    const ctx = canvasRef.current.getContext("2d");
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    const clampedX = Math.max(0, Math.min(mouseX, canvas.width));
+    const clampedY = Math.max(0, Math.min(mouseY, canvas.height));
+    setSelectionEnd({ x: clampedX, y: clampedY });
+    if (selectionStart) {
+      const startX = selectionStart.x;
+      const startY = selectionStart.y;
+      const width2 = clampedX - startX;
+      const height2 = clampedY - startY;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      redrawSelections(ctx);
+      drawSelection(ctx, startX, startY, width2, height2);
+      handleMouseUp();
+    }
     setSelectionStart(null);
     setSelectionEnd(null);
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    redrawSelections(ctx);
   };
   const checkIfMouseIsInsideCanvas = (e) => {
     const canvas = canvasRef.current;
@@ -14748,26 +14804,29 @@ const Canvas = () => {
   };
   const handleMouseUp = () => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
-    if (selectionStart.x === selectionEnd.x && selectionStart.y === selectionEnd.y) {
+    let sameXCoordinate = selectionStart.x === selectionEnd.x;
+    let sameYCoordinate = selectionStart.y === selectionEnd.y;
+    if (sameXCoordinate && sameYCoordinate && !isEnteringFeedback && allowPictureSelection) {
+      console.log("Creating picture-wide selection");
       const canvasElement = canvasRef.current;
       if (!canvasElement) return;
       const { width: width2, height: height2 } = canvasElement.getBoundingClientRect();
-      if (!canCreatePictureSelection(width2, height2)) return;
-      const newSelection = {
-        start: { x: 0, y: 0 },
-        end: { x: width2, y: height2 }
-      };
-      setSelections((prev2) => [...prev2, newSelection]);
+      if (!canCreatePictureSelection(width2, height2)) {
+        return;
+      }
+      createPictureSelection(width2, height2);
+      setIsEnteringFeedback(true);
+      setAllowPictureSelection(false);
     } else {
-      const newSelection = {
-        start: selectionStart,
-        end: selectionEnd
-      };
-      setSelections((prev2) => [...prev2, newSelection]);
+      createNewSelection(selectionStart, selectionEnd);
+      setIsEnteringFeedback(true);
     }
     const x = Math.max(selectionStart.x, selectionEnd.x);
     const y = Math.max(selectionStart.y, selectionEnd.y);
-    setTooltipPosition({ x, y });
+    setTooltipPosition({
+      x: x - 100,
+      y: y - 100
+    });
     setActiveSelectionIndex(selections.length);
     setIsSelecting(false);
     setSelectionStart(null);
@@ -14780,19 +14839,50 @@ const Canvas = () => {
     if (pictureWideSelection.length !== 0) return false;
     return true;
   };
+  const createNewSelection = (selectionStart2, selectionEnd2) => {
+    const newSelection = {
+      start: selectionStart2,
+      end: selectionEnd2
+    };
+    setSelections((prev2) => [...prev2, newSelection]);
+  };
+  const createPictureSelection = (pictureWidth, pictureHeight) => {
+    console.log("Creating picture-wide selection");
+    const newSelection = {
+      start: { x: 0, y: 0 },
+      end: { x: pictureWidth, y: pictureHeight }
+    };
+    setSelections((prev2) => [...prev2, newSelection]);
+  };
   const handleEdit = (index) => {
     setActiveSelectionIndex(index);
+    setIsEnteringFeedback(true);
     const selection = selections[index];
     const x = Math.min(selection.start.x, selection.end.x);
     const y = Math.min(selection.start.y, selection.end.y);
     setTooltipPosition({ x, y });
   };
   const handleDelete = (index) => {
+    checkForPictureSelection(index);
     setSelections((prev2) => prev2.filter((_, i) => i !== index));
     setTooltipPosition(null);
     setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
+  const checkForPictureSelection = (index) => {
+    if (!allowPictureSelection) {
+      const selection = selections[index ?? activeSelectionIndex ?? 0];
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const { width: width2, height: height2 } = canvas.getBoundingClientRect();
+        if (selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2) {
+          console.log("allowing picture selection");
+          setAllowPictureSelection(true);
+        }
+      }
+    }
+  };
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
       {
@@ -14809,6 +14899,9 @@ const Canvas = () => {
         width: canvasWidth,
         height: canvasHeight,
         className: "canvas",
+        style: {
+          cursor: isEnteringFeedback ? "default" : "crosshair"
+        },
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
         onMouseUp: handleMouseUp,
@@ -14857,27 +14950,18 @@ const Canvas = () => {
     tooltipPosition && activeSelectionIndex !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(
       Tooltip,
       {
+        index: activeSelectionIndex,
         x: tooltipPosition.x,
         y: tooltipPosition.y,
         selection: selections[activeSelectionIndex],
-        onSave: ({ functionValue, aestheticValue, comment: comment2 }) => {
-          setSelections((prev2) => {
-            const newSelections = [...prev2];
-            newSelections[activeSelectionIndex] = {
-              ...newSelections[activeSelectionIndex],
-              functionValue,
-              aestheticValue,
-              comment: comment2
-            };
-            return newSelections;
-          });
-          setTooltipPosition(null);
-          setActiveSelectionIndex(null);
-        },
+        setSelections,
+        setActiveSelectionIndex,
+        setTooltipPosition,
+        setIsEnteringFeedback,
         onDelete: () => handleDelete(activeSelectionIndex)
       }
     )
-  ] });
+  ] }) });
 };
 const App = () => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {}) });

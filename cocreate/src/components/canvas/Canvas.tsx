@@ -157,6 +157,7 @@ const Canvas: React.FC = () => {
         !selection.aestheticValue &&
         !selection.comment
       ) {
+        checkForPictureSelection();
         console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
         setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
@@ -267,6 +268,7 @@ const Canvas: React.FC = () => {
         return;
       }
       createPictureSelection(width, height);
+      setIsEnteringFeedback(true);
       setAllowPictureSelection(false);
     } else {
       createNewSelection(selectionStart, selectionEnd);
@@ -332,22 +334,45 @@ const Canvas: React.FC = () => {
   };
 
   const handleDelete = (index: number) => {
+
+    // Check if the selection to be deleted is a picture-wide selection
+    checkForPictureSelection(index);
+    
     setSelections((prev) => prev.filter((_, i) => i !== index));
     setTooltipPosition(null);
     setActiveSelectionIndex(null);
     setIsEnteringFeedback(false);
   };
 
-  const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
+  const checkForPictureSelection = (index?: number) => {
+    if (!allowPictureSelection) {
+      const selection = selections[index ?? activeSelectionIndex ?? 0];
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const { width, height } = canvas.getBoundingClientRect();
+        if (
+          selection.start.x === 0 && 
+          selection.start.y === 0 && 
+          selection.end.x === width && 
+          selection.end.y === height
+        ) {
+          console.log("allowing picture selection");
+          setAllowPictureSelection(true);
+        }
+      }
+    } 
+  }
+
+  // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
     
-  // Continuously updates mouse coordinates
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setMouseCoordinates([e.clientX, e.clientY]);
-    };
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, []);
+  // // Continuously updates mouse coordinates
+  // useEffect(() => {
+  //   const handleMouseMove = (e: MouseEvent) => {
+  //     setMouseCoordinates([e.clientX, e.clientY]);
+  //   };
+  //   window.addEventListener("mousemove", handleMouseMove);
+  //   return () => window.removeEventListener("mousemove", handleMouseMove);
+  // }, []);
 
   return (
     <>
@@ -422,7 +447,7 @@ const Canvas: React.FC = () => {
           />
         )}
       </div>
-      <div>
+      {/* <div>
         <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
         <br />
         <span>Selections: {JSON.stringify(selections)}</span>
@@ -430,7 +455,9 @@ const Canvas: React.FC = () => {
         <span>Active Selection Index: {activeSelectionIndex}</span>
         <br />
         <span>isEnteringFeedback: {JSON.stringify(isEnteringFeedback)}</span>
-      </div>
+        <br />
+        <span>allowPictureSelection: {JSON.stringify(allowPictureSelection)}</span>
+      </div> */}
     </>
   );
 };
