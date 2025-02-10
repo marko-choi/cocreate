@@ -1,6 +1,6 @@
 import { Delete, Edit } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Tooltip from "../tooltip/Tooltip";
 import "./canvas.css";
 import { Point } from "../../types/global";
@@ -12,10 +12,20 @@ export interface SelectionCoordinates {
 
 export interface Selection {
   start: SelectionCoordinates;
+  unscaledStart: SelectionCoordinates;
   end: SelectionCoordinates;
+  unscaledEnd: SelectionCoordinates;
   functionValue?: string;
   aestheticValue?: string;
   comment?: string;
+}
+
+
+export interface ResizeRatio {
+  prevWidthRatio: number;
+  prevHeightRatio: number;
+  currWidthRatio: number;
+  currHeightRatio: number;
 }
 
 const DEFAULT_IMAGE_SRC = "./rendering.jpg";
@@ -36,18 +46,23 @@ const Canvas: React.FC = () => {
   const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
   const [canvasHeight, setCanvasHeight] = useState<number>(534);
 
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
+  
   // Clear selections from localStorage when component mounts
   useEffect(() => {
+    localStorage.removeItem('cocreate-canvasSize');
     localStorage.removeItem('cocreate-canvasSelections');
   }, []);
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
+    localStorage.setItem('cocreate-canvasSize', JSON.stringify({ width: canvasWidth, height: canvasHeight }));
     localStorage.setItem('cocreate-canvasSelections', JSON.stringify(selections));
   }, [selections]);
 
   // Set canvas size based on image dimensions
-  const setCanvasDimensions = (img: HTMLImageElement) => {
+  const initCanvasDimensions = (img: HTMLImageElement) => {
     const maxWidth = MAX_IMAGE_WIDTH;
     const imgWidth = img.width;
     const imgHeight = img.height;
@@ -55,25 +70,60 @@ const Canvas: React.FC = () => {
     const aspectRatio = imgHeight / imgWidth;
     const width = Math.min(maxWidth, imgWidth);
     const height = Math.min(imgHeight, aspectRatio * width);
+    const scaleFactor = width / img.naturalWidth;
 
     setCanvasWidth(width);
     setCanvasHeight(height);
+    setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    setImageScaleFactor(scaleFactor);
   };
+
+  const resizeCanvasDimensions = useCallback((img: HTMLImageElement) => {
+    // Get screen width and image dimensions
+    const screenWidth = window.innerWidth; 
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+  
+    // Scale width to fit within screen width
+    const width = Math.min(screenWidth, imgWidth);
+    const aspectRatio = imgHeight / imgWidth;
+    const height = width * aspectRatio;
+    
+    setCanvasWidth(width);
+    setCanvasHeight(height);
+    
+    if (!imageDimensions) return
+    setImageScaleFactor(img.width / imageDimensions.width );
+
+  }, [imageDimensions]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const img = document.querySelector("img") as HTMLImageElement | null;
+      if (img) {
+        resizeCanvasDimensions(img);
+      }
+    };
+  
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [imageDimensions]);
 
   useEffect(() => {
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-      questionBodyImage.onload = () => setCanvasDimensions(questionBodyImage);
-      setCanvasDimensions(questionBodyImage);
+      questionBodyImage.onload = () => initCanvasDimensions(questionBodyImage);
+      initCanvasDimensions(questionBodyImage);
 
     } else {
       
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
+        console.log("Default image found");
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        defaultImage.onload = () => setCanvasDimensions(defaultImage);
+        defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
     }
   }, []);
@@ -115,9 +165,11 @@ const Canvas: React.FC = () => {
     ctx.stroke(); // Stroke the rounded rectangle
   };
 
-  const redrawSelections = (ctx: CanvasRenderingContext2D) => {
+  const redrawSelections = (ctx: CanvasRenderingContext2D, resizedSelections?: Selection[]) => {
     // Draw all selections without restrictions
-    selections.forEach(({ start, end }) => {
+    let selectionsToDraw = resizedSelections ?? selections;
+    // console.log("Selections to draw: \n" + JSON.stringify(selectionsToDraw));
+    selectionsToDraw.forEach(({ start, end }) => {
       const x = Math.min(start.x, end.x);
       const y = Math.min(start.y, end.y);
       const width = Math.abs(end.x - start.x);
@@ -158,7 +210,7 @@ const Canvas: React.FC = () => {
         !selection.comment
       ) {
         checkForPictureSelection();
-        console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
+        // console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
         setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
         setActiveSelectionIndex(null);
@@ -217,6 +269,10 @@ const Canvas: React.FC = () => {
       const width = clampedX - startX;
       const height = clampedY - startY;
 
+      console.log(
+        "Start [X, Y]: " + startX + ", " + startY, 
+        "\nEnd [X, Y]: " + clampedX + ", " + clampedY
+      );
       // Clear the canvas and redraw existing selections if necessary
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       redrawSelections(ctx);
@@ -254,9 +310,9 @@ const Canvas: React.FC = () => {
 
     let sameXCoordinate = selectionStart.x === selectionEnd.x;
     let sameYCoordinate = selectionStart.y === selectionEnd.y;
-    console.log("Same X Coordinate: " + sameXCoordinate);
-    console.log("Same Y Coordinate: " + sameYCoordinate)
-    console.log("Selection Start: " + JSON.stringify(selectionStart), "\nSelection End: " + JSON.stringify(selectionEnd))
+    // console.log("Same X Coordinate: " + sameXCoordinate);
+    // console.log("Same Y Coordinate: " + sameYCoordinate)
+    // console.log("Selection Start: " + JSON.stringify(selectionStart), "\nSelection End: " + JSON.stringify(selectionEnd))
 
     if (sameXCoordinate && sameYCoordinate) {
 
@@ -297,7 +353,7 @@ const Canvas: React.FC = () => {
   };
 
   const openPictureSelectionFeedback = (e: React.MouseEvent) => {
-    console.log("Opening picture-wide selection feedback");
+    // console.log("Opening picture-wide selection feedback");
     setIsEnteringFeedback(true);
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
@@ -311,13 +367,13 @@ const Canvas: React.FC = () => {
         selection.end.y === height
       );
     });
-    console.log("Picture-wide selection found: " + JSON.stringify(pictureSelection));
+    // console.log("Picture-wide selection found: " + JSON.stringify(pictureSelection));
 
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
       const mouseCoordinates = getMouseCoordinates(e);
 
-      console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
+      // console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
       
       setActiveSelectionIndex(pictureSelectionIndex);
       setTooltipPosition(mouseCoordinates);
@@ -360,17 +416,28 @@ const Canvas: React.FC = () => {
   ) => {
     const newSelection: Selection = {
       start: selectionStart,
+      unscaledStart: {
+        x: selectionStart.x / imageScaleFactor,
+        y: selectionStart.y / imageScaleFactor,
+      },
       end: selectionEnd,
+      unscaledEnd: {
+        x: selectionEnd.x / imageScaleFactor,
+        y: selectionEnd.y / imageScaleFactor,
+      },
     };
     setSelections((prev) => [...prev, newSelection]);  
   }
 
   const createPictureSelection = (pictureWidth: number, pictureHeight: number) => {
+    if (!imageDimensions) return;
     const newSelection: Selection = {
       start: { x: 0, y: 0 },
       end: { x: pictureWidth, y: pictureHeight },
+      unscaledStart: { x: 0, y: 0 },
+      unscaledEnd: { x: imageDimensions?.width, y: imageDimensions?.height },
     }; 
-    console.log("Creating picture-wide selection: \n" + JSON.stringify(newSelection));
+    // console.log("Creating picture-wide selection: \n" + JSON.stringify(newSelection));
     setSelections((prev) => [...prev, newSelection]);
   }
 
@@ -407,12 +474,44 @@ const Canvas: React.FC = () => {
           selection.end.x === width && 
           selection.end.y === height
         ) {
-          console.log("allowing picture selection");
+          // console.log("allowing picture selection");
           setAllowPictureSelection(true);
         }
       }
     } 
   }
+
+  // const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  // const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
+  // const [selections, setSelections] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } }[]>([]);
+  
+  // const updateScaleFactor = (newWidth: number) => {
+  //   if (imageDimensions) {
+  //     const newScaleFactor = newWidth / imageDimensions.width;
+  //     setImageScaleFactor(newScaleFactor);
+  //   }
+  // };
+  
+  useEffect(() => {
+    if (imageDimensions) {
+      setSelections(prevSelections =>
+        prevSelections.map(selection => ({
+          ...selection,
+          start: {
+            x: selection.unscaledStart.x * imageScaleFactor,
+            y: selection.unscaledStart.y * imageScaleFactor
+          },
+          end: {
+            x: selection.unscaledEnd.x * imageScaleFactor,
+            y: selection.unscaledEnd.y * imageScaleFactor
+          }
+        }))
+      );
+    }
+  }, [imageScaleFactor, imageDimensions]);
+  
+  
+  
 
   // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
     
@@ -427,12 +526,17 @@ const Canvas: React.FC = () => {
 
   return (
     <>
-      <div className="canvas-container">
+    <div className="canvas-container">
         <img
           src={imageSrc}
           alt="Rendering"
           className="rendering-image"
-          style={{ maxWidth: MAX_IMAGE_WIDTH, width: "100%", height: "auto" }}
+          style={{ 
+            // maxWidth: MAX_IMAGE_WIDTH, 
+            maxWidth: "100vw", 
+            height: "auto",
+            display: "block",
+          }}
         />
         <canvas
           ref={canvasRef}
@@ -441,6 +545,8 @@ const Canvas: React.FC = () => {
           className="canvas"
           style={{
             cursor: isEnteringFeedback ? "default" : "crosshair",
+            // width: "100%",
+            // height: "auto",
           }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -498,7 +604,8 @@ const Canvas: React.FC = () => {
           />
         )}
       </div>
-      {/* <div>
+    
+     {/* <div>
         <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
         <br />
         <span>Selections: {JSON.stringify(selections)}</span>
@@ -510,9 +617,18 @@ const Canvas: React.FC = () => {
         <span>allowPictureSelection: {JSON.stringify(allowPictureSelection)}</span>
         <br />
         <span>Tooltip Position: {JSON.stringify(tooltipPosition)}</span>
+        <br />
+        <span>Canvas Height & Width: {canvasHeight}, {canvasWidth}</span>
+        <br />
+        <span>Image Dimensions: {JSON.stringify(imageDimensions)}</span>
+        <br />
+        <span>Image Scale Factor: {imageScaleFactor}</span>
+        <br />
       </div> */}
     </>
   );
 };
 
 export default Canvas;
+
+    

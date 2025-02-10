@@ -1,16 +1,18 @@
 .canvas-container {
-  position: relative;
-  width: 800px;
-  height: 534px;
+  /* position: relative; */
+  /* width: 800px;
+  height: 534px; */
+  width: 100%;
+  height: 100%;
 }
 
 .rendering-image {
-  position: absolute;
+  /* position: absolute; */
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: 100vh;
+  /* object-fit: cover; */
   z-index: 0;
 }
 
