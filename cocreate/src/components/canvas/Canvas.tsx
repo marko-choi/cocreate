@@ -80,7 +80,7 @@ const Canvas: React.FC = () => {
 
     const scaleFactor = imgHeight / originalImageHeight
 
-    // console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
+    console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
     setCanvasWidth(width);
     setCanvasHeight(height);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
@@ -132,6 +132,7 @@ const Canvas: React.FC = () => {
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
+      console.log("Scraping image from question body");
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       questionBodyImage.onload = () => initCanvasDimensions(questionBodyImage);
 
