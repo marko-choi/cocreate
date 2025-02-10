@@ -132,10 +132,21 @@ const Canvas: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      const img = document.querySelector("img") as HTMLImageElement | null;
-      if (img) {
-        console.log(img)
-        resizeCanvasDimensions(img);
+      
+      var loadedImage = undefined
+      do { loadedImage = document.querySelector(".rendering-image"); } while (!loadedImage) 
+      
+      if (loadedImage instanceof HTMLImageElement) {
+        if (loadedImage.complete) {
+          console.log("Image already loaded");
+          resizeCanvasDimensions(loadedImage);
+        } else {
+          loadedImage.addEventListener("load", function() {
+            console.log("Image loaded");
+            console.log(this);
+            resizeCanvasDimensions(this);
+        });
+        }
       }
     };
   

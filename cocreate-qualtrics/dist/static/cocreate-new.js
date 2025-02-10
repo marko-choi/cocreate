@@ -14710,10 +14710,21 @@ const Canvas = () => {
   }, [imageDimensions]);
   reactExports.useEffect(() => {
     const handleResize = () => {
-      const img = document.querySelector("img");
-      if (img) {
-        console.log(img);
-        resizeCanvasDimensions(img);
+      var loadedImage = void 0;
+      do {
+        loadedImage = document.querySelector(".rendering-image");
+      } while (!loadedImage);
+      if (loadedImage instanceof HTMLImageElement) {
+        if (loadedImage.complete) {
+          console.log("Image already loaded");
+          resizeCanvasDimensions(loadedImage);
+        } else {
+          loadedImage.addEventListener("load", function() {
+            console.log("Image loaded");
+            console.log(this);
+            resizeCanvasDimensions(this);
+          });
+        }
       }
     };
     window.addEventListener("resize", handleResize);
