@@ -80,12 +80,15 @@ const Canvas: React.FC = () => {
     const width = height / aspectRatio;
 
     const scaleFactor = imageHeight / originalImageHeight
-
-    console.log("Image Width: " + imageWidth + " Image Height: " + imageHeight);
-    console.log("Screen Height: " + screenHeight);
-    console.log("Image Scale Factor: " + scaleFactor);
-    console.log("Resized Canvas Width: " + width + " Resized Canvas Height: " + height);
-    console.log("Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    
+    console.log(img)
+    console.log(
+      "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\n" +
+      "Screen Height: " + screenHeight + "\n" +
+      "Image Scale Factor: " + scaleFactor + "\n" +
+      "Resized Canvas Width: " + width + " Resized Canvas Height: " + height + "\n" +
+      "Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
+    );
 
     setCanvasWidth(width);
     setCanvasHeight(height);

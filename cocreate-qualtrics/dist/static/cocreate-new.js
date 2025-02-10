@@ -14681,11 +14681,10 @@ const Canvas = () => {
     const aspectRatio = imageHeight / imageWidth;
     const width2 = height2 / aspectRatio;
     const scaleFactor = imageHeight / originalImageHeight;
-    console.log("Image Width: " + imageWidth + " Image Height: " + imageHeight);
-    console.log("Screen Height: " + screenHeight);
-    console.log("Image Scale Factor: " + scaleFactor);
-    console.log("Resized Canvas Width: " + width2 + " Resized Canvas Height: " + height2);
-    console.log("Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    console.log(img);
+    console.log(
+      "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\nScreen Height: " + screenHeight + "\nImage Scale Factor: " + scaleFactor + "\nResized Canvas Width: " + width2 + " Resized Canvas Height: " + height2 + "\nImage Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
+    );
     setCanvasWidth(width2);
     setCanvasHeight(height2);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
@@ -14720,7 +14719,14 @@ const Canvas = () => {
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("Scraping image from question body");
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-      initCanvasDimensions(questionBodyImage);
+      var loadedImage = void 0;
+      while (!loadedImage) {
+        loadedImage = document.querySelector(".rendering-image");
+        console.log("Waiting for rendering image to load");
+      }
+      if (loadedImage instanceof HTMLImageElement) {
+        initCanvasDimensions(loadedImage);
+      }
     } else {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
