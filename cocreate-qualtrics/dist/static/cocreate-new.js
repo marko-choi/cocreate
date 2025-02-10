@@ -14673,13 +14673,14 @@ const Canvas = () => {
     localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
   }, [selections]);
   const initCanvasDimensions = (img) => {
-    const maxWidth2 = MAX_IMAGE_WIDTH;
+    const originalImageHeight = img.naturalHeight;
+    const screenHeight = window.innerHeight;
     const imgWidth = img.width;
     const imgHeight = img.height;
+    const height2 = Math.min(imgHeight, screenHeight);
     const aspectRatio = imgHeight / imgWidth;
-    const width2 = Math.min(maxWidth2, imgWidth);
-    const height2 = Math.min(imgHeight, aspectRatio * width2);
-    const scaleFactor = width2 / img.naturalWidth;
+    const width2 = height2 / aspectRatio;
+    const scaleFactor = imgHeight / originalImageHeight;
     setCanvasWidth(width2);
     setCanvasHeight(height2);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
@@ -14712,7 +14713,6 @@ const Canvas = () => {
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       questionBodyImage.onload = () => initCanvasDimensions(questionBodyImage);
-      initCanvasDimensions(questionBodyImage);
     } else {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {

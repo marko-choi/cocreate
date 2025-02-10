@@ -67,14 +67,18 @@ const Canvas: React.FC = () => {
 
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
-    const maxWidth = MAX_IMAGE_WIDTH;
+
+    const originalImageHeight = img.naturalHeight;
+
+    const screenHeight = window.innerHeight;
     const imgWidth = img.width;
     const imgHeight = img.height;
     
+    const height = Math.min(imgHeight, screenHeight);
     const aspectRatio = imgHeight / imgWidth;
-    const width = Math.min(maxWidth, imgWidth);
-    const height = Math.min(imgHeight, aspectRatio * width);
-    const scaleFactor = width / img.naturalWidth;
+    const width = height / aspectRatio
+
+    const scaleFactor = imgHeight / originalImageHeight
 
     // console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
     setCanvasWidth(width);
@@ -129,7 +133,6 @@ const Canvas: React.FC = () => {
       
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       questionBodyImage.onload = () => initCanvasDimensions(questionBodyImage);
-      initCanvasDimensions(questionBodyImage);
 
     } else {
       

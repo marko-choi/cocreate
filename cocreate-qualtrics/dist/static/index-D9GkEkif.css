@@ -15,7 +15,7 @@ h1 {
   text-align: center;
   margin-bottom: 20px;
 }.canvas-container {
-  /* position: relative; */
+  position: relative;
   /* width: 800px;
   height: 534px; */
   width: 100%;
@@ -24,7 +24,7 @@ h1 {
 }
 
 .rendering-image {
-  /* position: absolute; */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
