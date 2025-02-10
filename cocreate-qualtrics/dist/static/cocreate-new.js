@@ -14677,7 +14677,7 @@ const Canvas = () => {
     const screenHeight = window.innerHeight;
     const imgWidth = img.width;
     const imgHeight = img.height;
-    const height2 = Math.min(imgHeight, screenHeight);
+    const height2 = imgHeight;
     const aspectRatio = imgHeight / imgWidth;
     const width2 = height2 / aspectRatio;
     const scaleFactor = imgHeight / originalImageHeight;
@@ -14994,7 +14994,7 @@ const Canvas = () => {
           className: "rendering-image",
           style: {
             // maxWidth: MAX_IMAGE_WIDTH, 
-            maxHeight: "100vw",
+            maxHeight: "80vh",
             width: "auto",
             display: "block"
           }

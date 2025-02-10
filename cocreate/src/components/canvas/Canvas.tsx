@@ -74,7 +74,7 @@ const Canvas: React.FC = () => {
     const imgWidth = img.width;
     const imgHeight = img.height;
     
-    const height = Math.min(imgHeight, screenHeight);
+    const height = imgHeight
     const aspectRatio = imgHeight / imgWidth;
     const width = height / aspectRatio
 
@@ -554,7 +554,7 @@ const Canvas: React.FC = () => {
           className="rendering-image"
           style={{ 
             // maxWidth: MAX_IMAGE_WIDTH, 
-            maxHeight: "100vw", 
+            maxHeight: "80vh", 
             width: "auto",
             display: "block",
           }}
