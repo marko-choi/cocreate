@@ -151,8 +151,17 @@ const Canvas: React.FC = () => {
         console.log("Waiting for rendering image to load");
       }
       if (loadedImage instanceof HTMLImageElement) {
-        initCanvasDimensions(loadedImage);
-      }
+        // Wait for the image to load before calling initCanvasDimensions
+        if (loadedImage.complete) {
+            // The image is already loaded
+            initCanvasDimensions(loadedImage);
+        } else {
+            // Add an event listener to handle when the image finishes loading
+            loadedImage.addEventListener("load", function() {
+                initCanvasDimensions(this);
+            });
+        }
+    }
 
     } else {
       

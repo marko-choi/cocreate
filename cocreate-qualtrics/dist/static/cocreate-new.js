@@ -14725,7 +14725,13 @@ const Canvas = () => {
         console.log("Waiting for rendering image to load");
       }
       if (loadedImage instanceof HTMLImageElement) {
-        initCanvasDimensions(loadedImage);
+        if (loadedImage.complete) {
+          initCanvasDimensions(loadedImage);
+        } else {
+          loadedImage.addEventListener("load", function() {
+            initCanvasDimensions(this);
+          });
+        }
       }
     } else {
       const defaultImage = document.querySelector("img");
