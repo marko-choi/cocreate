@@ -140,7 +140,16 @@ const Canvas: React.FC = () => {
       
       console.log("Scraping image from question body");
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-      initCanvasDimensions(questionBodyImage);
+
+      // find image with classname rendering-image
+      var loadedImage = undefined
+      while (!loadedImage) {
+        loadedImage = document.querySelector(".rendering-image");
+        console.log("Waiting for rendering image to load");
+      }
+      if (loadedImage instanceof HTMLImageElement) {
+        initCanvasDimensions(loadedImage);
+      }
 
     } else {
       
