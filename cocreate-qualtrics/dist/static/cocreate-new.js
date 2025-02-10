@@ -14716,12 +14716,12 @@ const Canvas = () => {
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("Scraping image from question body");
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-      questionBodyImage.onload = () => initCanvasDimensions(questionBodyImage);
+      initCanvasDimensions(questionBodyImage);
     } else {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        defaultImage.onload = () => initCanvasDimensions(defaultImage);
+        initCanvasDimensions(defaultImage);
       }
     }
   }, []);
