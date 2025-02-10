@@ -14691,7 +14691,7 @@ const Canvas = () => {
     setImageScaleFactor(scaleFactor);
   };
   const resizeCanvasDimensions = reactExports.useCallback((img) => {
-    const screenHeight = window.innerHeight;
+    const screenHeight = window.outerHeight;
     const originalImageHeight = img.naturalHeight;
     const originalImageWidth = img.naturalWidth;
     const imageHeight = img.height;
@@ -14703,7 +14703,7 @@ const Canvas = () => {
     setCanvasWidth(width2);
     setCanvasHeight(height2);
     console.log(
-      "Image Width: " + originalImageWidth + "\nImage Height: " + originalImageHeight + "\nResized Canvas Width: " + width2 + "\nResized Canvas Height: " + height2 + "\nScreen Height: " + screenHeight + "\nAspect Ratio: " + aspectRatio + "\nImage Scale Factor: " + imageHeight / originalImageHeight + "\nImage Dimensions: " + JSON.stringify(imageDimensions)
+      "Original Image Width: " + originalImageWidth + "\nOriginal Image Height: " + originalImageHeight + "\nImage Height: " + imageHeight + "\nImage Width: " + imageWidth + "\nResized Canvas Width: " + width2 + "\nResized Canvas Height: " + height2 + "\nScreen Height: " + screenHeight + "\nAspect Ratio: " + aspectRatio + "\nImage Scale Factor: " + imageHeight / originalImageHeight + "\nImage Dimensions: " + JSON.stringify(imageDimensions)
     );
     if (!imageDimensions) return;
     setImageScaleFactor(img.width / imageDimensions.width);
@@ -14712,6 +14712,7 @@ const Canvas = () => {
     const handleResize = () => {
       const img = document.querySelector("img");
       if (img) {
+        console.log(img);
         resizeCanvasDimensions(img);
       }
     };
