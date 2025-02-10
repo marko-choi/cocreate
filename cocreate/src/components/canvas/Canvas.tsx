@@ -68,22 +68,25 @@ const Canvas: React.FC = () => {
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
 
-    const originalImageHeight = img.naturalHeight;
-
     const screenHeight = window.innerHeight;
-    const imgWidth = img.width;
-    const imgHeight = img.height;
+    const originalImageHeight = img.naturalHeight;
     
-    const height = imgHeight
-    const aspectRatio = imgHeight / imgWidth;
-    const width = height / aspectRatio
+    const imageHeight = img.height;
+    const imageWidth = img.width;
+    
+    // Scale width to fit within screen height
+    const height = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
+    const width = height / aspectRatio;
 
-    const scaleFactor = imgHeight / originalImageHeight
+    const scaleFactor = imageHeight / originalImageHeight
 
-    console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
+    console.log("Image Width: " + imageWidth + " Image Height: " + imageHeight);
     console.log("Screen Height: " + screenHeight);
     console.log("Image Scale Factor: " + scaleFactor);
     console.log("Resized Canvas Width: " + width + " Resized Canvas Height: " + height);
+    console.log("Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+
     setCanvasWidth(width);
     setCanvasHeight(height);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });

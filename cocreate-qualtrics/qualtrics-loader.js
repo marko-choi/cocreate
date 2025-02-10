@@ -27,13 +27,13 @@ function loadResource(url, type) {
 async function loadReactApp(qualtricsSurveyEngine) {
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
-	let questionBody = qualtricsSurveyEngine.getQuestionContainer()
-	console.log("QuestionBody:", questionData)
+	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
+	console.log("QuestionData:", questionData)
 
-	if (questionBody) { 
-		questionBody.style.overflow = 'visible';
-		questionBody.style.padding = '0px';
-		questionBody.style.paddingBottom = '0px !important';
+	if (questionContainer) { 
+		questionContainer.style.overflow = 'visible';
+		questionContainer.style.padding = '0px';
+		questionContainer.style.paddingBottom = '0px !important';
 	}
 
 	let questionText = document.querySelector('.QuestionText')
@@ -70,6 +70,8 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			questionImage.style.display = 'none';
 			questionImage.style.maxHeight = '85vh';
 		}
+
+		const questionBody = questionContainer.querySelector('.QuestionBody')
 
 		if (questionBody) {
 

@@ -14673,18 +14673,19 @@ const Canvas = () => {
     localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
   }, [selections]);
   const initCanvasDimensions = (img) => {
-    const originalImageHeight = img.naturalHeight;
     const screenHeight = window.innerHeight;
-    const imgWidth = img.width;
-    const imgHeight = img.height;
-    const height2 = imgHeight;
-    const aspectRatio = imgHeight / imgWidth;
+    const originalImageHeight = img.naturalHeight;
+    const imageHeight = img.height;
+    const imageWidth = img.width;
+    const height2 = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
     const width2 = height2 / aspectRatio;
-    const scaleFactor = imgHeight / originalImageHeight;
-    console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
+    const scaleFactor = imageHeight / originalImageHeight;
+    console.log("Image Width: " + imageWidth + " Image Height: " + imageHeight);
     console.log("Screen Height: " + screenHeight);
     console.log("Image Scale Factor: " + scaleFactor);
     console.log("Resized Canvas Width: " + width2 + " Resized Canvas Height: " + height2);
+    console.log("Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
     setCanvasWidth(width2);
     setCanvasHeight(height2);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
