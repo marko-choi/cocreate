@@ -14692,6 +14692,8 @@ const Canvas = () => {
   };
   const resizeCanvasDimensions = reactExports.useCallback((img) => {
     const screenHeight = window.innerHeight;
+    const originalImageHeight = img.naturalHeight;
+    const originalImageWidth = img.naturalWidth;
     const imageHeight = img.height;
     const imageWidth = img.width;
     const height2 = Math.min(screenHeight, imageHeight);
@@ -14700,6 +14702,9 @@ const Canvas = () => {
     console.log("Initializing canvas dimensions: " + width2 + ", " + height2);
     setCanvasWidth(width2);
     setCanvasHeight(height2);
+    console.log(
+      "Image Width: " + originalImageWidth + "\nImage Height: " + originalImageHeight + "\nResized Canvas Width: " + width2 + "\nResized Canvas Height: " + height2 + "\nScreen Height: " + screenHeight + "\nAspect Ratio: " + aspectRatio + "\nImage Scale Factor: " + imageHeight / originalImageHeight + "\nImage Dimensions: " + JSON.stringify(imageDimensions)
+    );
     if (!imageDimensions) return;
     setImageScaleFactor(img.width / imageDimensions.width);
   }, [imageDimensions]);

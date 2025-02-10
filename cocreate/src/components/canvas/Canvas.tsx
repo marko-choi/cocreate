@@ -99,8 +99,8 @@ const Canvas: React.FC = () => {
   const resizeCanvasDimensions = useCallback((img: HTMLImageElement) => {
     // Get screen width and image dimensions
     const screenHeight = window.innerHeight;
-    // const originalImageHeight = img.naturalHeight;
-    // const originalImageWidth = img.naturalWidth;
+    const originalImageHeight = img.naturalHeight;
+    const originalImageWidth = img.naturalWidth;
 
     const imageHeight = img.height;
     const imageWidth = img.width;
@@ -113,12 +113,16 @@ const Canvas: React.FC = () => {
     setCanvasWidth(width);
     setCanvasHeight(height);
     
-    // console.log(
-    //   "Image Width: " + originalImageWidth +
-    //   "\nImage Height: " + originalImageHeight +
-    //   "\nResized Canvas Width: " + width + 
-    //   "\nResized Canvas Height: " + height
-    // );
+    console.log(
+      "Image Width: " + originalImageWidth +
+      "\nImage Height: " + originalImageHeight +
+      "\nResized Canvas Width: " + width + 
+      "\nResized Canvas Height: " + height + 
+      "\nScreen Height: " + screenHeight +
+      "\nAspect Ratio: " + aspectRatio +
+      "\nImage Scale Factor: " + imageHeight / originalImageHeight +
+      "\nImage Dimensions: " + JSON.stringify(imageDimensions)
+    );
     if (!imageDimensions) return
     setImageScaleFactor(img.width / imageDimensions.width );
 
