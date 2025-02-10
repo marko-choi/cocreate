@@ -76,11 +76,11 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			let appContainer = document.createElement('div');
 			appContainer.id = 'root';
 
-			if (questionButton) {
-				questionContainer.insertBefore(appContainer, questionButton);
-			} else {
-				questionContainer.appendChild(appContainer);
-			}
+			// if (questionButton) {
+			// 	questionContainer.insertBefore(appContainer, questionButton);
+			// } else {
+			questionContainer.appendChild(appContainer);
+			// }
 
 			const rootDiv = document.querySelector('#root');
 			if (rootDiv) {
