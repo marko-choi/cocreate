@@ -14693,6 +14693,7 @@ const Canvas = () => {
     const height2 = Math.min(screenHeight, imageHeight);
     const aspectRatio = imageHeight / imageWidth;
     const width2 = height2 / aspectRatio;
+    console.log("Initializing canvas dimensions: " + width2 + ", " + height2);
     setCanvasWidth(width2);
     setCanvasHeight(height2);
     if (!imageDimensions) return;
@@ -14709,6 +14710,7 @@ const Canvas = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
   reactExports.useEffect(() => {
+    console.log("Initializing canvas dimensions");
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);

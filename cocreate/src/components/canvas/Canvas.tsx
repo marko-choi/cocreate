@@ -100,7 +100,7 @@ const Canvas: React.FC = () => {
     const height = Math.min(screenHeight, imageHeight);
     const aspectRatio = imageHeight / imageWidth;
     const width = height / aspectRatio;
-    
+    console.log("Initializing canvas dimensions: " + width + ", " + height);
     setCanvasWidth(width);
     setCanvasHeight(height);
     
@@ -128,6 +128,7 @@ const Canvas: React.FC = () => {
   }, [imageDimensions]);
 
   useEffect(() => {
+    console.log("Initializing canvas dimensions");
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
