@@ -14682,6 +14682,9 @@ const Canvas = () => {
     const width2 = height2 / aspectRatio;
     const scaleFactor = imgHeight / originalImageHeight;
     console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
+    console.log("Screen Height: " + screenHeight);
+    console.log("Image Scale Factor: " + scaleFactor);
+    console.log("Resized Canvas Width: " + width2 + " Resized Canvas Height: " + height2);
     setCanvasWidth(width2);
     setCanvasHeight(height2);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
