@@ -141,7 +141,7 @@ const Canvas: React.FC = () => {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        initCanvasDimensions(defaultImage);
+        defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
     }
   }, []);
@@ -623,8 +623,8 @@ const Canvas: React.FC = () => {
         )}
       </div>
     
-     {/* <div>
-        <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
+     <div>
+        {/* <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span> */}
         <br />
         <span>Selections: {JSON.stringify(selections)}</span>
         <br />
@@ -642,7 +642,7 @@ const Canvas: React.FC = () => {
         <br />
         <span>Image Scale Factor: {imageScaleFactor}</span>
         <br />
-      </div> */}
+      </div>
     </>
   );
 };

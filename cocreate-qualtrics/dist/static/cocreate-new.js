@@ -14721,7 +14721,7 @@ const Canvas = () => {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        initCanvasDimensions(defaultImage);
+        defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
     }
   }, []);
@@ -14981,93 +14981,140 @@ const Canvas = () => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "img",
-      {
-        src: imageSrc,
-        alt: "Rendering",
-        className: "rendering-image",
-        style: {
-          // maxWidth: MAX_IMAGE_WIDTH, 
-          maxHeight: "100vw",
-          width: "auto",
-          display: "block"
-        }
-      }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "canvas",
-      {
-        ref: canvasRef,
-        width: canvasWidth,
-        height: canvasHeight,
-        className: "canvas",
-        style: {
-          cursor: isEnteringFeedback ? "default" : "crosshair"
-          // width: "100%",
-          // height: "auto",
-        },
-        onMouseDown: handleMouseDown,
-        onMouseMove: handleMouseMove,
-        onMouseUp: handleMouseUp,
-        onMouseLeave: handleMouseLeave
-      }
-    ),
-    selections.map((selection, index) => {
-      const x = Math.min(selection.start.x, selection.end.x);
-      const y = Math.min(selection.start.y, selection.end.y);
-      const width2 = Math.abs(selection.end.x - selection.start.x);
-      const height2 = Math.abs(selection.end.y - selection.start.y);
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "img",
         {
+          src: imageSrc,
+          alt: "Rendering",
+          className: "rendering-image",
           style: {
-            position: "absolute",
-            top: y,
-            left: x,
-            width: width2,
-            height: height2
+            // maxWidth: MAX_IMAGE_WIDTH, 
+            maxHeight: "100vw",
+            width: "auto",
+            display: "block"
+          }
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "canvas",
+        {
+          ref: canvasRef,
+          width: canvasWidth,
+          height: canvasHeight,
+          className: "canvas",
+          style: {
+            cursor: isEnteringFeedback ? "default" : "crosshair"
+            // width: "100%",
+            // height: "auto",
           },
-          children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "selection-tooltip-box", children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              IconButton,
-              {
-                size: "small",
-                className: "edit-button",
-                onClick: () => handleEdit(index),
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Edit, {})
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              IconButton,
-              {
-                size: "small",
-                className: "delete-button",
-                onClick: () => handleDelete(index),
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Delete, {})
-              }
-            )
-          ] })
-        },
-        index
-      );
-    }),
-    tooltipPosition && activeSelectionIndex !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Tooltip,
-      {
-        index: activeSelectionIndex,
-        x: tooltipPosition.x,
-        y: tooltipPosition.y,
-        selection: selections[activeSelectionIndex],
-        setSelections,
-        setActiveSelectionIndex,
-        setTooltipPosition,
-        setIsEnteringFeedback,
-        onDelete: () => handleDelete(activeSelectionIndex)
-      }
-    )
-  ] }) });
+          onMouseDown: handleMouseDown,
+          onMouseMove: handleMouseMove,
+          onMouseUp: handleMouseUp,
+          onMouseLeave: handleMouseLeave
+        }
+      ),
+      selections.map((selection, index) => {
+        const x = Math.min(selection.start.x, selection.end.x);
+        const y = Math.min(selection.start.y, selection.end.y);
+        const width2 = Math.abs(selection.end.x - selection.start.x);
+        const height2 = Math.abs(selection.end.y - selection.start.y);
+        return /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            style: {
+              position: "absolute",
+              top: y,
+              left: x,
+              width: width2,
+              height: height2
+            },
+            children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "selection-tooltip-box", children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                IconButton,
+                {
+                  size: "small",
+                  className: "edit-button",
+                  onClick: () => handleEdit(index),
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(Edit, {})
+                }
+              ),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                IconButton,
+                {
+                  size: "small",
+                  className: "delete-button",
+                  onClick: () => handleDelete(index),
+                  children: /* @__PURE__ */ jsxRuntimeExports.jsx(Delete, {})
+                }
+              )
+            ] })
+          },
+          index
+        );
+      }),
+      tooltipPosition && activeSelectionIndex !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(
+        Tooltip,
+        {
+          index: activeSelectionIndex,
+          x: tooltipPosition.x,
+          y: tooltipPosition.y,
+          selection: selections[activeSelectionIndex],
+          setSelections,
+          setActiveSelectionIndex,
+          setTooltipPosition,
+          setIsEnteringFeedback,
+          onDelete: () => handleDelete(activeSelectionIndex)
+        }
+      )
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "Selections: ",
+        JSON.stringify(selections)
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "Active Selection Index: ",
+        activeSelectionIndex
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "isEnteringFeedback: ",
+        JSON.stringify(isEnteringFeedback)
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "allowPictureSelection: ",
+        JSON.stringify(allowPictureSelection)
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "Tooltip Position: ",
+        JSON.stringify(tooltipPosition)
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "Canvas Height & Width: ",
+        canvasHeight,
+        ", ",
+        canvasWidth
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "Image Dimensions: ",
+        JSON.stringify(imageDimensions)
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {}),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { children: [
+        "Image Scale Factor: ",
+        imageScaleFactor
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("br", {})
+    ] })
+  ] });
 };
 const App = () => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {}) });
