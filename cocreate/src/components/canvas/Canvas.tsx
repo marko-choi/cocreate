@@ -618,8 +618,8 @@ const Canvas: React.FC = () => {
         )}
       </div>
     
-     <div>
-        {/* <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span> */}
+     {/* <div>
+        <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
         <br />
         <span>Selections: {JSON.stringify(selections)}</span>
         <br />
@@ -637,7 +637,7 @@ const Canvas: React.FC = () => {
         <br />
         <span>Image Scale Factor: {imageScaleFactor}</span>
         <br />
-      </div>
+      </div> */}
     </>
   );
 };
