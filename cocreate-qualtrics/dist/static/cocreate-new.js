@@ -14658,33 +14658,63 @@ const Canvas = () => {
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = reactExports.useState(MAX_IMAGE_WIDTH);
   const [canvasHeight, setCanvasHeight] = reactExports.useState(534);
+  const [imageDimensions, setImageDimensions] = reactExports.useState(null);
+  const [imageScaleFactor, setImageScaleFactor] = reactExports.useState(1);
   reactExports.useEffect(() => {
+    localStorage.removeItem("cocreate-canvasSize");
     localStorage.removeItem("cocreate-canvasSelections");
   }, []);
   reactExports.useEffect(() => {
+    localStorage.setItem("cocreate-canvasSize", JSON.stringify({ width: canvasWidth, height: canvasHeight }));
     localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
   }, [selections]);
-  const setCanvasDimensions = (img) => {
+  const initCanvasDimensions = (img) => {
     const maxWidth2 = MAX_IMAGE_WIDTH;
     const imgWidth = img.width;
     const imgHeight = img.height;
     const aspectRatio = imgHeight / imgWidth;
     const width2 = Math.min(maxWidth2, imgWidth);
     const height2 = Math.min(imgHeight, aspectRatio * width2);
+    const scaleFactor = width2 / img.naturalWidth;
     setCanvasWidth(width2);
     setCanvasHeight(height2);
+    setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    setImageScaleFactor(scaleFactor);
   };
+  const resizeCanvasDimensions = reactExports.useCallback((img) => {
+    const screenWidth = window.innerWidth;
+    const imgWidth = img.naturalWidth;
+    const imgHeight = img.naturalHeight;
+    const width2 = Math.min(screenWidth, imgWidth);
+    const aspectRatio = imgHeight / imgWidth;
+    const height2 = width2 * aspectRatio;
+    setCanvasWidth(width2);
+    setCanvasHeight(height2);
+    if (!imageDimensions) return;
+    setImageScaleFactor(img.width / imageDimensions.width);
+  }, [imageDimensions]);
+  reactExports.useEffect(() => {
+    const handleResize = () => {
+      const img = document.querySelector("img");
+      if (img) {
+        resizeCanvasDimensions(img);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [imageDimensions]);
   reactExports.useEffect(() => {
     const questionBodyImage = document.querySelector(".QuestionText img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-      questionBodyImage.onload = () => setCanvasDimensions(questionBodyImage);
-      setCanvasDimensions(questionBodyImage);
+      questionBodyImage.onload = () => initCanvasDimensions(questionBodyImage);
+      initCanvasDimensions(questionBodyImage);
     } else {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
+        console.log("Default image found");
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        defaultImage.onload = () => setCanvasDimensions(defaultImage);
+        defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
     }
   }, []);
@@ -14710,8 +14740,9 @@ const Canvas = () => {
     ctx.fill();
     ctx.stroke();
   };
-  const redrawSelections = (ctx) => {
-    selections.forEach(({ start, end }) => {
+  const redrawSelections = (ctx, resizedSelections) => {
+    let selectionsToDraw = selections;
+    selectionsToDraw.forEach(({ start, end }) => {
       const x = Math.min(start.x, end.x);
       const y = Math.min(start.y, end.y);
       const width2 = Math.abs(end.x - start.x);
@@ -14742,7 +14773,6 @@ const Canvas = () => {
       const selection = selections[activeSelectionIndex];
       if (!selection.functionValue && !selection.aestheticValue && !selection.comment) {
         checkForPictureSelection();
-        console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
         setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
         setActiveSelectionIndex(null);
@@ -14782,6 +14812,10 @@ const Canvas = () => {
       const startY = selectionStart.y;
       const width2 = clampedX - startX;
       const height2 = clampedY - startY;
+      console.log(
+        "Start [X, Y]: " + startX + ", " + startY,
+        "\nEnd [X, Y]: " + clampedX + ", " + clampedY
+      );
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       redrawSelections(ctx);
       drawSelection(ctx, startX, startY, width2, height2);
@@ -14806,9 +14840,6 @@ const Canvas = () => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
     let sameXCoordinate = selectionStart.x === selectionEnd.x;
     let sameYCoordinate = selectionStart.y === selectionEnd.y;
-    console.log("Same X Coordinate: " + sameXCoordinate);
-    console.log("Same Y Coordinate: " + sameYCoordinate);
-    console.log("Selection Start: " + JSON.stringify(selectionStart), "\nSelection End: " + JSON.stringify(selectionEnd));
     if (sameXCoordinate && sameYCoordinate) {
       if (!isEnteringFeedback && allowPictureSelection) {
         const canvasElement = canvasRef.current;
@@ -14840,7 +14871,6 @@ const Canvas = () => {
     setSelectionEnd(null);
   };
   const openPictureSelectionFeedback = (e) => {
-    console.log("Opening picture-wide selection feedback");
     setIsEnteringFeedback(true);
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
@@ -14848,11 +14878,9 @@ const Canvas = () => {
     const pictureSelection = selections.find((selection) => {
       return selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2;
     });
-    console.log("Picture-wide selection found: " + JSON.stringify(pictureSelection));
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
       const mouseCoordinates = getMouseCoordinates(e);
-      console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
       setActiveSelectionIndex(pictureSelectionIndex);
       setTooltipPosition(mouseCoordinates);
       setIsSelecting(false);
@@ -14880,16 +14908,26 @@ const Canvas = () => {
   const createNewSelection = (selectionStart2, selectionEnd2) => {
     const newSelection = {
       start: selectionStart2,
-      end: selectionEnd2
+      unscaledStart: {
+        x: selectionStart2.x / imageScaleFactor,
+        y: selectionStart2.y / imageScaleFactor
+      },
+      end: selectionEnd2,
+      unscaledEnd: {
+        x: selectionEnd2.x / imageScaleFactor,
+        y: selectionEnd2.y / imageScaleFactor
+      }
     };
     setSelections((prev2) => [...prev2, newSelection]);
   };
   const createPictureSelection = (pictureWidth, pictureHeight) => {
+    if (!imageDimensions) return;
     const newSelection = {
       start: { x: 0, y: 0 },
-      end: { x: pictureWidth, y: pictureHeight }
+      end: { x: pictureWidth, y: pictureHeight },
+      unscaledStart: { x: 0, y: 0 },
+      unscaledEnd: { x: imageDimensions == null ? void 0 : imageDimensions.width, y: imageDimensions == null ? void 0 : imageDimensions.height }
     };
-    console.log("Creating picture-wide selection: \n" + JSON.stringify(newSelection));
     setSelections((prev2) => [...prev2, newSelection]);
   };
   const handleEdit = (index) => {
@@ -14914,12 +14952,28 @@ const Canvas = () => {
       if (canvas) {
         const { width: width2, height: height2 } = canvas.getBoundingClientRect();
         if (selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2) {
-          console.log("allowing picture selection");
           setAllowPictureSelection(true);
         }
       }
     }
   };
+  reactExports.useEffect(() => {
+    if (imageDimensions) {
+      setSelections(
+        (prevSelections) => prevSelections.map((selection) => ({
+          ...selection,
+          start: {
+            x: selection.unscaledStart.x * imageScaleFactor,
+            y: selection.unscaledStart.y * imageScaleFactor
+          },
+          end: {
+            x: selection.unscaledEnd.x * imageScaleFactor,
+            y: selection.unscaledEnd.y * imageScaleFactor
+          }
+        }))
+      );
+    }
+  }, [imageScaleFactor, imageDimensions]);
   return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
@@ -14927,7 +14981,12 @@ const Canvas = () => {
         src: imageSrc,
         alt: "Rendering",
         className: "rendering-image",
-        style: { maxWidth: MAX_IMAGE_WIDTH, width: "100%", height: "auto" }
+        style: {
+          // maxWidth: MAX_IMAGE_WIDTH, 
+          maxHeight: "100vw",
+          width: "auto",
+          display: "block"
+        }
       }
     ),
     /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -14939,6 +14998,8 @@ const Canvas = () => {
         className: "canvas",
         style: {
           cursor: isEnteringFeedback ? "default" : "crosshair"
+          // width: "100%",
+          // height: "auto",
         },
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
