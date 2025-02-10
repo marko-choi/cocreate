@@ -77,6 +77,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			questionBody.appendChild(appContainer);
 
 			const rootDiv = document.querySelector('#root');
+			console.log(questionBody)
 			console.log(rootDiv)
 			if (rootDiv) {
 				rootDiv.style.display = 'flex';
