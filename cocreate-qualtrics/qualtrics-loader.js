@@ -98,6 +98,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 function handleDataSubmission(qualtricsSurveyEngine, type) {
 	if (type == "next") {
 		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
+		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
 		const questionInfo = qualtricsSurveyEngine.getQuestionInfo()
 		const questionBody = qualtricsSurveyEngine.getQuestionContainer()
 		const questionId = questionInfo.QuestionID
@@ -120,5 +121,6 @@ function handleDataSubmission(qualtricsSurveyEngine, type) {
 		// Store question ID and selections
 		qualtricsSurveyEngine.setEmbeddedData("questionId", questionId)
 		qualtricsSurveyEngine.setEmbeddedData("selectionsData", JSON.stringify(selections))
+		qualtricsSurveyEngine.setEmbeddedData("metadata", JSON.stringify(metadata))
 	}
 }
