@@ -71,17 +71,18 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			questionImage.style.maxHeight = '85vh';
 		}
 
-		const questionBody = questionContainer.querySelector('.QuestionBody')
-
-		if (questionBody) {
+		if (questionContainer) {
 
 			let appContainer = document.createElement('div');
 			appContainer.id = 'root';
-			questionBody.appendChild(appContainer);
+
+			if (questionButton) {
+				questionContainer.insertBefore(appContainer, questionButton);
+			} else {
+				questionContainer.appendChild(appContainer);
+			}
 
 			const rootDiv = document.querySelector('#root');
-			console.log(questionBody)
-			console.log(rootDiv)
 			if (rootDiv) {
 				rootDiv.style.display = 'flex';
 				rootDiv.style.alignItems = 'center';
