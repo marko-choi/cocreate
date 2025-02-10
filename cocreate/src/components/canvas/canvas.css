@@ -4,6 +4,7 @@
   height: 534px; */
   width: 100%;
   height: 100%;
+  border: 2px solid red;
 }
 
 .rendering-image {
@@ -11,7 +12,7 @@
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;
+  height: 85vh;
   /* object-fit: cover; */
   z-index: 0;
 }
@@ -22,6 +23,7 @@
   left: 0;
   z-index: 1;
   cursor: crosshair;
+  border: 2px solid blue;
 }
 
 .selection-tooltip-box {

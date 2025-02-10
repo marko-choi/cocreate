@@ -57,7 +57,11 @@ const Canvas: React.FC = () => {
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
-    localStorage.setItem('cocreate-canvasSize', JSON.stringify({ width: canvasWidth, height: canvasHeight }));
+    localStorage.setItem('cocreate-canvasSize', JSON.stringify({ 
+      width: canvasWidth, 
+      height: canvasHeight, 
+      imageScaleFactor: imageScaleFactor 
+    }));
     localStorage.setItem('cocreate-canvasSelections', JSON.stringify(selections));
   }, [selections]);
 
@@ -72,6 +76,7 @@ const Canvas: React.FC = () => {
     const height = Math.min(imgHeight, aspectRatio * width);
     const scaleFactor = width / img.naturalWidth;
 
+    // console.log("Image Width: " + imgWidth + " Image Height: " + imgHeight);
     setCanvasWidth(width);
     setCanvasHeight(height);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
@@ -80,18 +85,27 @@ const Canvas: React.FC = () => {
 
   const resizeCanvasDimensions = useCallback((img: HTMLImageElement) => {
     // Get screen width and image dimensions
-    const screenWidth = window.innerWidth; 
-    const imgWidth = img.naturalWidth;
-    const imgHeight = img.naturalHeight;
+    const screenHeight = window.innerHeight;
+    // const originalImageHeight = img.naturalHeight;
+    // const originalImageWidth = img.naturalWidth;
+
+    const imageHeight = img.height;
+    const imageWidth = img.width;
   
-    // Scale width to fit within screen width
-    const width = Math.min(screenWidth, imgWidth);
-    const aspectRatio = imgHeight / imgWidth;
-    const height = width * aspectRatio;
+    // Scale width to fit within screen height
+    const height = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
+    const width = height / aspectRatio;
     
     setCanvasWidth(width);
     setCanvasHeight(height);
     
+    // console.log(
+    //   "Image Width: " + originalImageWidth +
+    //   "\nImage Height: " + originalImageHeight +
+    //   "\nResized Canvas Width: " + width + 
+    //   "\nResized Canvas Height: " + height
+    // );
     if (!imageDimensions) return
     setImageScaleFactor(img.width / imageDimensions.width );
 
@@ -121,7 +135,6 @@ const Canvas: React.FC = () => {
       
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
-        console.log("Default image found");
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
         defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
@@ -605,8 +618,8 @@ const Canvas: React.FC = () => {
         )}
       </div>
     
-     {/* <div>
-        <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
+     <div>
+        {/* <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span> */}
         <br />
         <span>Selections: {JSON.stringify(selections)}</span>
         <br />
@@ -624,7 +637,7 @@ const Canvas: React.FC = () => {
         <br />
         <span>Image Scale Factor: {imageScaleFactor}</span>
         <br />
-      </div> */}
+      </div>
     </>
   );
 };
