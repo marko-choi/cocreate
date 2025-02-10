@@ -154,10 +154,12 @@ const Canvas: React.FC = () => {
         // Wait for the image to load before calling initCanvasDimensions
         if (loadedImage.complete) {
             // The image is already loaded
+            console.log("Image already loaded");
             initCanvasDimensions(loadedImage);
         } else {
             // Add an event listener to handle when the image finishes loading
             loadedImage.addEventListener("load", function() {
+                console.log("Image loaded");
                 initCanvasDimensions(this);
             });
         }

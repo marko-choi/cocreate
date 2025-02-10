@@ -14726,9 +14726,11 @@ const Canvas = () => {
       }
       if (loadedImage instanceof HTMLImageElement) {
         if (loadedImage.complete) {
+          console.log("Image already loaded");
           initCanvasDimensions(loadedImage);
         } else {
           loadedImage.addEventListener("load", function() {
+            console.log("Image loaded");
             initCanvasDimensions(this);
           });
         }
