@@ -528,22 +528,23 @@ const Canvas: React.FC = () => {
   };
 
   const checkForPictureSelection = (index?: number) => {
-    if (!allowPictureSelection) {
-      const selection = selections[index ?? activeSelectionIndex ?? 0];
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const { width, height } = canvas.getBoundingClientRect();
-        if (
-          selection.start.x === 0 && 
-          selection.start.y === 0 && 
-          selection.end.x === width && 
-          selection.end.y === height
-        ) {
-          // console.log("allowing picture selection");
-          setAllowPictureSelection(true);
-        }
-      }
-    } 
+
+    if (allowPictureSelection) return
+    
+    const selection = selections[index ?? activeSelectionIndex ?? 0];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const { width, height } = canvas.getBoundingClientRect();
+    if (
+      selection.start.x === 0 && 
+      selection.start.y === 0 && 
+      selection.end.x === width && 
+      selection.end.y === height
+    ) {
+      // console.log("allowing picture selection");
+      setAllowPictureSelection(true);
+    }
   }
 
   // const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);

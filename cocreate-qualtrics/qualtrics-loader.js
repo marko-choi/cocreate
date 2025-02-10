@@ -101,12 +101,13 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	}
 }
 
-function handleDataSubmission(qualtricsSurveyEngine, type) {
+function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
+	console.log(qualtricsSurveyEngine)
+	console.log(type)
 	if (type == "next") {
 		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
 		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
-		const questionInfo = qualtricsSurveyEngine.getQuestionInfo()
-		const questionBody = qualtricsSurveyEngine.getQuestionContainer()
+		const questionInfo = pageInfo.getQuestionInfo()
 		const questionId = questionInfo.QuestionID
 
 		if (selections) {
