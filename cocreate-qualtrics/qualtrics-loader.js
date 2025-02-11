@@ -1,6 +1,6 @@
 const qualtricsResources = [
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CpI3WNZX.css'
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-BjgQIF21.css'
 ];
 
 
@@ -50,6 +50,11 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	let questionSkinContainer = document.querySelector(".Skin #Questions")
 	if (questionSkinContainer) {
 		questionSkinContainer.style.overflow = 'visible';
+	}
+
+	let questionBody = document.querySelector('.QuestionBody')
+	if (questionBody) {
+		questionBody.style.padding = '0px';
 	}
 
 	let questionButton = document.querySelector('#Buttons')
