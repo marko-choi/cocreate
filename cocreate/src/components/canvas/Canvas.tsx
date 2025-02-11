@@ -599,7 +599,7 @@ const Canvas: React.FC = () => {
           className="rendering-image"
           style={{ 
             // maxWidth: MAX_IMAGE_WIDTH, 
-            maxHeight: "85vh", 
+            maxHeight: "80vh", 
             width: "auto",
             display: "block",
           }}

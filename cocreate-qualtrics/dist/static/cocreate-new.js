@@ -14988,15 +14988,13 @@ const Canvas = () => {
     setIsEnteringFeedback(false);
   };
   const checkForPictureSelection = (index) => {
-    if (!allowPictureSelection) {
-      const selection = selections[index ?? activeSelectionIndex ?? 0];
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const { width: width2, height: height2 } = canvas.getBoundingClientRect();
-        if (selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2) {
-          setAllowPictureSelection(true);
-        }
-      }
+    if (allowPictureSelection) return;
+    const selection = selections[index ?? activeSelectionIndex ?? 0];
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { width: width2, height: height2 } = canvas.getBoundingClientRect();
+    if (selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2) {
+      setAllowPictureSelection(true);
     }
   };
   reactExports.useEffect(() => {
@@ -15025,7 +15023,7 @@ const Canvas = () => {
         className: "rendering-image",
         style: {
           // maxWidth: MAX_IMAGE_WIDTH, 
-          maxHeight: "85vh",
+          maxHeight: "80vh",
           width: "auto",
           display: "block"
         }
