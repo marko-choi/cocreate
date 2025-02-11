@@ -15103,7 +15103,7 @@ const Canvas = () => {
   ] });
 };
 const App = () => {
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {}) });
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {});
 };
 function mountApp() {
   const rootElement = document.getElementById("root");
