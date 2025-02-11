@@ -1,6 +1,6 @@
 const qualtricsResources = [
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-BOajYHwD.css'
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CpI3WNZX.css'
 ];
 
 
@@ -36,10 +36,10 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		questionContainer.style.paddingBottom = '0px !important';
 	}
 
-	// let questionText = document.querySelector('.QuestionText')
-	// if (questionText) {
-	// 	questionText.style.padding = '0px';
-	// }
+	let questionText = document.querySelector('.QuestionText')
+	if (questionText) {
+		questionText.style.padding = '0px';
+	}
 	
 	let questionContainerInner = document.querySelector(".SkinInner")
 	if (questionContainerInner) {
