@@ -15014,7 +15014,7 @@ const Canvas = () => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(jsxRuntimeExports.Fragment, { children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
       {
@@ -15100,7 +15100,7 @@ const Canvas = () => {
         onDelete: () => handleDelete(activeSelectionIndex)
       }
     )
-  ] }) });
+  ] });
 };
 const App = () => {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {}) });

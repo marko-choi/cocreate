@@ -591,7 +591,6 @@ const Canvas: React.FC = () => {
   // }, []);
 
   return (
-    <>
     <div className="canvas-container">
         <img
           src={imageSrc}
@@ -669,9 +668,13 @@ const Canvas: React.FC = () => {
             onDelete={() => handleDelete(activeSelectionIndex)}
           />
         )}
-      </div>
-    
-     {/* <div>
+      </div> 
+  );
+};
+
+export default Canvas;
+
+    {/* <div>
         <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
         <br />
         <span>Selections: {JSON.stringify(selections)}</span>
@@ -691,10 +694,3 @@ const Canvas: React.FC = () => {
         <span>Image Scale Factor: {imageScaleFactor}</span>
         <br />
       </div> */}
-    </>
-  );
-};
-
-export default Canvas;
-
-    
