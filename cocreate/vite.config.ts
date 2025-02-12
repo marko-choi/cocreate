@@ -6,10 +6,13 @@ export default defineConfig({
   plugins: [react()],
   base: '/cocreate/',
   build: {
-    rollupOptions: {
-      external: ["react", "react-dom"], // Exclude React from the bundle
-    },
-    outDir: '../cocreate-qualtrics', // output directory for build
+    minify: false,
+    outDir: '../cocreate-qualtrics/dist', // output directory for build
     assetsDir: 'static',  // place assets in a static folder under cocreate-qualtrics
+    rollupOptions: {  
+      output: {
+        entryFileNames: 'static/cocreate-new.js',
+      }
+    }
   }
 })
