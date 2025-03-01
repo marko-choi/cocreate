@@ -2,31 +2,45 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable'
 import { Annotation } from './types/global'
-import { decodeBase64Image, generateCoCreateData } from './utils/data-generator'
+import { generateCoCreateData } from './utils/data-generator'
 import { cn } from './lib/utils'
 import Ping from './components/ping/Ping'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card'
-import { Separator } from './components/ui/separator'
+import { Button } from './components/ui/button'
+import Canvas from './components/canvas/Canvas'
+import { PieChartComponent } from './components/pie-chart/Test'
 
 function App() {
+  const generateNumber = () => Math.floor(Math.random() * 1000)
 
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
+  const [annotationViewMode, setAnnotationViewMode] = useState<'single' | 'grid'>('grid')
 
-  function formatBase64Image(image: string) {
-    return image.startsWith("data:image") ? image : `data:image/png;base64,${image}`;
-  }
+  // function formatBase64Image(image: string) {
+  //   return image.startsWith("data:image") ? image : `data:image/png;base64,${image}`;
+  // }
+
+  function importAnnotations() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = (event) => {
+      const file = (event.target as HTMLInputElement).files?.[0];
+      if (file) { console.log(file) }
+    };
+    input.click();
+}
 
   const currentAnnotationComments = aggregatedAnnotations[activeAnnotation] || []
   
 
   useEffect(() => {
-    const numQuestions = 10
-    const maxAnnotation = 10
-    const minSelectionPerAnnotation = 1
-    const maxSelectionPerAnnotation = 5
-    const imageSize: [number, number] = [1000, 1000]
+    const numQuestions = 14
+    const maxAnnotation = 14
+    const minSelectionPerAnnotation = 4
+    const maxSelectionPerAnnotation = 6
+    const imageSize: [number, number] = [400, 270]
     
     const generatedData = generateCoCreateData(
       numQuestions, 
@@ -51,50 +65,249 @@ function App() {
     setActiveAnnotation(selectionIndex)
   }
 
+  const handleAnnotationViewModeChange = () => {
+    setAnnotationViewMode(annotationViewMode === 'single' ? 'grid' : 'single')
+  }
+
   return (
     <>
+      {/* Header */}
+      <div className="flex justify-between items-center p-8 bg-[#000] h-[7.5vh]">
+        <div className="flex items-center gap-5">
+          {/* <img src="../logo.png" alt="logo" className="w-10 h-10" /> */}
+          <h1 className="text-2xl text-white">CoCreate</h1>
+        </div>
+        <div className="flex items-center gap-5">
+          <button className="text-blue-500">Dashboard</button>
+          {/* <button className="text-white">Projects</button> */}
+          {/* <button className="text-white">Settings</button> */}
+          {/* <button className="text-white">Logout</button> */}
+        </div>
+      </div>
+
+      {/* Body */}
       <ResizablePanelGroup 
         direction='horizontal' 
-        className="h-[100vh] rounded-lg border"
+        className="h-[100vh] rounded-lg "
       >
-        <ResizablePanel minSize={30} className="bg-[#202020] border">
-          <div className="h-[100vh] w-[100%] border p-5">
-            <h1 className="text-2xl font-bold pb-3">Annotations</h1>
-            <div className="flex flex-wrap gap-5 w-[100%] h-[90vh] border overflow-scroll">
-              {aggregatedAnnotations.map((annotation, index) => (
-                <div
-                  key={index} 
-                  className={cn(
-                    "flex jusify-content-center items-center relative cursor-pointer",
-                    "hover:scale-105 transform transition duration-300 ease-in-out",
-                    "border-3 border-transparent",
-                    { "border-blue-500": activeAnnotation === index }
-                  )}
+        <ResizablePanel minSize={30} className="bg-[#202020] border-2 border-[#333]">
+          <div className="h-[92.5vh] w-[100%] border-2 border-[#333] p-5 gap-y-2 flex flex-col">
+            
+            <div className='flex justify-between items-center'>
+              <h1 className="text-2xl font-bold pb-3">Annotations</h1>
+                <Button 
+                  className="bg-blue-500 hover:bg-blue-600 hover:cursor-pointer text-white p-2"
+                  onClick={importAnnotations}
                 >
-                  <img src="../rendering.jpg" 
-                    alt="rendering" 
-                    className="w-80 top-0 left-0 right-0 bottom-0 m-auto"
-                    onClick={handleSelection(index)}
-                  />
-                  {/* // Create an overlay to show the number of annotations */}
-                  <div className="absolute bottom-0 left-0 w-[100%] bg-[#111111cc] text-white p-1 z-30">
-                    View {index + 1} - {annotation.length} comments
-                    {/* {JSON.stringify(annotation)}   */}
-                  </div>
-                </div>
-              ))}
+                Import
+                </Button>
             </div>
+
+            {/* Search Bar */}
+            <div className="flex justify-between items-center flex-wrap-reverse gap-2">
+              <div className="flex">
+                <input 
+                  type="text" placeholder="Search annotations" 
+                  className="border border-[#333] dark:border-[#333] bg-[#111] p-1 max-w-80" 
+                />
+                <button className="bg-blue-500 border-blue-500 border-2 text-white p-1">
+                  Search
+                </button>
+              </div>
+              {/*  */}
+              <div className="flex justify-end gap-2">
+                <Button 
+                  className={cn(
+                    "p-2 cursor-pointer",
+                    { "bg-blue-500 text-white": annotationViewMode === "single" }, // Always active for now
+                    { "bg-gray-700 text-gray-400": annotationViewMode !== "single" } // Always inactive for now
+                  )}
+                  onClick={handleAnnotationViewModeChange}
+                >
+                  Single View
+                </Button>
+                <Button 
+                  className={cn(
+                    "p-2 cursor-pointer",
+                    { "bg-blue-500 text-white": annotationViewMode === "grid" }, // Always inactive for now
+                    { "bg-gray-700 text-gray-400": annotationViewMode !== "grid" } // Always active for now
+                  )}
+                  onClick={handleAnnotationViewModeChange}
+                >
+                  Grid View
+                </Button>
+              </div>
+
+            </div>
+
+            {
+              annotationViewMode === "grid" &&
+              <div 
+                className={cn(
+                  "p-3 flex flex-wrap justify-center gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
+                  "bg-[#111]" // Dark Mode
+                )}
+                >
+                  
+                {aggregatedAnnotations.map((annotation, index) =>  {
+                
+                  let aestheticValues = annotation
+                    .flatMap(annotation => annotation.selections)
+                    .map(selection => selection.aestheticValue)
+                    .reduce((acc, curr) => {
+                      switch (curr) {
+                        case 'good': acc.likes++; break;
+                        case 'bad': acc.dislikes++; break;
+                        default: acc.blank++; break;
+                      }
+                      return acc;
+                    }, { likes: 0, dislikes: 0, blank: 0 })
+
+
+                  let functionValues = annotation
+                    .flatMap(annotation => annotation.selections)
+                    .map(selection => selection.functionValue)
+                    .reduce((acc, curr) => {
+                      switch (curr) {
+                        case 'good': acc.likes++; break;
+                        case 'bad': acc.dislikes++; break;
+                        default: acc.blank++; break;
+                      }
+                      return acc;
+                    }, { likes: 0, dislikes: 0, blank: 0 })
+
+                    let functionDislikePercentage = functionValues.dislikes / (functionValues.likes + functionValues.dislikes) * 100
+                    let functionDislikePercentageWidth = functionValues.dislikes === functionValues.likes  ? `50%` : `${functionDislikePercentage}%`
+
+                  return (
+                  <div
+                    key={index} 
+                    className={cn(
+                      "flex jusify-content-center items-center relative cursor-pointer",
+                      "hover:scale-105 transform transition duration-300 ease-in-out",
+                      "border-3 border-transparent",
+                      { "border-blue-500": activeAnnotation === index }
+                    )}
+                  >
+                    <div className="relative w-80">
+                      <img 
+                        src="../rendering.jpg" 
+                        alt="rendering" 
+                        className="w-full"
+                        onClick={handleSelection(index)}
+                      />
+                      {/* Overlay to show the number of annotations */}
+                      <div className="absolute bottom-0 left-0 w-full bg-[#111111cc] text-white p-1 z-30">
+                        View {index + 1} - {annotation.length} comments
+                      </div>
+                      <div>
+                        <div className="text-xs absolute top-41 left-0 w-full bg-green-800 text-white p-0.5 z-30">
+                          {/* Aesthetic: {aestheticValues.likes} 👍 {aestheticValues.dislikes} 👎 */}
+                          {functionValues.likes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(100 - functionDislikePercentage)}%]
+                        </div>
+                        <div className="text-xs absolute top-41 right-0 bg-red-800 text-white p-0.5 z-30"
+                          style={{ width: functionDislikePercentageWidth }}
+                        >
+                              {functionValues.dislikes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(functionDislikePercentage)}%]
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                )}
+              )}
+              </div>
+            }
+            {
+              annotationViewMode === "single" &&
+              <div className="flex flex-col gap-3 h-[90vh] overflow-scroll">
+                {annotations.map((annotation, index) => (
+                  <div 
+                    key={index} 
+                    className={cn(
+                      "flex justify-between items-center p-2 cursor-pointer",
+                      "hover:bg-[#333] border-2 border-[#444]",
+                      { "bg-[#333]": activeAnnotation === index }
+                    )}
+                    onClick={handleSelection(index)}
+                  >
+                    <img 
+                      src="../rendering.jpg"
+                      alt="rendering" 
+                      className="w-20 h-20"
+                    />
+                    <div className="flex flex-col gap-2">
+                      <div>View {index + 1}</div>
+                      {/* <div>{annotation.length} comments</div> */}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            }
+
           </div>
         </ResizablePanel>
         <ResizableHandle />
         {
           activeAnnotation !== -1 && 
-          <ResizablePanel 
-            minSize={30}
-            className="bg-[#202020] border"
-          >
-            <div className="p-3">
+          <ResizablePanel minSize={30} className="bg-[#202020] border-4 border-l-0 border-[#333]">
+            <div className="flex flex-col p-3 gap-3 h-[92.5vh] overflow-scroll">
 
+              {/* Annotation */}
+              <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
+                <CardHeader className="bg-[#161616] rounded-xl m-2">
+                  Mosque
+                </CardHeader>
+                <CardContent>
+                  
+                  {/* Data */}
+                  <p className='text-warp text-sm'>
+                    Question ID: {JSON.stringify(annotations[activeAnnotation].questionId)}
+                  </p>
+ 
+                  {/* Canvas */}
+                  <div className="h-auto w-auto">
+                    <Canvas
+                      selections={annotations[activeAnnotation].selections}
+                      canvasWidth={410}
+                      canvasHeight={270}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <PieChartComponent title=""
+                      chartData={[
+                        { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
+                        { browser: "safari", visitors: generateNumber(), fill: "var(--color-safari)" },
+                        { browser: "firefox", visitors: generateNumber(), fill: "var(--color-firefox)" },
+                        { browser: "edge", visitors: generateNumber(), fill: "var(--color-edge)" },
+                        { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
+                      ]}
+                      />
+                    <PieChartComponent title=""
+                      chartData={[
+                        { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
+                        { browser: "safari", visitors: generateNumber(), fill: "var(--color-safari)" },
+                        { browser: "firefox", visitors: generateNumber(), fill: "var(--color-firefox)" },
+                        { browser: "edge", visitors: generateNumber(), fill: "var(--color-edge)" },
+                        { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
+                      ]}
+                    />
+                    <PieChartComponent title="" 
+                      chartData={[
+                        { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
+                        { browser: "safari", visitors: generateNumber(), fill: "var(--color-safari)" },
+                        { browser: "firefox", visitors: generateNumber(), fill: "var(--color-firefox)" },
+                        { browser: "edge", visitors: generateNumber(), fill: "var(--color-edge)" },
+                        { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
+                      ]}
+                    />
+                  </div>
+                  <div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              {/* Executive Summary */}
               <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
                 <CardHeader className="bg-[#161616] rounded-xl m-2">
                   <div className="flex items-center justify-between ">
@@ -166,6 +379,65 @@ function App() {
                   </div>
                 </CardFooter>
 
+              </Card>
+
+              {/* Feedback Comments */}
+              <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
+                
+                <CardHeader className='flex flex-row justify-between items-baseline bg-[#161616] rounded-xl mb-2 pb-3'>
+                  <CardTitle>Feedback Comments</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Showing {currentAnnotationComments.length} comments 
+                  </CardDescription>
+                </CardHeader>
+                
+                <CardContent>
+                  <div className="flex flex-col">
+                    {/* Flat map on selections */}
+                    {currentAnnotationComments
+                      .flatMap((annotation) => annotation.selections)
+                      .filter((selection) => selection.comment !== '' && selection.aestheticValue !== null && selection.functionValue !== null)
+                      .filter((_, index) => index < 2)
+                      .map((selection, index) => (
+                      <div key={index} className="flex flex-col gap-2">
+                        <div className="flex flex-col text-balance w-[100%] border-t p-2 border-[#444]">
+                          {/* {JSON.stringify(comment)} */}
+                          {
+                            selection.functionValue !== null &&
+                            <div className='flex justify-between gap-2'>
+                              <div>
+                                <div>
+                                  {selection.functionValue ? '👍' : '👎'} <b>Functional</b> | Architect
+                                </div>
+                                <div className="text-sm text-gray-400">{selection.comment.slice(0, 40)}</div>
+                              </div>
+                              <div className="text-sm text-gray-400">
+                                4 days ago
+                              </div>
+                            </div>
+                          }
+
+                        </div>
+                        <div className="flex flex-col text-balance w-[100%] border-t p-2 border-[#444]">
+                          {
+                            selection.aestheticValue !== null &&
+                            <div className='flex justify-between gap-2'>
+                              <div>
+                                <div>
+                                  {selection.aestheticValue ? '👍' : '👎'} <b>Aesthetic</b> | Designer
+                                </div>
+                                <div className="text-sm text-gray-400">{selection.comment.slice(0, 40)}</div>
+                              </div>
+                              <div className="text-sm text-gray-400">
+                              10 days ago
+                            </div>
+                          </div>
+                          }
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
               </Card>
 
             </div>

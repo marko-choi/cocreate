@@ -70,10 +70,11 @@ export const generateCoCreateData = (
   const totalNumQuestions = getRandomBoundedInt(1, numQuestions)
   for (let i = 0; i < totalNumQuestions; i++) {
     
-    const questionId = getRandomInt(numQuestions)
+    const questionId = i
+    const numAnnotations = getRandomBoundedInt(1, maxAnnotation)
     
     for (let z = 0; z < totalNumQuestions; z++) {
-      for (let j = 0; j < maxAnnotation; j++) {
+      for (let j = 0; j < numAnnotations; j++) {
         const image = 'data:image/png;base64,' + generateRandomString(1000)
         const selections = generateSelections(minSelectionPerAnnotation, maxSelectionPerAnnotation, imageSize)
         const scaleFactor = getRandomBoundedFloat(0.5, 2)   
@@ -101,8 +102,13 @@ export const generateSelections = (
     for (let i = 0; i < numSelections; i++) {
       const start = { x: getRandomFloat(imageSize[0]), y: getRandomFloat(imageSize[1]) }
       const end = { x: getRandomBoundedFloat(start.x, imageSize[0]), y: getRandomBoundedFloat(start.y, imageSize[1]) }
-      const functionValue = Math.random() > 0.5 ? 'good' : null
-      const aestheticValue = Math.random() > 0.5 ? 'good' : null
+      
+      const randomFunctionValue = Math.random()
+      const randomAestheticValue = Math.random()  
+
+      const functionValue = randomFunctionValue > 0.66 ? 'good' : randomFunctionValue > 0.33 ? 'bad' : null
+      const aestheticValue = randomAestheticValue > 0.66 ? 'good' : randomAestheticValue > 0.33 ? 'bad' : null
+
       const comment = generateRandomString(100)
       selections.push({ start, end, functionValue, aestheticValue, comment })
     }
