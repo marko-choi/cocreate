@@ -8,15 +8,30 @@ import Ping from './components/ping/Ping'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card'
 import { Button } from './components/ui/button'
 import Canvas from './components/canvas/Canvas'
-import { PieChartComponent } from './components/pie-chart/Test'
+// import { PieChartComponent } from './components/pie-chart/Test'
+import Header from './components/layout/Header'
+import { Checkbox, CheckboxWithText } from './components/ui/checkbox'
+import { MultiSelect } from './components/ui/multi-select'
+
+interface MultiSelectType {
+  value: string;
+  label: string;
+}
 
 function App() {
-  const generateNumber = () => Math.floor(Math.random() * 1000)
+  // const generateNumber = () => Math.floor(Math.random() * 1000)
 
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
   const [annotationViewMode, setAnnotationViewMode] = useState<'single' | 'grid'>('grid')
+
+  const [rolesList, setRolesList] = useState<MultiSelectType[]>([
+    { value: "architect", label: "Architect" },
+    { value: "designer", label: "Designer" },
+    { value: "developer", label: "Developer" },
+  ])
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([])
 
   // function formatBase64Image(image: string) {
   //   return image.startsWith("data:image") ? image : `data:image/png;base64,${image}`;
@@ -33,9 +48,7 @@ function App() {
 }
 
   const currentAnnotationComments = aggregatedAnnotations[activeAnnotation] || []
-  
-
-  useEffect(() => {
+  const generateRandomData = () => {
     const numQuestions = 14
     const maxAnnotation = 14
     const minSelectionPerAnnotation = 4
@@ -58,7 +71,9 @@ function App() {
     })
     console.log(buckets)
     setAggregatedAnnotations(buckets)
-  }, [])
+  }
+
+  useEffect(() => generateRandomData(), [])
 
   const handleSelection = (index: number) => () => {
     const selectionIndex = activeAnnotation === index ? -1 : index
@@ -72,19 +87,8 @@ function App() {
   return (
     <>
       {/* Header */}
-      <div className="flex justify-between items-center p-8 bg-[#000] h-[7.5vh]">
-        <div className="flex items-center gap-5">
-          {/* <img src="../logo.png" alt="logo" className="w-10 h-10" /> */}
-          <h1 className="text-2xl text-white">CoCreate</h1>
-        </div>
-        <div className="flex items-center gap-5">
-          <button className="text-blue-500">Dashboard</button>
-          {/* <button className="text-white">Projects</button> */}
-          {/* <button className="text-white">Settings</button> */}
-          {/* <button className="text-white">Logout</button> */}
-        </div>
-      </div>
-
+      <Header />
+      
       {/* Body */}
       <ResizablePanelGroup 
         direction='horizontal' 
@@ -104,7 +108,7 @@ function App() {
             </div>
 
             {/* Search Bar */}
-            <div className="flex justify-between items-center flex-wrap-reverse gap-2">
+            <div className="flex justify-between items-center flex-wrap-reverse gap-2 ">
               <div className="flex">
                 <input 
                   type="text" placeholder="Search annotations" 
@@ -114,7 +118,7 @@ function App() {
                   Search
                 </button>
               </div>
-              {/*  */}
+
               <div className="flex justify-end gap-2">
                 <Button 
                   className={cn(
@@ -142,80 +146,89 @@ function App() {
 
             {
               annotationViewMode === "grid" &&
-              <div 
-                className={cn(
-                  "p-3 flex flex-wrap justify-center gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
-                  "bg-[#111]" // Dark Mode
-                )}
-                >
-                  
-                {aggregatedAnnotations.map((annotation, index) =>  {
-                
-                  let aestheticValues = annotation
-                    .flatMap(annotation => annotation.selections)
-                    .map(selection => selection.aestheticValue)
-                    .reduce((acc, curr) => {
-                      switch (curr) {
-                        case 'good': acc.likes++; break;
-                        case 'bad': acc.dislikes++; break;
-                        default: acc.blank++; break;
-                      }
-                      return acc;
-                    }, { likes: 0, dislikes: 0, blank: 0 })
-
-
-                  let functionValues = annotation
-                    .flatMap(annotation => annotation.selections)
-                    .map(selection => selection.functionValue)
-                    .reduce((acc, curr) => {
-                      switch (curr) {
-                        case 'good': acc.likes++; break;
-                        case 'bad': acc.dislikes++; break;
-                        default: acc.blank++; break;
-                      }
-                      return acc;
-                    }, { likes: 0, dislikes: 0, blank: 0 })
-
-                    let functionDislikePercentage = functionValues.dislikes / (functionValues.likes + functionValues.dislikes) * 100
-                    let functionDislikePercentageWidth = functionValues.dislikes === functionValues.likes  ? `50%` : `${functionDislikePercentage}%`
-
-                  return (
-                  <div
-                    key={index} 
-                    className={cn(
-                      "flex jusify-content-center items-center relative cursor-pointer",
-                      "hover:scale-105 transform transition duration-300 ease-in-out",
-                      "border-3 border-transparent",
-                      { "border-blue-500": activeAnnotation === index }
-                    )}
+              <div className='mx-auto h-[90vh] overflow-scroll'>
+                <div 
+                  className={cn(
+                    "p-3 flex flex-wrap justify-center gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
+                    // "p-3 flex flex-wrap gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
+                    "bg-[#111]" // Dark Mode
+                  )}
                   >
-                    <div className="relative w-80">
-                      <img 
-                        src="../rendering.jpg" 
-                        alt="rendering" 
-                        className="w-full"
-                        onClick={handleSelection(index)}
-                      />
-                      {/* Overlay to show the number of annotations */}
-                      <div className="absolute bottom-0 left-0 w-full bg-[#111111cc] text-white p-1 z-30">
-                        View {index + 1} - {annotation.length} comments
-                      </div>
-                      <div>
-                        <div className="text-xs absolute top-41 left-0 w-full bg-green-800 text-white p-0.5 z-30">
-                          {/* Aesthetic: {aestheticValues.likes} 👍 {aestheticValues.dislikes} 👎 */}
-                          {functionValues.likes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(100 - functionDislikePercentage)}%]
-                        </div>
-                        <div className="text-xs absolute top-41 right-0 bg-red-800 text-white p-0.5 z-30"
-                          style={{ width: functionDislikePercentageWidth }}
-                        >
-                              {functionValues.dislikes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(functionDislikePercentage)}%]
-                        </div>
-                      </div>
-                    </div>
+                    
+                  {aggregatedAnnotations.map((annotation, index) =>  {
+                  
+                    let aestheticValues = annotation
+                      .flatMap(annotation => annotation.selections)
+                      .map(selection => selection.aestheticValue)
+                      .reduce((acc, curr) => {
+                        switch (curr) {
+                          case 'good': acc.likes++; break;
+                          case 'bad': acc.dislikes++; break;
+                          default: acc.blank++; break;
+                        }
+                        return acc;
+                      }, { likes: 0, dislikes: 0, blank: 0 })
 
-                  </div>
+
+                    let functionValues = annotation
+                      .flatMap(annotation => annotation.selections)
+                      .map(selection => selection.functionValue)
+                      .reduce((acc, curr) => {
+                        switch (curr) {
+                          case 'good': acc.likes++; break;
+                          case 'bad': acc.dislikes++; break;
+                          default: acc.blank++; break;
+                        }
+                        return acc;
+                      }, { likes: 0, dislikes: 0, blank: 0 })
+
+                      let functionDislikePercentage = functionValues.dislikes / (functionValues.likes + functionValues.dislikes) * 100
+                      let functionLikePercetange = functionValues.likes / (functionValues.likes + functionValues.dislikes) * 100
+                      let functionDislikePercentageWidth = functionValues.dislikes === functionValues.likes  ? `50%` : `${functionDislikePercentage}%`
+                      let functionLikePercentageWidth = functionValues.likes === functionValues.dislikes  ? `50%` : `${functionLikePercetange}%`
+
+                    return (
+                    <div
+                      key={index} 
+                      className={cn(
+                        "flex jusify-content-center items-center relative cursor-pointer",
+                        "hover:scale-105 transform transition duration-300 ease-in-out",
+                        "border-3 border-transparent",
+                        { "border-blue-500": activeAnnotation === index }
+                      )}
+                    >
+                      <div className="relative w-[100%] max-w-80 mx-auto">
+                        <img 
+                          src="../rendering.jpg" 
+                          alt="rendering" 
+                          className="w-full"
+                          onClick={handleSelection(index)}
+                        />
+                        {/* Overlay to show the number of annotations */}
+                        <div className="absolute bottom-0 left-0 w-full bg-[#111111cc] text-white z-30 flex flex-wrap-reverse">
+                          <div className="w-full bg-[#111111cc] text-white p-1 z-30 text-ellipsis overflow-hidden whitespace-nowrap">
+                            View {index + 1} - {annotation.length} comments
+                          </div>
+                          <div className='w-full flex'>
+                              <div 
+                                className="text-xs bg-green-800 text-white p-0.5 z-30 text-ellipsis overflow-hidden whitespace-nowrap"
+                                style={{ width: functionLikePercentageWidth }}
+                              >
+                                {functionValues.likes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(100 - functionDislikePercentage)}%]
+                              </div>
+                              <div className="text-xs bg-red-800 text-white p-0.5 z-30 text-ellipsis overflow-hidden whitespace-nowrap"
+                                style={{ width: functionDislikePercentageWidth }}
+                              >
+                                    {functionValues.dislikes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(functionDislikePercentage)}%]
+                              </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                    </div>
+                  )}
                 )}
-              )}
+                </div>
               </div>
             }
             {
@@ -247,7 +260,7 @@ function App() {
 
           </div>
         </ResizablePanel>
-        <ResizableHandle />
+        <ResizableHandle withHandle={activeAnnotation !== -1} />
         {
           activeAnnotation !== -1 && 
           <ResizablePanel minSize={30} className="bg-[#202020] border-4 border-l-0 border-[#333]">
@@ -265,15 +278,70 @@ function App() {
                     Question ID: {JSON.stringify(annotations[activeAnnotation].questionId)}
                   </p>
  
-                  {/* Canvas */}
-                  <div className="h-auto w-auto">
-                    <Canvas
-                      selections={annotations[activeAnnotation].selections}
-                      canvasWidth={410}
-                      canvasHeight={270}
-                    />
+                  <div className="flex flex-wrap">
+                    {/* Canvas */}
+                    <div className="flex justify-center items-center w-[100%] md:w-[80%] min-w-[200px]">
+                      <Canvas
+                        selections={annotations[activeAnnotation].selections}
+                        canvasWidth={410}
+                        canvasHeight={270}
+                      />
+                    </div>
+                    {/* Search & Filters */}
+                    <div className="min-w-[150px] w-[100%] md:w-[100%] flex flex-row items-start md:items-center gap-2">
+                      <Card className="w-[100%] border-[#333] bg-[#2d2d2d]">
+                        <CardHeader className="m-1 p-3 bg-[#111] rounded-xl">
+                          <b className="text-xs">Feedback Properties</b>
+                        </CardHeader>
+                        <CardContent className="px-3 w-[100%]">
+                          <div className="w-[100%] flex justify-between">
+                            <span className="text-xs font-medium">Sentiment</span>
+                            <span className="text-xs font-medium">Total: {annotations[activeAnnotation].selections.find(selection => selection.aestheticValue)?.aestheticValue?.length}</span>
+                          </div>
+                          <div className="flex flex-col gap-1 my-2">
+                            <CheckboxWithText id="good" label="Positive" />
+                            <CheckboxWithText id="bad" label="Negative" />
+                          </div>
+                          <div className="w-[100%] flex justify-between">
+                            <span className="text-xs font-medium">Category</span>
+                            <span className="text-xs font-medium">Total: {annotations[activeAnnotation].selections.find(selection => selection.functionValue)?.functionValue?.length}</span>
+                          </div>
+                          <div className="flex flex-col gap-1 my-2">
+                            <CheckboxWithText id="aesthetic" label="Aesthetic" />
+                            <CheckboxWithText id="functional" label="Functional" />
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      <Card className="w-[100%] border-[#333] bg-[#2d2d2d]">
+                        <CardHeader className="m-1 p-3 bg-[#111] rounded-xl">
+                          <b className="text-xs">User Demographics</b>
+                        </CardHeader>
+                        <CardContent className="px-3 w-[100%]">
+                          <div className="w-[100%] flex justify-between">
+                            <span className="text-xs font-medium">Role</span>
+                          </div>
+                          <div className="flex flex-col gap-1 my-2">
+                            <MultiSelect
+                              options={rolesList}
+                              onValueChange={setSelectedRoles}
+                              defaultValue={selectedRoles}
+                              placeholder="Select Roles"
+                              maxCount={3}
+                            />
+                          </div>
+                          <div className="w-[100%] flex justify-between">
+                            <span className="text-xs font-medium">Tenure</span>
+                          </div>
+                          <div className="flex flex-col gap-1 my-2">
+                            <CheckboxWithText id="aesthetic" label="Aesthetic" />
+                            <CheckboxWithText id="functional" label="Functional" />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </div>
-                  <div className="flex gap-2">
+                  {/* <div className="flex gap-2">
                     <PieChartComponent title=""
                       chartData={[
                         { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
@@ -301,7 +369,7 @@ function App() {
                         { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
                       ]}
                     />
-                  </div>
+                  </div> */}
                   <div>
                   </div>
                 </CardContent>
@@ -444,16 +512,7 @@ function App() {
           </ResizablePanel>
         }
       </ResizablePanelGroup>
-        
-            {/* {annotation.selections.map((selection, index) => (
-                  <div key={index} className="border p-3 w-50 h-50">
-                    <div>Start: {selection.start.x}, {selection.start.y}</div>
-                    <div>End: {selection.end.x}, {selection.end.y}</div>
-                    <div>Function Value: {selection.functionValue}</div>
-                    <div>Aesthetic Value: {selection.aestheticValue}</div>
-                    <div>Comment: {selection.comment}</div>
-                  </div>
-                ))} */}
+      
     </>
   )
 }

@@ -58,7 +58,6 @@ const Canvas = (props: CanvasProps) => {
       const y = selection.start.y
       const width = selection.end.x - selection.start.x
       const height = selection.end.y - selection.start.y
-      
       drawSelection(ctx, x, y, width, height);
     });
   }
@@ -68,22 +67,29 @@ const Canvas = (props: CanvasProps) => {
     <div 
       className="canvas-container flex justify-center items-center"
       style={{
-        width: `100%`,
-        height: `${canvasHeight}px`,
+        // paddingTop: `${(canvasHeight / canvasWidth) * 100}%`,  // create empty space for the canvas (aspect ratio'd)
+        // maxHeight: '75vh', // Maximum height of 90% of the viewport
+        aspectRatio: `${canvasWidth} / ${canvasHeight}`, // Maintain aspect ratio
+        // width: "100%",
+        maxWidth: `${(canvasWidth / canvasHeight) * 75}vh`, // Max width based on aspect ratio and 90vh cap
+        maxHeight: '75vh', // Cap height at 90% viewport
+        position: 'relative',
         justifyContent: "center",
         alignItems: "center",
-        display: "flex",
+        display: "inline-block",
       }}
     >
       <img
           src="../rendering.jpg"
           alt="Rendering"
-          className="rendering-image overflow-scroll"
+          className="rendering-image overflow-scroll aspect-auto"
           style={{ 
-            // maxWidth: MAX_IMAGE_WIDTH, 
-            height: `${canvasHeight}px`,
-            width: `${canvasWidth}px`,
-            // display: "block",
+            top: '50%',
+            left: '50%',
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            transform: 'translate(-50%, -50%)',
           }}
         />
 
@@ -92,6 +98,15 @@ const Canvas = (props: CanvasProps) => {
         width={canvasWidth}
         height={canvasHeight}
         className="canvas"
+        style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          transform: 'translate(-50%, -50%)',
+        }}
       />
     
     </div>
