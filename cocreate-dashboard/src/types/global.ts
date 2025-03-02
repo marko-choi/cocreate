@@ -22,5 +22,6 @@ export interface Annotation {
   questionId: number;
   selections: Selection[];
   image: string; // this is in base64
+  imagePath: string;
   scaleFactor: number;
 }

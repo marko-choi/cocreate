@@ -3,6 +3,7 @@ import "./canvas.css";
 
 export interface CanvasProps {
   selections: any;
+  imagePath: string;
   canvasWidth: number;
   canvasHeight: number;
 }
@@ -80,7 +81,7 @@ const Canvas = (props: CanvasProps) => {
       }}
     >
       <img
-          src="../rendering.jpg"
+          src={props.imagePath}
           alt="Rendering"
           className="rendering-image overflow-scroll aspect-auto"
           style={{ 

@@ -39,7 +39,7 @@ const multiSelectVariants = cva(
     variants: {
       variant: {
         default:
-          "border-foreground/10 text-foreground bg-card hover:bg-card/80 dark:bg-[#222] dark:border-[#111111a5] dark:hover:bg-[#222] dark:hover:border-[#111111a5]",
+          "border-foreground/10 text-foreground bg-card hover:bg-card/80 dark:bg-[#111] dark:border-[#111111a5] dark:hover:bg-[#222] dark:hover:border-[#111111a5]",
         secondary:
           "border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
@@ -202,7 +202,7 @@ export const MultiSelect = React.forwardRef<
             {...props}
             onClick={handleTogglePopover}
             className={cn(
-              "flex w-full p-1 rounded-md border min-h-10 h-auto items-center justify-between bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
+              "flex w-full p-1 rounded-md border border-[#000] min-h-10 h-auto items-center justify-between bg-inherit hover:bg-inherit [&_svg]:pointer-events-auto",
               className
             )}
           >
@@ -280,7 +280,7 @@ export const MultiSelect = React.forwardRef<
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 dark:bg-[#222] border-[#111111a5] border-2"
+          className="w-auto p-0 dark:bg-[#1d1d1d] border-[#111111a5] border-2"
           align="start"
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >

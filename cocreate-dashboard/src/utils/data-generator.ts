@@ -56,6 +56,7 @@ export function generateRandomString(length: number): string {
  * @param minSelectionPerAnnotation - The minimum number of selections per annotation.
  * @param maxSelectionPerAnnotation - The maximum number of selections per annotation.
  * @param imageSize - The size of the image as a tuple [width, height].
+ * @param pictureRange - The range of pictures (index) to select from. Located in the public folder.
  * @returns An array of generated annotations.
  */
 export const generateCoCreateData = (
@@ -64,21 +65,26 @@ export const generateCoCreateData = (
   minSelectionPerAnnotation: number,
   maxSelectionPerAnnotation: number,
   imageSize: [number, number],
+  pictureRange: number,
 ) => {
 
   const annotations: Annotation[] = []
-  const totalNumQuestions = getRandomBoundedInt(1, numQuestions)
+  const totalNumQuestions = numQuestions
   for (let i = 0; i < totalNumQuestions; i++) {
     
     const questionId = i
     const numAnnotations = getRandomBoundedInt(1, maxAnnotation)
+    console.log(questionId)
     
     for (let z = 0; z < totalNumQuestions; z++) {
+      const imageNumber = getRandomBoundedInt(1, pictureRange)
+      const imagePath = `../rendering${imageNumber}.jpg`
+
       for (let j = 0; j < numAnnotations; j++) {
-        const image = 'data:image/png;base64,' + generateRandomString(1000)
+        const image = 'data:image/png;base64,' // + generateRandomString(1000)
         const selections = generateSelections(minSelectionPerAnnotation, maxSelectionPerAnnotation, imageSize)
         const scaleFactor = getRandomBoundedFloat(0.5, 2)   
-        annotations.push({ questionId, selections, image, scaleFactor })
+        annotations.push({ questionId, selections, image, imagePath, scaleFactor })
       }
     }
   }
