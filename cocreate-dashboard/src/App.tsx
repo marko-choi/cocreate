@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable'
-import { Annotation } from './types/global'
+import { Annotation, Selection } from './types/global'
 import { generateCoCreateData } from './utils/data-generator'
 import { cn } from './lib/utils'
 import Ping from './components/ping/Ping'
@@ -10,7 +10,7 @@ import { Button } from './components/ui/button'
 import Canvas from './components/canvas/Canvas'
 // import { PieChartComponent } from './components/pie-chart/Test'
 import Header from './components/layout/Header'
-import { Checkbox, CheckboxWithText } from './components/ui/checkbox'
+import { CheckboxWithText } from './components/ui/checkbox'
 import { MultiSelect } from './components/ui/multi-select'
 
 interface MultiSelectType {
@@ -18,14 +18,33 @@ interface MultiSelectType {
   label: string;
 }
 
+interface FeedbackFilterGroup {
+  group: string;
+  groupType: 'value' | 'field';
+  groupCount: number | undefined;
+  filters: FeedbackFilter[];
+}
+
+interface FeedbackFilter {
+  label: string;
+  id: string;
+  value: string;
+  fieldName: string;
+  active: boolean;
+}
+
 function App() {
   // const generateNumber = () => Math.floor(Math.random() * 1000)
 
+  const [annotationViewMode, setAnnotationViewMode] = useState<'single' | 'grid'>('grid')
   const [showSidebar, setShowSidebar] = useState<boolean>(true)
+  const [showExecutiveSummary, setShowExecutiveSummary] = useState<boolean>(true)
+
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
-  const [annotationViewMode, setAnnotationViewMode] = useState<'single' | 'grid'>('grid')
+  const [activeComment, setActiveComment] = useState<string | null>(null)
+  
 
   const [rolesList, setRolesList] = useState<MultiSelectType[]>([
     { value: "architect", label: "Architect" },
@@ -40,9 +59,98 @@ function App() {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedTenures, setSelectedTenures] = useState<string[]>([])
 
+  const [feedbackFilters, setFeedbackFilters] = useState<FeedbackFilterGroup[]>([
+    {
+      group: "Sentiment",
+      groupCount: annotations[activeAnnotation]?.selections.find(selection => selection.aestheticValue)?.aestheticValue?.length ?? 0,
+      groupType: "value",
+      filters: [
+        { label: "Positive", id: "positive", value: "good", fieldName: 'functionValue', active: true },
+        { label: "Negative", id: "negative", value: "bad", fieldName: 'functionValue', active: true },
+      ]
+    },
+    {
+      group: "Category",
+      groupCount: annotations[activeAnnotation]?.selections.find(selection => selection.functionValue)?.functionValue?.length ?? 0,
+      groupType: "field",
+      filters: [
+        { label: "Aesthetic", id: "aesthetic", value: "aesthetic", fieldName: 'aestheticValue', active: true },
+        { label: "Functional", id: "functional", value: "functional", fieldName: 'functionValue', active: true },
+      ]
+    }
+  ])
+
   // function formatBase64Image(image: string) {
   //   return image.startsWith("data:image") ? image : `data:image/png;base64,${image}`;
   // }
+
+  const checkSelectionShowEligibility = (
+    selection: Selection,
+    feedbackFilters: FeedbackFilterGroup[]
+  ) => {
+
+    const fieldFilters = feedbackFilters.filter(fg => fg.groupType === 'field').flatMap(fg => fg.filters)
+    const valueFilters = feedbackFilters.filter(fg => fg.groupType === 'value').flatMap(fg => fg.filters)
+    if (!fieldFilters || !valueFilters) return false
+    
+    var showElgibility = false
+    for (const field of fieldFilters) {
+      console.log("Checking field: ", field)
+      for (const value of valueFilters) {
+        let fieldName = field.fieldName as keyof Selection
+        let hasEligibility = selection[fieldName] === value.value && value.active
+        console.log(fieldName, hasEligibility, selection)
+        if (hasEligibility) return true
+      }
+    }
+
+    console.log(showElgibility, selection)
+    return showElgibility
+  } 
+
+  const handleFilterChange = (
+    questionId: number,
+    filterGroup: string, 
+    fieldName: string, 
+    value: string
+  ) => {
+    
+    const filterGroupChanged = feedbackFilters.find(fg => fg.group === filterGroup)
+    if (!filterGroupChanged) return
+
+    const filterChanged = filterGroupChanged.filters.find(f => f.fieldName === fieldName && f.value === value)
+    if (!filterChanged) return
+
+     // Update checked status
+     const updatedFilters = feedbackFilters.map((filterGroup) => {
+      const updatedFilters = filterGroup.filters.map((filter) => {
+        if (filter.fieldName === fieldName && filter.value === value) {
+          return { ...filter, active: !filter.active }
+        }
+        return filter
+      })
+      return { ...filterGroup, filters: updatedFilters }
+    })
+
+    // Update show status
+    const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
+      const updatedQuestions = question.map((annotation) => {
+        if (annotation.questionId !== questionId) return annotation
+        const updatedSelections = annotation.selections.map((selection) => 
+          ({ ...selection, show: checkSelectionShowEligibility(selection, updatedFilters) }))
+        return { ...annotation, selections: updatedSelections }
+      })
+      return updatedQuestions
+    })
+
+    setFeedbackFilters(updatedFilters)
+    setAggregatedAnnotations(updatedAggregatedAnnotations)
+  }
+
+
+  function convertFromBase64(base64: string) {
+    return `data:image/png;base64,${base64}`
+  }
 
   function importAnnotations() {
     const input = document.createElement('input');
@@ -56,11 +164,11 @@ function App() {
 
   const currentAnnotationComments = aggregatedAnnotations[activeAnnotation] || []
   const generateRandomData = () => {
-    const numQuestions = 14
-    const maxAnnotation = 14
-    const minSelectionPerAnnotation = 4
-    const maxSelectionPerAnnotation = 6
-    const imageSize: [number, number] = [400, 270]
+    const numQuestions = 10
+    const maxAnnotation = 1
+    const minSelectionPerAnnotation = 1
+    const maxSelectionPerAnnotation = 1
+    const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
     
     const generatedData = generateCoCreateData(
@@ -76,9 +184,13 @@ function App() {
     // Create 10 buckets, and assign each annotation to a bucket based on questionId
     const buckets: Annotation[][] = Array.from({ length: numQuestions }, () => [])
     generatedData.forEach(annotation => {
+      annotation.selections.forEach(selection => {
+        selection.show = checkForIniitalShowEligibility(selection)
+        selection.uid = Math.random().toString(36).substring(7)
+      })
       buckets[annotation.questionId].push(annotation)
     })
-    console.log(buckets)
+    // console.log(buckets)
     setAggregatedAnnotations(buckets)
   }
 
@@ -87,6 +199,13 @@ function App() {
   const handleSelection = (index: number) => () => {
     const selectionIndex = activeAnnotation === index ? -1 : index
     setActiveAnnotation(selectionIndex)
+  }
+
+  const checkForIniitalShowEligibility = (selection: Selection) => {
+    return (
+      selection.aestheticValue !== null 
+      || selection.functionValue !== null
+    )
   }
 
   const handleAnnotationViewModeChange = () => {
@@ -210,7 +329,7 @@ function App() {
                       >
                         <div className="relative w-full max-w-80 mx-auto border border-[#333] aspect-[3/2]">
                           <img 
-                            src={annotation[index]?.imagePath ?? "-"}
+                            src={annotation[index]?.imagePath ?? ""}
                             alt="rendering" 
                             className="w-full h-full object-contain"
                             onClick={handleSelection(index)}
@@ -282,9 +401,16 @@ function App() {
               <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
                 <CardHeader className="bg-[#161616] rounded-xl m-2 flex flex-row justify-between items-center">
                   <div>
-                    Mosque
+                    Mosque {activeAnnotation + 1} of {aggregatedAnnotations.length}
                   </div>
-                  <div>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      className="bg-blue-500 hover:bg-blue-600 text-white p-2 cursor-pointer text-sm"
+                      onClick={() => setShowExecutiveSummary(!showExecutiveSummary)}
+                    >
+                      {showExecutiveSummary ? 'Hide Executive Summary' : 'Show Executive Summary'}
+                    </Button>
                     <Button 
                       className="bg-blue-500 hover:bg-blue-600 text-white p-2 cursor-pointer text-sm"
                       onClick={() => setShowSidebar(!showSidebar)}
@@ -297,44 +423,70 @@ function App() {
                   
                   {/* Data */}
                   <p className='text-warp text-sm'>
-                    Question ID: {JSON.stringify(annotations[activeAnnotation].questionId)}
+                    Question ID: {JSON.stringify(aggregatedAnnotations[activeAnnotation][0]?.questionId)}
                   </p>
  
                   <div className="flex flex-col lg:flex-row">
                     {/* Canvas */}
                     <div className="flex justify-center items-center w-[100%] lg:w-[80%]">
                       <Canvas
-                        selections={annotations[activeAnnotation].selections}
-                        imagePath={annotations[activeAnnotation].imagePath}
+                        annotations={aggregatedAnnotations[activeAnnotation]}
+                        activeComment={activeComment}
+                        // imagePath={aggregatedAnnotations[activeAnnotation]}
                         canvasWidth={410}
                         canvasHeight={270}
                       />
-                    </div>
+                  </div>
                     {/* Search & Filters */}
                     <div className="min-w-[200px] w-[100%] lg:w-[30%] flex flex-row lg:flex-col lg:items-center gap-2 flex-wrap">
-                      <Card className="w-[100%] border-[#333] bg-[#111]">
+
+                      <Card className="w-[100%] border-[#333] bg-[#111]">  
                         <CardHeader className="m-2 p-3 bg-[#000] border-[#333] border-1 rounded-lg">
                           <b className="text-xs">Feedback Properties</b>
                         </CardHeader>
                         <CardContent className="px-3 w-[100%]">
-                          <div className="w-[100%] flex justify-between">
-                            <span className="text-xs font-medium">Sentiment</span>
-                            <span className="text-xs font-medium">Total: {annotations[activeAnnotation].selections.find(selection => selection.aestheticValue)?.aestheticValue?.length}</span>
-                          </div>
-                          <div className="flex flex-col gap-1 my-2">
-                            <CheckboxWithText id="good" label="Positive" />
-                            <CheckboxWithText id="bad" label="Negative" />
-                          </div>
-                          <div className="w-[100%] flex justify-between">
-                            <span className="text-xs font-medium">Category</span>
-                            <span className="text-xs font-medium">Total: {annotations[activeAnnotation].selections.find(selection => selection.functionValue)?.functionValue?.length}</span>
-                          </div>
-                          <div className="flex flex-col gap-1 my-2">
-                            <CheckboxWithText id="aesthetic" label="Aesthetic" />
-                            <CheckboxWithText id="functional" label="Functional" />
-                          </div>
+                          {
+                            feedbackFilters.map((filterGroup, index) => (
+                              <>
+                                <div key={index} className="w-[100%] flex justify-between">
+                                  <span className="text-xs font-medium">{filterGroup.group}</span>
+                                  <span className="text-xs font-medium">Total: {filterGroup.groupCount}</span>
+                                </div>
+                                <div className="flex flex-col gap-1 my-2">
+                                  {
+                                    filterGroup.filters.map((filter, index) => (
+                                      <CheckboxWithText 
+                                        key={index} 
+                                        id={filter.id} 
+                                        label={filter.label} 
+                                        checked={filter.active}
+                                        onCheckedChange={() => handleFilterChange(
+                                          aggregatedAnnotations[activeAnnotation][0]?.questionId,
+                                          filterGroup.group, 
+                                          filter.fieldName, 
+                                          filter.value
+                                        )}
+                                      />
+                                    ))
+                                  }
+                                </div>
+                              </>
+                            ))
+                          }
                         </CardContent>
                       </Card>
+
+                      {/* <span className="break-words text-wrap text-sm text-gray-400 w-[450px]">
+                      {JSON.stringify(
+                        aggregatedAnnotations[activeAnnotation]
+                        .flatMap(annotation => annotation.selections)
+                        .map(selection => ({
+                          function: selection.functionValue,
+                          aesthetic: selection.aestheticValue,
+                          show: selection.show
+                        }))
+                      )}
+                      </span> */}
 
                       <Card className="w-[100%] border-[#333] bg-[#111]">
                         <CardHeader className="m-2 p-3 bg-[#000] border-[#333] border-1 rounded-lg">
@@ -406,79 +558,82 @@ function App() {
               </Card>
               
               {/* Executive Summary */}
-              <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
-                <CardHeader className="bg-[#161616] rounded-xl m-2">
-                  <div className="flex items-center justify-between ">
-                    <div>
-                      <CardTitle>Executive Summary</CardTitle>
-                      <CardDescription className="text-gray-400">View {activeAnnotation + 1}</CardDescription>
-                    </div>
-                    <div className='flex gap-2 flex-col md:flex-row'>
-                      <div className='flex items-center gap-2'>
-                        <Ping />
-                        <span className="text-sm text-gray-400">65% Positive</span>
+              {
+                showExecutiveSummary &&
+                <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
+                  <CardHeader className="bg-[#161616] rounded-xl m-2">
+                    <div className="flex items-center justify-between ">
+                      <div>
+                        <CardTitle>Executive Summary</CardTitle>
+                        <CardDescription className="text-gray-400">View {activeAnnotation + 1}</CardDescription>
                       </div>
-                      <div className='flex items-center gap-2'>
-                        <Ping />
-                        <span className="text-sm text-gray-400">82% Response Rate</span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Ping />
-                        <span className="text-sm text-gray-400">
-                          {currentAnnotationComments.length} Comments
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                {/* <div className="border-t border-gray-400 mx-3"></div> */}
-                <CardContent>
-
-                    <div>
-                      <h2>Key Findings</h2>
-                      <p className='text-gray-400 text-sm'>
-                        Overall positive sentiment (65%) with strong appreciation for modern design elements.
-                        Primary concerns center around functional aspects in the upper floor layout.
-                      </p>
-                    </div>
-                    <div className="border-t border-gray-400 my-3"></div>
-                    <div>
-                      <h2>Critical Analysis</h2>
-                      <ul className='list-inside list-disc text-gray-400 text-sm'> 
-                        <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
-                        <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
-                        <li>Consistent feedback across different stakeholder groups on sustainability features</li>
-                      </ul>
-                    </div>
-
-                </CardContent>
-
-                <CardFooter>
-                  <div className='flex flex-col gap-2 w-[100%]'>
-                    <div className='flex gap-2 flex-wrap md:flex-nowrap'>
-
-                      <div className='bg-green-600/40 text-green-200 flex flex-col md:w-1/2 p-2'>
-                        <b>Strengths</b>
-                        <span className='text-sm'>
-                          Modern aesthetic, sustainable materials, natural lighting
-                        </span>
-                      </div>
-
-                      <div className='bg-red-500/50 text-red-200 flex flex-col md:w-1/2 p-2'>
-                        <b>Area of Improvements</b>
-                        <span className='text-sm'>
-                          Functional layout, lack of storage, limited natural light
-                        </span>
+                      <div className='flex gap-2 flex-col md:flex-row'>
+                        <div className='flex items-center gap-2'>
+                          <Ping />
+                          <span className="text-sm text-gray-400">65% Positive</span>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <Ping />
+                          <span className="text-sm text-gray-400">82% Response Rate</span>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <Ping />
+                          <span className="text-sm text-gray-400">
+                            {currentAnnotationComments.length} Comments
+                          </span>
+                        </div>
                       </div>
                     </div>
+                  </CardHeader>
+                  {/* <div className="border-t border-gray-400 mx-3"></div> */}
+                  <CardContent>
 
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
+                      <div>
+                        <h2>Key Findings</h2>
+                        <p className='text-gray-400 text-sm'>
+                          Overall positive sentiment (65%) with strong appreciation for modern design elements.
+                          Primary concerns center around functional aspects in the upper floor layout.
+                        </p>
+                      </div>
+                      <div className="border-t border-gray-400 my-3"></div>
+                      <div>
+                        <h2>Critical Analysis</h2>
+                        <ul className='list-inside list-disc text-gray-400 text-sm'> 
+                          <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
+                          <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
+                          <li>Consistent feedback across different stakeholder groups on sustainability features</li>
+                        </ul>
+                      </div>
+
+                  </CardContent>
+
+                  <CardFooter>
+                    <div className='flex flex-col gap-2 w-[100%]'>
+                      <div className='flex gap-2 flex-wrap md:flex-nowrap'>
+
+                        <div className='bg-green-600/40 text-green-200 flex flex-col md:w-1/2 p-2'>
+                          <b>Strengths</b>
+                          <span className='text-sm'>
+                            Modern aesthetic, sustainable materials, natural lighting
+                          </span>
+                        </div>
+
+                        <div className='bg-red-500/50 text-red-200 flex flex-col md:w-1/2 p-2'>
+                          <b>Area of Improvements</b>
+                          <span className='text-sm'>
+                            Functional layout, lack of storage, limited natural light
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
+                      </div>
                     </div>
-                  </div>
-                </CardFooter>
+                  </CardFooter>
+                </Card>
+              }
 
-              </Card>
 
               {/* Feedback Comments */}
               <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
@@ -489,26 +644,43 @@ function App() {
                     Showing {currentAnnotationComments.length} comments 
                   </CardDescription>
                 </CardHeader>
-                
+
                 <CardContent>
+                  {/* Comment Searchbar */}
+                  <div className="flex justify-between items-center">
+                    <input 
+                      type="text" placeholder="Search comments" 
+                      className="border border-[#333] dark:border-[#333] bg-[#111] p-1 w-[80%]" 
+                    />
+                    <Button className="bg-blue-500 border-blue-500 border-2 text-white p-1 py-0 my-0 hover:bg-blue-600 hover:cursor-pointer">
+                      Search
+                    </Button>
+                  </div>
+                
                   <div className="flex flex-col">
                     {/* Flat map on selections */}
                     {currentAnnotationComments
                       .flatMap((annotation) => annotation.selections)
                       .filter((selection) => selection.comment !== '' && selection.aestheticValue !== null && selection.functionValue !== null)
-                      .filter((_, index) => index < 2)
+                      .filter((selection) => selection.show)
+                      // .filter((_, index) => index < 2)
                       .map((selection, index) => (
                       <div key={index} className="flex flex-col gap-2">
-                        <div className="flex flex-col w-[100%] border-t p-2 border-[#444]">
-                          {/* {JSON.stringify(comment)} */}
+                        <Button 
+                          className={cn(
+                            "flex flex-row justify-start w-[100%] border-t p-2 border-[#444]",
+                            "hover:bg-[#333] hover:cursor-pointer",
+                          )}
+                          onClick={() => setActiveComment(selection.uid)}
+                        >
                           {
                             selection.functionValue !== null &&
-                            <div className='flex justify-between gap-2'>
+                            <div className='flex w-[100%] justify-between gap-2'>
                               <div className='w-[80%]'>
-                                <div>
-                                  {selection.functionValue ? '👍' : '👎'} <b>Functional</b> | Architect
+                                <div className="flex justify-start">
+                                  {selection.functionValue ? '👍' : '👎'} <b>Functional</b> &nbsp; Architect
                                 </div>
-                                <div className="text-sm text-gray-400 break-words">
+                                <div className="flex justify-start text-sm text-gray-400 break-words">
                                   {selection.comment.slice(0, 40)}
                                 </div>
                               </div>
@@ -518,16 +690,23 @@ function App() {
                             </div>
                           }
 
-                        </div>
-                        <div className="flex flex-col text-balance w-[100%] border-t p-2 border-[#444]">
+                        </Button>
+                        <Button 
+                          className={cn(
+                            "flex flex-row justify-start w-[100%] border-t p-2 border-[#444]",
+                            "hover:bg-[#333] hover:cursor-pointer",
+                            { "bg-[#333]": activeComment === selection.uid }
+                          )}
+                          onClick={() => setActiveComment(selection.uid)}
+                        >
                           {
                             selection.aestheticValue !== null &&
-                            <div className='flex justify-between gap-2'>
+                            <div className='flex w-[100%] justify-between gap-2'>
                               <div className='w-[80%]'>
-                                <div>
-                                  {selection.aestheticValue ? '👍' : '👎'} <b>Aesthetic</b> | Designer
+                                <div className="flex justify-start">
+                                  {selection.aestheticValue ? '👍' : '👎'} <b>Aesthetic</b> &nbsp; Designer
                                 </div>
-                                <div className="text-sm text-gray-400 break-words">
+                                <div className="flex justify-start text-sm text-gray-400 break-words">
                                   {selection.comment.slice(0, 40)}
                                 </div>
                               </div>
@@ -536,7 +715,7 @@ function App() {
                             </div>
                           </div>
                           }
-                        </div>
+                        </Button>
                       </div>
                     ))}
                   </div>
@@ -547,7 +726,7 @@ function App() {
           </ResizablePanel>
         }
       </ResizablePanelGroup>
-      
+
     </>
   )
 }

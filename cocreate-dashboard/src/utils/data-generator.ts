@@ -74,17 +74,19 @@ export const generateCoCreateData = (
     
     const questionId = i
     const numAnnotations = getRandomBoundedInt(1, maxAnnotation)
-    console.log(questionId)
-    
-    for (let z = 0; z < totalNumQuestions; z++) {
-      const imageNumber = getRandomBoundedInt(1, pictureRange)
-      const imagePath = `../rendering${imageNumber}.jpg`
 
+    const imageNumber = getRandomBoundedInt(1, pictureRange)
+    const imagePath = `../rendering${imageNumber}.jpg`
+
+    
+    var selectionNum = 1
+    for (let z = 0; z < totalNumQuestions; z++) {
       for (let j = 0; j < numAnnotations; j++) {
-        const image = 'data:image/png;base64,' // + generateRandomString(1000)
-        const selections = generateSelections(minSelectionPerAnnotation, maxSelectionPerAnnotation, imageSize)
+        const image = ""
+        const selections = generateSelections(selectionNum, minSelectionPerAnnotation, maxSelectionPerAnnotation, imageSize)
         const scaleFactor = getRandomBoundedFloat(0.5, 2)   
         annotations.push({ questionId, selections, image, imagePath, scaleFactor })
+        selectionNum++
       }
     }
   }
@@ -99,12 +101,14 @@ export const generateCoCreateData = (
  * @returns An array of generated selections.
 */
 export const generateSelections = (
+    selectionNum: number,
     minSelectionPerAnnotation: number,
     maxSelectionPerAnnotation: number,
     imageSize: [number, number]
   ) => {
     const selections: Selection[] = []
     const numSelections = getRandomBoundedInt(minSelectionPerAnnotation, maxSelectionPerAnnotation)
+    var commentNum = 1
     for (let i = 0; i < numSelections; i++) {
       const start = { x: getRandomFloat(imageSize[0]), y: getRandomFloat(imageSize[1]) }
       const end = { x: getRandomBoundedFloat(start.x, imageSize[0]), y: getRandomBoundedFloat(start.y, imageSize[1]) }
@@ -115,7 +119,8 @@ export const generateSelections = (
       const functionValue = randomFunctionValue > 0.66 ? 'good' : randomFunctionValue > 0.33 ? 'bad' : null
       const aestheticValue = randomAestheticValue > 0.66 ? 'good' : randomAestheticValue > 0.33 ? 'bad' : null
 
-      const comment = generateRandomString(100)
+      const comment = `Selection-Comment ${selectionNum}-${commentNum} ${generateRandomString(2)}`
+      commentNum++
       selections.push({ start, end, functionValue, aestheticValue, comment })
     }
     return selections

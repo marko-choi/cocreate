@@ -4,11 +4,13 @@ export interface Point {
 }
 
 export interface Selection {
+  uid: string;
   start: Point;
   end: Point;
   functionValue: 'good' | 'bad' | null;
   aestheticValue: 'good' | 'bad' | null;
   comment: string;
+  show?: boolean;
 }
 
 export interface TooltipProps {

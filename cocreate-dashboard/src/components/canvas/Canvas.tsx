@@ -1,16 +1,19 @@
 import { useEffect, useRef } from "react";
 import "./canvas.css";
+import { Annotation } from "@/types/global";
 
 export interface CanvasProps {
-  selections: any;
-  imagePath: string;
+  annotations: Annotation[];
+  activeComment: string | null;
+  // imagePath: string;
   canvasWidth: number;
   canvasHeight: number;
 }
 
 const Canvas = (props: CanvasProps) => {
   const { 
-    selections, 
+    annotations, 
+    activeComment,
     canvasWidth,
     canvasHeight
   } = props;
@@ -29,7 +32,7 @@ const Canvas = (props: CanvasProps) => {
     lineWidth: number = 2,
     radius: number = 15
   ) => {
-    console.log("drawSelection", x, y, width, height);
+    // console.log("drawSelection", x, y, width, height);
     ctx.fillStyle = fillStyle;
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
@@ -46,7 +49,30 @@ const Canvas = (props: CanvasProps) => {
     ctx.stroke(); // Stroke the rounded rectangle
   };
 
+  // useEffect(() => { 
+  //   console.log("Updating active comment", activeComment);
+  //   if (activeComment === null) return;
+  //   const canvas = canvasRef.current;
+  //   if (!canvas) return
+
+  //   const ctx = canvas.getContext("2d");
+  //   if (!ctx) return
+
+  //   const allSelections = annotations.flatMap((annotation) => annotation.selections);
+  //   const activeSelection = allSelections.find((selection) => selection.uid === activeComment);
+  //   console.log("activeComment", activeComment, activeSelection);
+  //   if (!activeSelection) return;
+
+  //   const { start, end } = activeSelection;
+  //   const x = start.x
+  //   const y = start.y
+  //   const width = end.x - start.x
+  //   const height = end.y - start.y
+  //   drawSelection(ctx, x, y, width, height, "rgba(200, 200, 200, 0.6)", "red", 4);
+  // }, [activeComment, annotations]);
+
   useEffect(() => {
+    // console.log("updating canvas");
     const canvas = canvasRef.current;
     if (!canvas) return
 
@@ -54,15 +80,28 @@ const Canvas = (props: CanvasProps) => {
     if (!ctx) return
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    selections.forEach((selection: any) => {
-      const x = selection.start.x
-      const y = selection.start.y
-      const width = selection.end.x - selection.start.x
-      const height = selection.end.y - selection.start.y
-      drawSelection(ctx, x, y, width, height);
+    annotations.forEach((annotation) => {
+      const { selections } = annotation;
+      selections.forEach((selection) => {
+        // console.log(selection.show, selection);
+        var fillStyle = "rgba(200, 200, 200, 0.3)";
+        var strokeStyle = "white";
+
+        if (selection.uid === activeComment) {
+          fillStyle = "rgba(250, 123, 123, 0.3)";
+          strokeStyle = "red";
+        } 
+        
+        if (!selection.show) return;
+        const x = selection.start.x
+        const y = selection.start.y
+        const width = selection.end.x - selection.start.x
+        const height = selection.end.y - selection.start.y
+        drawSelection(ctx, x, y, width, height, fillStyle, strokeStyle);
+      });
     });
   }
-  , [selections]);
+  , [activeComment, annotations]);
 
   return (
     <div 
@@ -81,7 +120,7 @@ const Canvas = (props: CanvasProps) => {
       }}
     >
       <img
-          src={props.imagePath}
+          src={annotations[0].imagePath}
           alt="Rendering"
           className="rendering-image overflow-scroll aspect-auto"
           style={{ 

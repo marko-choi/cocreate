@@ -29,7 +29,7 @@ function Checkbox({
 
 export { Checkbox }
 
-export interface CheckboxWithTextProps {
+export interface CheckboxWithTextProps extends React.ComponentProps<typeof CheckboxPrimitive.Root> {
   id: string,
   label: string,
   description?: string,
@@ -40,7 +40,11 @@ export interface CheckboxWithTextProps {
 export function CheckboxWithText(props: CheckboxWithTextProps) {
   return (
     <div className="items-top flex space-x-2">
-      <Checkbox id={props.id} />
+      <Checkbox 
+        id={props.id} 
+        checked={props.checked} 
+        onCheckedChange={props.onCheckedChange}
+      />
       <div className="grid gap-1.5 leading-none">
         <label
           htmlFor={props.id}
