@@ -12,6 +12,7 @@ import Canvas from './components/canvas/Canvas'
 import Header from './components/layout/Header'
 import { CheckboxWithText } from './components/ui/checkbox'
 import { MultiSelect } from './components/ui/multi-select'
+import { json } from 'stream/consumers'
 
 interface MultiSelectType {
   value: string;
@@ -162,12 +163,17 @@ function App() {
     input.click();
 }
 
-  const currentAnnotationComments = aggregatedAnnotations[activeAnnotation] || []
+  const currentAnnotationComments = 
+    activeAnnotation === -1 
+      ? aggregatedAnnotations.flat().flatMap(annotation => annotation.selections)
+      : aggregatedAnnotations[activeAnnotation]
+        ?.flatMap(annotation => annotation.selections) ?? []
+
   const generateRandomData = () => {
     const numQuestions = 10
-    const maxAnnotation = 1
+    const maxAnnotation = 3
     const minSelectionPerAnnotation = 1
-    const maxSelectionPerAnnotation = 1
+    const maxSelectionPerAnnotation = 4
     const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
     
@@ -188,6 +194,7 @@ function App() {
         selection.show = checkForIniitalShowEligibility(selection)
         selection.uid = Math.random().toString(36).substring(7)
       })
+      annotation.show = true
       buckets[annotation.questionId].push(annotation)
     })
     // console.log(buckets)
@@ -211,6 +218,50 @@ function App() {
   const handleAnnotationViewModeChange = () => {
     setAnnotationViewMode(annotationViewMode === 'single' ? 'grid' : 'single')
   }
+
+  const extractSelectionFieldValue = (value: string | null) => {
+    switch (value) {
+      case 'good': return '👍'
+      case 'bad': return '👎'
+      default: return 'N/A'
+    }
+  }
+
+  /**
+   * Handle case insensitive search for annotations, and update the show status of the selections.
+   * @param searchText - The text to search for.
+   */
+  const handleSearchAnnotations = (searchText: string) => {
+    const cleanedSearchText = searchText.trim().toLowerCase()
+    const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
+      const updatedQuestions = question.map((annotation) => {
+        return { ...annotation, show: annotation.imageName.toLowerCase().includes(cleanedSearchText) }
+      })
+      return updatedQuestions
+    })
+    setAggregatedAnnotations(updatedAggregatedAnnotations)
+  }
+
+
+  /**
+   * Handle case insensitive search for comments, and update the show status of the selections.
+   * @param searchText - The text to search for.
+   */
+  const handleSearchComments = (searchText: string) => {
+    const cleanedSearchText = searchText.trim().toLowerCase()
+    const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
+      const updatedQuestions = question.map((annotation) => {
+        const updatedSelections = annotation.selections.map((selection) => 
+          ({ ...selection, show: selection.comment.toLowerCase().includes(cleanedSearchText) }))
+        return { ...annotation, selections: updatedSelections }
+      })
+      return updatedQuestions
+    })
+    setAggregatedAnnotations(updatedAggregatedAnnotations)
+  }
+      
+    
+    
 
   return (
     <>
@@ -239,14 +290,15 @@ function App() {
 
               {/* Search Bar */}
               <div className="flex justify-between items-center flex-wrap-reverse gap-2 ">
-                <div className="flex">
+                <div className="flex w-[65%] gap-2">
                   <input 
                     type="text" placeholder="Search annotations" 
-                    className="border border-[#333] dark:border-[#333] bg-[#111] p-1 max-w-[80%] w-[80%]" 
+                    className="border border-[#333] dark:border-[#333] bg-[#111] p-1 max-w-[80%] w-[100%]" 
+                    onChange={(e) => handleSearchAnnotations(e.target.value)}
                   />
-                  <button className="bg-blue-500 border-blue-500 border-2 text-white p-1">
+                  {/* <button className="bg-blue-500 border-blue-500 border-2 text-white p-1">
                     Search
-                  </button>
+                  </button> */}
                 </div>
 
                 <div className="flex justify-end gap-2">
@@ -276,16 +328,25 @@ function App() {
 
               {
                 annotationViewMode === "grid" &&
-                <div className='mx-auto h-[90vh] overflow-scroll'>
+                <div className='mx-auto h-[90vh] overflow-scroll w-[100%]'>
                   <div 
                     className={cn(
                       "p-3 flex flex-wrap justify-center gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
+                      "min-w-[100%]",
                       // "p-3 flex flex-wrap gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
                       "bg-[#111]" // Dark Mode
                     )}
                     >
+                    {aggregatedAnnotations.filter(annotation => annotation[0]?.show).length === 0 &&
+                      <div className="flex text-gray-400 justify-center items-center w-full h-full">
+                        No annotations found
+                      </div>
+                    }
                       
-                    {aggregatedAnnotations.map((annotation, index) =>  {
+                      
+                    {aggregatedAnnotations
+                      .filter(annotation => annotation[0]?.show)
+                      .map((annotation, questionIndex) =>  {
                     
                       let aestheticValues = annotation
                         .flatMap(annotation => annotation.selections)
@@ -319,25 +380,27 @@ function App() {
 
                       return (
                       <div
-                        key={index} 
+                        key={questionIndex} 
                         className={cn(
                           "flex jusify-content-center items-center relative cursor-pointer",
                           "hover:scale-105 transform transition duration-300 ease-in-out",
                           "border-3 border-transparent",
-                          { "border-blue-500": activeAnnotation === index }
+                          { "border-blue-500": activeAnnotation === questionIndex }
                         )}
                       >
                         <div className="relative w-full max-w-80 mx-auto border border-[#333] aspect-[3/2]">
-                          <img 
-                            src={annotation[index]?.imagePath ?? ""}
-                            alt="rendering" 
-                            className="w-full h-full object-contain"
-                            onClick={handleSelection(index)}
-                          />
+                          {annotation[0]?.imagePath !== undefined && 
+                            <img 
+                              src={annotation[0].imagePath}
+                              alt="rendering" 
+                              className="w-full h-full object-contain"
+                              onClick={handleSelection(questionIndex)}
+                            />
+                          }
                           {/* Overlay to show the number of annotations */}
                           <div className="absolute bottom-0 left-0 w-full bg-[#111111cc] text-white z-30 flex flex-wrap-reverse">
                             <div className="w-full bg-[#111111cc] text-white p-1 z-30 text-ellipsis overflow-hidden whitespace-nowrap">
-                              View {index + 1} - {annotation.length} comments
+                              [{questionIndex + 1}] {annotation[0].imageName} - {annotation.length} entries
                             </div>
                             <div className='w-full flex'>
                                 <div 
@@ -391,13 +454,13 @@ function App() {
             </div>
           </ResizablePanel>
         }
-        <ResizableHandle withHandle={activeAnnotation !== -1} />
-        {
-          activeAnnotation !== -1 && 
-          <ResizablePanel minSize={40} className="bg-[#202020] border-4 border-l-0 border-[#333]">
-            <div className="flex flex-col p-3 gap-3 h-[92.5vh] overflow-scroll">
+        <ResizableHandle withHandle />
+        <ResizablePanel minSize={40} className="bg-[#202020] border-4 border-l-0 border-[#333]">
+          <div className="flex flex-col p-3 gap-3 h-[92.5vh] overflow-scroll">
 
-              {/* Annotation */}
+            {/* Annotation */}
+            {
+              activeAnnotation !== -1 &&
               <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
                 <CardHeader className="bg-[#161616] rounded-xl m-2 flex flex-row justify-between items-center">
                   <div>
@@ -425,7 +488,7 @@ function App() {
                   <p className='text-warp text-sm'>
                     Question ID: {JSON.stringify(aggregatedAnnotations[activeAnnotation][0]?.questionId)}
                   </p>
- 
+
                   <div className="flex flex-col lg:flex-row">
                     {/* Canvas */}
                     <div className="flex justify-center items-center w-[100%] lg:w-[80%]">
@@ -556,129 +619,141 @@ function App() {
                   </div>
                 </CardContent>
               </Card>
-              
-              {/* Executive Summary */}
-              {
-                showExecutiveSummary &&
-                <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
-                  <CardHeader className="bg-[#161616] rounded-xl m-2">
-                    <div className="flex items-center justify-between ">
-                      <div>
-                        <CardTitle>Executive Summary</CardTitle>
-                        <CardDescription className="text-gray-400">View {activeAnnotation + 1}</CardDescription>
-                      </div>
-                      <div className='flex gap-2 flex-col md:flex-row'>
-                        <div className='flex items-center gap-2'>
-                          <Ping />
-                          <span className="text-sm text-gray-400">65% Positive</span>
-                        </div>
-                        <div className='flex items-center gap-2'>
-                          <Ping />
-                          <span className="text-sm text-gray-400">82% Response Rate</span>
-                        </div>
-                        <div className='flex items-center gap-2'>
-                          <Ping />
-                          <span className="text-sm text-gray-400">
-                            {currentAnnotationComments.length} Comments
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  {/* <div className="border-t border-gray-400 mx-3"></div> */}
-                  <CardContent>
-
-                      <div>
-                        <h2>Key Findings</h2>
-                        <p className='text-gray-400 text-sm'>
-                          Overall positive sentiment (65%) with strong appreciation for modern design elements.
-                          Primary concerns center around functional aspects in the upper floor layout.
-                        </p>
-                      </div>
-                      <div className="border-t border-gray-400 my-3"></div>
-                      <div>
-                        <h2>Critical Analysis</h2>
-                        <ul className='list-inside list-disc text-gray-400 text-sm'> 
-                          <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
-                          <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
-                          <li>Consistent feedback across different stakeholder groups on sustainability features</li>
-                        </ul>
-                      </div>
-
-                  </CardContent>
-
-                  <CardFooter>
-                    <div className='flex flex-col gap-2 w-[100%]'>
-                      <div className='flex gap-2 flex-wrap md:flex-nowrap'>
-
-                        <div className='bg-green-600/40 text-green-200 flex flex-col md:w-1/2 p-2'>
-                          <b>Strengths</b>
-                          <span className='text-sm'>
-                            Modern aesthetic, sustainable materials, natural lighting
-                          </span>
-                        </div>
-
-                        <div className='bg-red-500/50 text-red-200 flex flex-col md:w-1/2 p-2'>
-                          <b>Area of Improvements</b>
-                          <span className='text-sm'>
-                            Functional layout, lack of storage, limited natural light
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
-                      </div>
-                    </div>
-                  </CardFooter>
-                </Card>
-              }
-
-
-              {/* Feedback Comments */}
+            }
+            
+            {/* Executive Summary */}
+            {
+              showExecutiveSummary &&
               <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
-                
-                <CardHeader className='flex flex-row justify-between items-baseline bg-[#161616] rounded-xl mb-2 pb-3'>
-                  <CardTitle>Feedback Comments</CardTitle>
-                  <CardDescription className="text-gray-400">
-                    Showing {currentAnnotationComments.length} comments 
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                  {/* Comment Searchbar */}
-                  <div className="flex justify-between items-center">
-                    <input 
-                      type="text" placeholder="Search comments" 
-                      className="border border-[#333] dark:border-[#333] bg-[#111] p-1 w-[80%]" 
-                    />
-                    <Button className="bg-blue-500 border-blue-500 border-2 text-white p-1 py-0 my-0 hover:bg-blue-600 hover:cursor-pointer">
-                      Search
-                    </Button>
+                <CardHeader className="bg-[#161616] rounded-xl m-2">
+                  <div className="flex items-center justify-between ">
+                    <div>
+                      <CardTitle>Executive Summary</CardTitle>
+                      <CardDescription className="text-gray-400">View {activeAnnotation + 1}</CardDescription>
+                    </div>
+                    <div className='flex gap-2 flex-col md:flex-row'>
+                      <div className='flex items-center gap-2'>
+                        <Ping />
+                        <span className="text-sm text-gray-400">65% Positive</span>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Ping />
+                        <span className="text-sm text-gray-400">82% Response Rate</span>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Ping />
+                        <span className="text-sm text-gray-400">
+                          {currentAnnotationComments.length} Comments
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                
-                  <div className="flex flex-col">
-                    {/* Flat map on selections */}
-                    {currentAnnotationComments
-                      .flatMap((annotation) => annotation.selections)
-                      .filter((selection) => selection.comment !== '' && selection.aestheticValue !== null && selection.functionValue !== null)
-                      .filter((selection) => selection.show)
-                      // .filter((_, index) => index < 2)
-                      .map((selection, index) => (
-                      <div key={index} className="flex flex-col gap-2">
-                        <Button 
-                          className={cn(
-                            "flex flex-row justify-start w-[100%] border-t p-2 border-[#444]",
-                            "hover:bg-[#333] hover:cursor-pointer",
-                          )}
-                          onClick={() => setActiveComment(selection.uid)}
-                        >
-                          {
-                            selection.functionValue !== null &&
+                </CardHeader>
+                {/* <div className="border-t border-gray-400 mx-3"></div> */}
+                <CardContent>
+
+                    <div>
+                      <h2>Key Findings</h2>
+                      <p className='text-gray-400 text-sm'>
+                        Overall positive sentiment (65%) with strong appreciation for modern design elements.
+                        Primary concerns center around functional aspects in the upper floor layout.
+                      </p>
+                    </div>
+                    <div className="border-t border-gray-400 my-3"></div>
+                    <div>
+                      <h2>Critical Analysis</h2>
+                      <ul className='list-inside list-disc text-gray-400 text-sm'> 
+                        <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
+                        <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
+                        <li>Consistent feedback across different stakeholder groups on sustainability features</li>
+                      </ul>
+                    </div>
+
+                </CardContent>
+
+                <CardFooter>
+                  <div className='flex flex-col gap-2 w-[100%]'>
+                    <div className='flex gap-2 flex-wrap md:flex-nowrap'>
+
+                      <div className='bg-green-600/40 text-green-200 flex flex-col md:w-1/2 p-2'>
+                        <b>Strengths</b>
+                        <span className='text-sm'>
+                          Modern aesthetic, sustainable materials, natural lighting
+                        </span>
+                      </div>
+
+                      <div className='bg-red-500/50 text-red-200 flex flex-col md:w-1/2 p-2'>
+                        <b>Area of Improvements</b>
+                        <span className='text-sm'>
+                          Functional layout, lack of storage, limited natural light
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
+                    </div>
+                  </div>
+                </CardFooter>
+              </Card>
+            }
+
+
+            {/* Feedback Comments */}
+            <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
+              
+              <CardHeader className='flex flex-row justify-between items-baseline bg-[#161616] rounded-xl mb-2 pb-3'>
+                <CardTitle>Feedback Comments</CardTitle>
+
+                <CardDescription className="text-gray-400">
+                  Showing {currentAnnotationComments.length} comments 
+                </CardDescription>
+              </CardHeader>
+
+              <CardContent>
+                {/* Comment Searchbar */}
+                <div className="flex justify-between items-center">
+                  <input 
+                    type="text" placeholder="Search comments" 
+                    className="border border-[#333] dark:border-[#333] bg-[#111] p-1 w-[80%]" 
+                    onChange={(e) => handleSearchComments(e.target.value)}
+                  />
+                  <Button className="bg-blue-500 border-blue-500 border-2 text-white p-1 py-0 my-0 hover:bg-blue-600 hover:cursor-pointer">
+                    Search
+                  </Button>
+                </div>
+              
+                <div className="flex flex-col">
+                  {/* Flat map on selections */}
+                  {currentAnnotationComments
+                    .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
+                    .filter((selection) => selection.show)
+                    .map((selection, index) => 
+                      {
+                        const aestheticValue = extractSelectionFieldValue(selection.aestheticValue)
+                        const functionValue = extractSelectionFieldValue(selection.functionValue)
+                        return (
+                        <div key={index} className="flex flex-col gap-2">
+                          <Button 
+                            size='lg'
+                            className={cn(
+                              "flex flex-row justify-start w-[100%] py-2 my-1",
+                              "hover:bg-[#333] hover:cursor-pointer",
+                              "border-2 border-transparent",
+                              // odd bg color
+                              { "bg-[#171717]": index % 2 === 0 },
+                              // even bg color
+                              { "bg-[#1d1d1d]": index % 2 !== 0 },
+                              { "border-2 border-blue-500": activeComment === selection.uid }
+                            )}
+                            onClick={() => setActiveComment(selection.uid)}
+                          >
                             <div className='flex w-[100%] justify-between gap-2'>
                               <div className='w-[80%]'>
-                                <div className="flex justify-start">
-                                  {selection.functionValue ? '👍' : '👎'} <b>Functional</b> &nbsp; Architect
+                                <div className="flex justify-start gap-2 ">
+                                  <span>Architect</span> |
+                                  <span>{functionValue} <b>Functional</b></span> |
+                                  <span>{aestheticValue} <b>Aesthetic</b></span> 
                                 </div>
                                 <div className="flex justify-start text-sm text-gray-400 break-words">
                                   {selection.comment.slice(0, 40)}
@@ -688,43 +763,15 @@ function App() {
                                 4 days ago
                               </div>
                             </div>
-                          }
+                          </Button>
+                        </div>
+                    )})}
+                </div>
+              </CardContent>
+            </Card>
 
-                        </Button>
-                        <Button 
-                          className={cn(
-                            "flex flex-row justify-start w-[100%] border-t p-2 border-[#444]",
-                            "hover:bg-[#333] hover:cursor-pointer",
-                            { "bg-[#333]": activeComment === selection.uid }
-                          )}
-                          onClick={() => setActiveComment(selection.uid)}
-                        >
-                          {
-                            selection.aestheticValue !== null &&
-                            <div className='flex w-[100%] justify-between gap-2'>
-                              <div className='w-[80%]'>
-                                <div className="flex justify-start">
-                                  {selection.aestheticValue ? '👍' : '👎'} <b>Aesthetic</b> &nbsp; Designer
-                                </div>
-                                <div className="flex justify-start text-sm text-gray-400 break-words">
-                                  {selection.comment.slice(0, 40)}
-                                </div>
-                              </div>
-                              <div className="text-sm text-gray-400 w-[20%]">
-                              10 days ago
-                            </div>
-                          </div>
-                          }
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-            </div>
-          </ResizablePanel>
-        }
+          </div>
+        </ResizablePanel>
       </ResizablePanelGroup>
 
     </>

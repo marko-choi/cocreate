@@ -47,6 +47,13 @@ export function generateRandomString(length: number): string {
   return btoa(Array.from({ length }, () => String.fromCharCode(getRandomBoundedInt(65, 90))).join('')) 
 }
 
+const IMAGE_NAMES = [
+  "Topik",
+  "Mosque",
+  "Landscape",
+  "Nature",
+  "City",
+]
 
 
 /**
@@ -69,27 +76,28 @@ export const generateCoCreateData = (
 ) => {
 
   const annotations: Annotation[] = []
-  const totalNumQuestions = numQuestions
-  for (let i = 0; i < totalNumQuestions; i++) {
+  for (let i = 0; i < numQuestions; i++) {
     
     const questionId = i
     const numAnnotations = getRandomBoundedInt(1, maxAnnotation)
 
-    const imageNumber = getRandomBoundedInt(1, pictureRange)
-    const imagePath = `../rendering${imageNumber}.jpg`
+    var imageNumber = getRandomBoundedInt(1, pictureRange)
+    var imageName = IMAGE_NAMES[imageNumber % IMAGE_NAMES.length]
+    var imagePath = `../rendering${imageNumber}.jpg`
 
     
     var selectionNum = 1
-    for (let z = 0; z < totalNumQuestions; z++) {
-      for (let j = 0; j < numAnnotations; j++) {
-        const image = ""
+    for (let z = 0; z < numAnnotations; z++) {
+      // for (let j = 0; j < numAnnotations; j++) {
+        const image = "" // "data:image/jpeg;base64," + decodeBase64Image(imagePath)
         const selections = generateSelections(selectionNum, minSelectionPerAnnotation, maxSelectionPerAnnotation, imageSize)
         const scaleFactor = getRandomBoundedFloat(0.5, 2)   
-        annotations.push({ questionId, selections, image, imagePath, scaleFactor })
+        annotations.push({ imageName, questionId, selections, image, imagePath, scaleFactor })
         selectionNum++
-      }
+      // }
     }
   }
+  console.log(annotations)
   return annotations
 }
 
@@ -110,6 +118,8 @@ export const generateSelections = (
     const numSelections = getRandomBoundedInt(minSelectionPerAnnotation, maxSelectionPerAnnotation)
     var commentNum = 1
     for (let i = 0; i < numSelections; i++) {
+      
+      const uid = generateRandomString(8)
       const start = { x: getRandomFloat(imageSize[0]), y: getRandomFloat(imageSize[1]) }
       const end = { x: getRandomBoundedFloat(start.x, imageSize[0]), y: getRandomBoundedFloat(start.y, imageSize[1]) }
       
@@ -121,7 +131,9 @@ export const generateSelections = (
 
       const comment = `Selection-Comment ${selectionNum}-${commentNum} ${generateRandomString(2)}`
       commentNum++
-      selections.push({ start, end, functionValue, aestheticValue, comment })
+      
+      selections.push({ uid, start, end, functionValue, aestheticValue, comment })
+
     }
     return selections
   }
