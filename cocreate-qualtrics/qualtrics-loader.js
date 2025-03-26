@@ -74,7 +74,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		console.log("loading css")
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
 
-		const questionImage = document.querySelector('.question-display')
+		const questionImage = document.querySelector('.question-display img')
 		console.log("questionImage", questionImage)
 		if (questionImage) {
 			questionImage.style.display = 'none';
