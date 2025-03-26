@@ -93,7 +93,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 			const rootDiv = document.querySelector('#cocreate-root');
 			if (rootDiv) {
-				rootDiv.style.display = 'flex';
+				// rootDiv.style.display = 'flex';
 				rootDiv.style.alignItems = 'center';
 				rootDiv.style.justifyContent = 'center';
 				rootDiv.style.overflow = 'visible';
