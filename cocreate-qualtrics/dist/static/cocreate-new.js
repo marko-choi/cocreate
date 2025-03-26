@@ -14969,7 +14969,7 @@ const Canvas = () => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", style: { display: "absolute" }, children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
       {
