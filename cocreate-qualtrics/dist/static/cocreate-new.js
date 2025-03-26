@@ -14637,7 +14637,7 @@ const Canvas = () => {
     const scaleFactor = imageHeight / originalImageHeight;
     console.log(img);
     console.log(
-      "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\nScreen Height: " + screenHeight + "\nImage Scale Factor: " + scaleFactor + "\nResized Canvas Width: " + width2 + " Resized Canvas Height: " + height2 + "\nImage Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
+      "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\nScreen Height: " + screenHeight + "\nImage Scale Factor: " + scaleFactor + "\nAspect Ratio: " + aspectRatio + "\nResized Canvas Width: " + width2 + " Resized Canvas Height: " + height2 + "\nImage Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
     );
     setCanvasWidth(width2);
     setCanvasHeight(height2);
@@ -14685,7 +14685,7 @@ const Canvas = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
   reactExports.useEffect(() => {
-    console.log("IÍnitializing canvas dimensions");
+    console.log("Initializing canvas dimensions");
     const questionBodyImage = document.querySelector("#question-QID1 img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("Scraping image from question body");
