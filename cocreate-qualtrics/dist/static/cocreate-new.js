@@ -14624,6 +14624,9 @@ const Canvas = () => {
     localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
   }, [selections]);
   const initCanvasDimensions = (img) => {
+    console.log("Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    console.log("Window" + window);
+    console.log("Window inner height: " + window.innerHeight);
     const screenHeight = window.innerHeight;
     const originalImageHeight = img.naturalHeight;
     const imageHeight = img.height;
@@ -14686,6 +14689,7 @@ const Canvas = () => {
     const questionBodyImage = document.querySelector("#question-QID1 img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("Scraping image from question body");
+      console.log("Question Body Image: " + questionBodyImage);
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       var loadedImage = void 0;
       while (!loadedImage) {
