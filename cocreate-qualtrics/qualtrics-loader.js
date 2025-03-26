@@ -79,6 +79,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		if (questionImage) {
 			questionImage.style.display = 'none';
 			questionImage.style.maxHeight = '85vh';
+			console.log("Updated question image")
 		}
 
 		if (questionContainer) {
