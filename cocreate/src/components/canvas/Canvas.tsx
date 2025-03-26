@@ -68,6 +68,9 @@ const Canvas: React.FC = () => {
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
 
+    console.log("Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    console.log("Window" + window);
+    console.log("Window inner height: " + window.innerHeight);
     const screenHeight = window.innerHeight;
     const originalImageHeight = img.naturalHeight;
     
