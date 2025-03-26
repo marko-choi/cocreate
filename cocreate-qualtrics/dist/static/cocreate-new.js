@@ -6797,6 +6797,9 @@ function requireReactDom_production_min() {
     hl(a, b);
     (a = a.alternate) && hl(a, b);
   }
+  function jl() {
+    return null;
+  }
   var kl = "function" === typeof reportError ? reportError : function(a) {
     console.error(a);
   };
@@ -6969,7 +6972,7 @@ function requireReactDom_production_min() {
   var ul = { bundleType: tl.bundleType, version: tl.version, rendererPackageName: tl.rendererPackageName, rendererConfig: tl.rendererConfig, overrideHookState: null, overrideHookStateDeletePath: null, overrideHookStateRenamePath: null, overrideProps: null, overridePropsDeletePath: null, overridePropsRenamePath: null, setErrorHandler: null, setSuspenseHandler: null, scheduleUpdate: null, currentDispatcherRef: ua.ReactCurrentDispatcher, findHostInstanceByFiber: function(a) {
     a = Zb(a);
     return null === a ? null : a.stateNode;
-  }, findFiberByHostInstance: tl.findFiberByHostInstance, findHostInstancesForRefresh: null, scheduleRefresh: null, scheduleRoot: null, setRefreshHandler: null, getCurrentFiber: null, reconcilerVersion: "18.3.1-next-f1338f8080-20240426" };
+  }, findFiberByHostInstance: tl.findFiberByHostInstance || jl, findHostInstancesForRefresh: null, scheduleRefresh: null, scheduleRoot: null, setRefreshHandler: null, getCurrentFiber: null, reconcilerVersion: "18.3.1-next-f1338f8080-20240426" };
   if ("undefined" !== typeof __REACT_DEVTOOLS_GLOBAL_HOOK__) {
     var vl = __REACT_DEVTOOLS_GLOBAL_HOOK__;
     if (!vl.isDisabled && vl.supportsFiber) try {
@@ -9761,7 +9764,7 @@ var jsx = function jsx2(type, props) {
   var JSX;
   /* @__PURE__ */ (function(_JSX) {
   })(JSX || (JSX = _jsx.JSX || (_jsx.JSX = {})));
-})(jsx);
+})(jsx || (jsx = {}));
 function css() {
   for (var _len = arguments.length, args = new Array(_len), _key = 0; _key < _len; _key++) {
     args[_key] = arguments[_key];
@@ -10049,7 +10052,7 @@ tags.forEach(function(tagName) {
   newStyled[tagName] = newStyled(tagName);
 });
 /**
- * @mui/styled-engine v6.4.0
+ * @mui/styled-engine v6.4.3
  *
  * @license MIT
  * This source code is licensed under the MIT license found in the
@@ -10730,7 +10733,7 @@ const assignNestedKeys = (obj, keys, value, arrayKeys = []) => {
 const walkObjectDeep = (obj, callback, shouldSkipPaths) => {
   function recurse(object, parentKeys = [], arrayKeys = []) {
     Object.entries(object).forEach(([key, value]) => {
-      if (!shouldSkipPaths || !shouldSkipPaths([...parentKeys, key])) {
+      if (!shouldSkipPaths || shouldSkipPaths && !shouldSkipPaths([...parentKeys, key])) {
         if (value !== void 0 && value !== null) {
           if (typeof value === "object" && Object.keys(value).length > 0) {
             recurse(value, [...parentKeys, key], Array.isArray(value) ? [...arrayKeys, key] : arrayKeys);
@@ -10979,99 +10982,47 @@ const grey = {
 };
 const purple = {
   50: "#f3e5f5",
-  100: "#e1bee7",
   200: "#ce93d8",
   300: "#ba68c8",
   400: "#ab47bc",
   500: "#9c27b0",
-  600: "#8e24aa",
-  700: "#7b1fa2",
-  800: "#6a1b9a",
-  900: "#4a148c",
-  A100: "#ea80fc",
-  A200: "#e040fb",
-  A400: "#d500f9",
-  A700: "#aa00ff"
+  700: "#7b1fa2"
 };
 const red = {
-  50: "#ffebee",
-  100: "#ffcdd2",
-  200: "#ef9a9a",
   300: "#e57373",
   400: "#ef5350",
   500: "#f44336",
-  600: "#e53935",
   700: "#d32f2f",
-  800: "#c62828",
-  900: "#b71c1c",
-  A100: "#ff8a80",
-  A200: "#ff5252",
-  A400: "#ff1744",
-  A700: "#d50000"
+  800: "#c62828"
 };
 const orange = {
-  50: "#fff3e0",
-  100: "#ffe0b2",
-  200: "#ffcc80",
   300: "#ffb74d",
   400: "#ffa726",
   500: "#ff9800",
-  600: "#fb8c00",
   700: "#f57c00",
-  800: "#ef6c00",
-  900: "#e65100",
-  A100: "#ffd180",
-  A200: "#ffab40",
-  A400: "#ff9100",
-  A700: "#ff6d00"
+  900: "#e65100"
 };
 const blue = {
   50: "#e3f2fd",
-  100: "#bbdefb",
   200: "#90caf9",
-  300: "#64b5f6",
   400: "#42a5f5",
-  500: "#2196f3",
-  600: "#1e88e5",
   700: "#1976d2",
-  800: "#1565c0",
-  900: "#0d47a1",
-  A100: "#82b1ff",
-  A200: "#448aff",
-  A400: "#2979ff",
-  A700: "#2962ff"
+  800: "#1565c0"
 };
 const lightBlue = {
-  50: "#e1f5fe",
-  100: "#b3e5fc",
-  200: "#81d4fa",
   300: "#4fc3f7",
   400: "#29b6f6",
   500: "#03a9f4",
-  600: "#039be5",
   700: "#0288d1",
-  800: "#0277bd",
-  900: "#01579b",
-  A100: "#80d8ff",
-  A200: "#40c4ff",
-  A400: "#00b0ff",
-  A700: "#0091ea"
+  900: "#01579b"
 };
 const green = {
-  50: "#e8f5e9",
-  100: "#c8e6c9",
-  200: "#a5d6a7",
   300: "#81c784",
   400: "#66bb6a",
   500: "#4caf50",
-  600: "#43a047",
   700: "#388e3c",
   800: "#2e7d32",
-  900: "#1b5e20",
-  A100: "#b9f6ca",
-  A200: "#69f0ae",
-  A400: "#00e676",
-  A700: "#00c853"
+  900: "#1b5e20"
 };
 function getLight() {
   return {
@@ -12358,7 +12309,7 @@ function _objectWithoutPropertiesLoose(r2, e) {
   if (null == r2) return {};
   var t = {};
   for (var n in r2) if ({}.hasOwnProperty.call(r2, n)) {
-    if (e.includes(n)) continue;
+    if (-1 !== e.indexOf(n)) continue;
     t[n] = r2[n];
   }
   return t;
@@ -14731,8 +14682,8 @@ const Canvas = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
   reactExports.useEffect(() => {
-    console.log("Initializing canvas dimensions");
-    const questionBodyImage = document.querySelector(".QuestionText img");
+    console.log("IÍnitializing canvas dimensions");
+    const questionBodyImage = document.querySelector("#question-QID1 img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("Scraping image from question body");
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
@@ -15116,7 +15067,7 @@ const App = () => {
   );
 };
 function mountApp() {
-  const rootElement = document.getElementById("root");
+  const rootElement = document.getElementById("cocreate-root");
   console.log("Checking for root element");
   if (rootElement) {
     clientExports.createRoot(rootElement).render(

@@ -4,7 +4,7 @@ import App from './App.tsx';
 
 // Function to ensure the #root element exists before rendering
 function mountApp() {
-  const rootElement = document.getElementById('root');
+  const rootElement = document.getElementById('cocreate-root');
   console.log("Checking for root element")
   
   if (rootElement) {

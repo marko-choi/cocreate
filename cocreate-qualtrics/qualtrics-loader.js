@@ -83,7 +83,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		if (questionContainer) {
 
 			let appContainer = document.createElement('div');
-			appContainer.id = 'root';
+			appContainer.id = 'cocreate-root';
 
 			// if (questionButton) {
 			// 	questionContainer.insertBefore(appContainer, questionButton);
@@ -91,7 +91,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			questionContainer.appendChild(appContainer);
 			// }
 
-			const rootDiv = document.querySelector('#root');
+			const rootDiv = document.querySelector('#cocreate-root');
 			if (rootDiv) {
 				rootDiv.style.display = 'flex';
 				rootDiv.style.alignItems = 'center';

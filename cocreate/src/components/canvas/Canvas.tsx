@@ -155,8 +155,8 @@ const Canvas: React.FC = () => {
   }, [imageDimensions]);
 
   useEffect(() => {
-    console.log("Initializing canvas dimensions");
-    const questionBodyImage = document.querySelector(".QuestionText img");
+    console.log("IÍnitializing canvas dimensions");
+    const questionBodyImage = document.querySelector("#question-QID1 img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
       console.log("Scraping image from question body");
