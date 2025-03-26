@@ -74,12 +74,21 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		console.log("loading css")
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
 
+		// image via text
 		const questionImage = document.querySelector('.question-display img')
 		console.log("questionImage", questionImage)
 		if (questionImage) {
 			questionImage.style.display = 'none';
-			questionImage.style.maxHeight = '85vh';
+			// questionImage.style.maxHeight = '85vh';
 			console.log("Updated question image")
+		}
+
+		// image via graphics
+		const questionGraphics = document.querySelector('.question-content img')
+		console.log("questionGraphics", questionGraphics)
+		if (questionGraphics) {
+			questionGraphics.style.display = 'none';
+			console.log("Updated question graphics")
 		}
 
 		if (questionContainer) {
