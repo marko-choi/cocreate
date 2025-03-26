@@ -75,6 +75,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
 
 		const questionImage = document.querySelector('#question-display-QID1 img')
+		console.log("questionImage", questionImage)
 		if (questionImage) {
 			questionImage.style.display = 'none';
 			questionImage.style.maxHeight = '85vh';
