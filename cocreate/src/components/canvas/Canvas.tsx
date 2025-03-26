@@ -160,6 +160,7 @@ const Canvas: React.FC = () => {
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
       console.log("Scraping image from question body");
+      console.log("Question Body Image: " + questionBodyImage);
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
 
       // find image with classname rendering-image
