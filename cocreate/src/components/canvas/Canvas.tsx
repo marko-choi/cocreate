@@ -89,6 +89,7 @@ const Canvas: React.FC = () => {
       "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\n" +
       "Screen Height: " + screenHeight + "\n" +
       "Image Scale Factor: " + scaleFactor + "\n" +
+      "Aspect Ratio: " + aspectRatio + "\n" +
       "Resized Canvas Width: " + width + " Resized Canvas Height: " + height + "\n" +
       "Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
     );
@@ -158,7 +159,7 @@ const Canvas: React.FC = () => {
   }, [imageDimensions]);
 
   useEffect(() => {
-    console.log("IÍnitializing canvas dimensions");
+    console.log("Initializing canvas dimensions");
     const questionBodyImage = document.querySelector("#question-QID1 img");
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
