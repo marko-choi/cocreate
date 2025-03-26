@@ -14625,7 +14625,7 @@ const Canvas = () => {
   }, [selections]);
   const initCanvasDimensions = (img) => {
     console.log("Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
-    console.log("Window" + window);
+    console.log("Window" + JSON.stringify(window));
     console.log("Window inner height: " + window.innerHeight);
     const screenHeight = window.innerHeight;
     const originalImageHeight = img.naturalHeight;
