@@ -31,6 +31,7 @@ function loadResource(url, resourceType) {
 			element.onload = resolve;
 			element.onerror = reject;
 			document.head.appendChild(element);
+			console.log("[Qualtrics Loader] Loaded resource:", url);
 	});
 }
 
@@ -38,7 +39,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
-	console.log("[Cocreate] QuestionData:", questionData)
+	console.log("[Qualtrics Loader] QuestionData:", questionData)
 
 	if (questionContainer) { 
 		questionContainer.style.overflow = 'visible';
@@ -86,26 +87,26 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	
 	try {
 
-		console.log("[Cocreate] loading script")
+		console.log("[Qualtrics Loader] loading script")
 		await loadResource(qualtricsResources[0], 'script'); // Load React App
-		console.log("[Cocreate] loading css")
+		console.log("[Qualtrics Loader] loading css")
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
 
 		// image via text
 		// const questionImage = document.querySelector('.question-display img')
-		// console.log("[Cocreate] questionImage", questionImage)
+		// console.log("[Qualtrics Loader] questionImage", questionImage)
 		// if (questionImage) {
 		// 	questionImage.style.display = 'none';
 		// 	// questionImage.style.maxHeight = '85vh';
-		// 	console.log("[Cocreate] Updated question image")
+		// 	console.log("[Qualtrics Loader] Updated question image")
 		// }
 
 		// image via graphics
 		const questionGraphics = document.querySelector('.question-content img')
-		console.log("[Cocreate] questionGraphics", questionGraphics)
+		console.log("[Qualtrics Loader] questionGraphics", questionGraphics)
 		if (questionGraphics) {
 			questionGraphics.style.display = 'none';
-			console.log("[Cocreate] Updated question graphics")
+			console.log("[Qualtrics Loader] Updated question graphics")
 		}
 
 		if (questionContainer) {
@@ -131,17 +132,17 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 			console.log('React app loaded!');
 		} else {
-			console.error("[Cocreate] Unable to find the QuestionBody container.")
+			console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
 		}
 
 	} catch (error) {
-		console.error("[Cocreate] Error loading resources:", error);
+		console.error("[Qualtrics Loader] Error loading resources:", error);
 	}
 }
 
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
-	console.log("[Cocreate] qualtricsSurveyEngine", qualtricsSurveyEngine)
-	console.log("[Cocreate] type", type)
+	console.log("[Qualtrics Loader] qualtricsSurveyEngine", qualtricsSurveyEngine)
+	console.log("[Qualtrics Loader] type", type)
 	if (type == "next") {
 		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
 		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
@@ -155,9 +156,9 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		}
 
 		if (selections) {
-			console.log("[Cocreate] Selections data:", selections);
+			console.log("[Qualtrics Loader] Selections data:", selections);
 		} else {
-			console.error("[Cocreate] No selections data found in localStorage.");
+			console.error("[Qualtrics Loader] No selections data found in localStorage.");
 		}
 
 		// Extract image as a png image
