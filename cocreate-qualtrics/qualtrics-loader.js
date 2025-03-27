@@ -18,7 +18,6 @@ function loadResource(url, resourceType) {
 
 			if (document.querySelector(selector)) {
 				// remove it
-				console.log("[Qualtrics Loader] Removing resource:", url);
 				const element = document.querySelector(selector);
 				if (element) {
 					element.remove();
@@ -189,5 +188,6 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		qualtricsSurveyEngine.setJSEmbeddedData("questionId", questionId)
 		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(selections))
 		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(metadata))
+		unmountApp();
 	}
 }

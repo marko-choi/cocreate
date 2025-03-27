@@ -374,12 +374,6 @@ function requireJsxRuntime() {
   return jsxRuntime.exports;
 }
 var jsxRuntimeExports = requireJsxRuntime();
-var reactExports = requireReact();
-const React = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
-const React$1 = /* @__PURE__ */ _mergeNamespaces({
-  __proto__: null,
-  default: React
-}, [reactExports]);
 var client = {};
 var reactDom = { exports: {} };
 var reactDom_production_min = {};
@@ -7082,6 +7076,12 @@ function requireClient() {
   return client;
 }
 var clientExports = requireClient();
+var reactExports = requireReact();
+const React = /* @__PURE__ */ getDefaultExportFromCjs(reactExports);
+const React$1 = /* @__PURE__ */ _mergeNamespaces({
+  __proto__: null,
+  default: React
+}, [reactExports]);
 var reactIs$1 = { exports: {} };
 var reactIs_production = {};
 /**
@@ -15076,18 +15076,14 @@ const App = () => {
     }
   );
 };
+let rootInstance = null;
 function mountApp() {
   const rootElement = document.getElementById("cocreate-root");
-  console.log("Checking for root element:", rootElement);
+  console.log("[Cocreate] Checking for root element:", rootElement);
   if (rootElement) {
-    console.log("Unmounting previous React app");
-    if (rootElement._reactRootContainer) {
-      rootElement._reactRootContainer.unmount();
-    }
-    clientExports.createRoot(rootElement).render(
-      /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
-    );
-    console.log("React app mounted!");
+    rootInstance = clientExports.createRoot(rootElement);
+    rootInstance.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
+    console.log("[Cocreate] React app mounted!");
   } else {
     setTimeout(mountApp, 50);
   }
