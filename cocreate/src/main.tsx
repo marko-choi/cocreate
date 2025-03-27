@@ -4,10 +4,17 @@ import App from './App.tsx';
 
 // Function to ensure the #root element exists before rendering
 function mountApp() {
-  const rootElement = document.getElementById('cocreate-root');
-  console.log("Checking for root element")
-  
+  const rootElement = document.getElementById('cocreate-root') as any;
+  console.log("Checking for root element");
+
   if (rootElement) {
+    // Unmount previous app if it exists
+    console.log('Unmounting previous React app');
+    if (rootElement._reactRootContainer) {
+      rootElement._reactRootContainer.unmount(); // Clean up before remounting
+    }
+
+    // Mount the app
     createRoot(rootElement).render(
       <StrictMode>
         <App />
