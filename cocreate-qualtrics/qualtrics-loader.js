@@ -188,6 +188,5 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		qualtricsSurveyEngine.setJSEmbeddedData("questionId", questionId)
 		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(selections))
 		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(metadata))
-		unmountApp();
 	}
 }
