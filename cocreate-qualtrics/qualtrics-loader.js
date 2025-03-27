@@ -1,4 +1,4 @@
-const qualtricsResources = [
+let qualtricsResources = [
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/ndex-DcZ2BxwU.css'
 ];
@@ -146,14 +146,14 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		const canvas = document.querySelector('canvas')
 		if (canvas) {
 			const imageData = canvas.toDataURL("image/png")
-			qualtricsSurveyEngine.setEmbeddedData("image", imageData);
+			qualtricsSurveyEngine.setJSEmbeddedData("image", imageData);
 		} else {
-			qualtricsSurveyEngine.setEmbeddedData("image", null);
+			qualtricsSurveyEngine.setJSEmbeddedData("image", null);
 		}
 
 		// Store question ID and selections
-		qualtricsSurveyEngine.setEmbeddedData("questionId", questionId)
-		qualtricsSurveyEngine.setEmbeddedData("selectionsData", JSON.stringify(selections))
-		qualtricsSurveyEngine.setEmbeddedData("metadata", JSON.stringify(metadata))
+		qualtricsSurveyEngine.setJSEmbeddedData("questionId", questionId)
+		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(selections))
+		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(metadata))
 	}
 }
