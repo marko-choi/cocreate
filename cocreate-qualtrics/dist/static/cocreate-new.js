@@ -14968,7 +14968,7 @@ const Canvas = () => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", style: { display: "absolute", height: "100%" }, children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", style: { height: "100%" }, children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
       {
@@ -14977,7 +14977,7 @@ const Canvas = () => {
         className: "rendering-image",
         style: {
           // maxWidth: MAX_IMAGE_WIDTH, 
-          maxHeight: "80vh",
+          maxHeight: "100%",
           width: "auto",
           display: "block"
         }
@@ -15063,7 +15063,8 @@ const App = () => {
       style: {
         display: "flex",
         justifyContent: "center",
-        alignItems: "center"
+        alignItems: "center",
+        height: "100%"
       },
       children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {})
     }
