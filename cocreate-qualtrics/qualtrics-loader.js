@@ -1,6 +1,6 @@
 const qualtricsResources = [
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CacrYfD-.css'
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/ndex-DcZ2BxwU.css'
 ];
 
 
@@ -129,6 +129,12 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
 		const questionInfo = pageInfo.getQuestionInfo()
 		const questionId = questionInfo.QuestionID
+
+		// Destroy the main container #cocreate-root
+		const rootDiv = document.querySelector('#cocreate-root');
+		if (rootDiv) {
+			rootDiv.remove();
+		}
 
 		if (selections) {
 			console.log('Selections data:', selections);
