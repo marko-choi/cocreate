@@ -1,4 +1,4 @@
-const qualtricsResources = [
+let qualtricsResources = [
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
 ];
@@ -17,10 +17,12 @@ function loadResource(url, resourceType) {
 				: `link[href="${url}"]`;
 
 			if (document.querySelector(selector)) {
+				console.log("[Qualtrics Loader] Removing resource:", url);
 				// remove it
 				const element = document.querySelector(selector);
 				if (element) {
 					element.remove();
+					console.log("[Qualtrics Loader] Removed resource:", element);
 				}
 			}
 
