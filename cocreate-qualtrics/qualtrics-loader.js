@@ -18,6 +18,7 @@ function loadResource(url, resourceType) {
 
 			if (document.querySelector(selector)) {
 				// remove it
+				console.log("[Qualtrics Loader] Removing resource:", url);
 				const element = document.querySelector(selector);
 				if (element) {
 					element.remove();
