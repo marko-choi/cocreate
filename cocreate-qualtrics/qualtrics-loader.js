@@ -150,10 +150,19 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		}
 
 		// Extract image as a png image
-		const canvas = document.querySelector('canvas')
-		if (canvas) {
-			const imageData = canvas.toDataURL("image/png")
-			qualtricsSurveyEngine.setJSEmbeddedData("image", imageData);
+		// const canvas = document.querySelector('canvas')
+		// if (canvas) {
+		// 	const imageData = canvas.toDataURL("image/png")
+		// 	qualtricsSurveyEngine.setJSEmbeddedData("image", imageData);
+		// } else {
+		// 	qualtricsSurveyEngine.setJSEmbeddedData("image", null);
+		// }
+
+		// Extract the image as a link
+		const image = document.querySelector('.question-content img')
+		if (image) {
+			const imageLink = image.src
+			qualtricsSurveyEngine.setJSEmbeddedData("image", imageLink);
 		} else {
 			qualtricsSurveyEngine.setJSEmbeddedData("image", null);
 		}
