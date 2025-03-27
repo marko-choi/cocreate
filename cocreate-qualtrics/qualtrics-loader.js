@@ -17,7 +17,11 @@ function loadResource(url, resourceType) {
 				: `link[href="${url}"]`;
 
 			if (document.querySelector(selector)) {
-				return resolve();  // Resource already exists
+				// remove it
+				const element = document.querySelector(selector);
+				if (element) {
+					element.remove();
+				}
 			}
 
 			const element = document.createElement(resourceType);
