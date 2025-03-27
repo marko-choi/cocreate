@@ -14968,7 +14968,7 @@ const Canvas = () => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", style: { display: "absolute", maxHeight: "70vh" }, children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", style: { display: "absolute", height: "100%" }, children: [
     /* @__PURE__ */ jsxRuntimeExports.jsx(
       "img",
       {
