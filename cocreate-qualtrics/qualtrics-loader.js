@@ -92,13 +92,13 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
 
 		// image via text
-		const questionImage = document.querySelector('.question-display img')
-		console.log("[Cocreate] questionImage", questionImage)
-		if (questionImage) {
-			questionImage.style.display = 'none';
-			// questionImage.style.maxHeight = '85vh';
-			console.log("[Cocreate] Updated question image")
-		}
+		// const questionImage = document.querySelector('.question-display img')
+		// console.log("[Cocreate] questionImage", questionImage)
+		// if (questionImage) {
+		// 	questionImage.style.display = 'none';
+		// 	// questionImage.style.maxHeight = '85vh';
+		// 	console.log("[Cocreate] Updated question image")
+		// }
 
 		// image via graphics
 		const questionGraphics = document.querySelector('.question-content img')
@@ -152,6 +152,12 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		const rootDiv = document.querySelector('#cocreate-root');
 		if (rootDiv) {
 			rootDiv.remove();
+		}
+
+		// Remove the script tag
+		const scriptTag = document.querySelector('script[src="https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js"]');
+		if (scriptTag) {
+			scriptTag.remove();
 		}
 
 		if (selections) {
