@@ -154,12 +154,6 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 			rootDiv.remove();
 		}
 
-		// Remove the script tag
-		const scriptTag = document.querySelector('script[src="https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js"]');
-		if (scriptTag) {
-			scriptTag.remove();
-		}
-
 		if (selections) {
 			console.log("[Cocreate] Selections data:", selections);
 		} else {
