@@ -1,6 +1,6 @@
-let qualtricsResources = [
+const qualtricsResources = [
 	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/ndex-DcZ2BxwU.css'
+	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
 ];
 
 
