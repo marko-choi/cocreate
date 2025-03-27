@@ -4,23 +4,33 @@ const qualtricsResources = [
 ];
 
 
-function loadResource(url, type) {
+/**
+ * Load a resource from a URL
+ * @param {string} url - The URL of the resource to load
+ * @param {string} resourceType - The type of resource to load
+ * @returns {Promise} - A promise that resolves when the resource is loaded
+ */
+function loadResource(url, resourceType) {
 	return new Promise((resolve, reject) => {
-		let element;
-		if (type === 'script') {
-			element = document.createElement('script');
-			element.src = url;
-			element.async = true;
+			const selector = type === 'script'
+				? `script[src="${url}"]`
+				: `link[href="${url}"]`;
+
+			if (document.querySelector(selector)) {
+				return resolve();  // Resource already exists
+			}
+
+			const element = document.createElement(resourceType);
+
+			if (resourceType === 'script') {
+				Object.assign(element, { src: url, async: true });
+			} else {
+				Object.assign(element, { href: url, rel: 'stylesheet' });
+			}
+
 			element.onload = resolve;
 			element.onerror = reject;
-		} else if (type === 'link') {
-			element = document.createElement('link');
-			element.href = url;
-			element.rel = 'stylesheet';
-			element.onload = resolve;
-			element.onerror = reject;
-		}
-		document.head.appendChild(element);
+			document.head.appendChild(element);
 	});
 }
 
