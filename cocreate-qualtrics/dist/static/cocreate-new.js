@@ -15078,8 +15078,12 @@ const App = () => {
 };
 function mountApp() {
   const rootElement = document.getElementById("cocreate-root");
-  console.log("Checking for root element");
+  console.log("Checking for root element:", rootElement);
   if (rootElement) {
+    console.log("Unmounting previous React app");
+    if (rootElement._reactRootContainer) {
+      rootElement._reactRootContainer.unmount();
+    }
     clientExports.createRoot(rootElement).render(
       /* @__PURE__ */ jsxRuntimeExports.jsx(reactExports.StrictMode, { children: /* @__PURE__ */ jsxRuntimeExports.jsx(App, {}) })
     );
