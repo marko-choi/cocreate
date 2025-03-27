@@ -1,9 +1,3 @@
-let qualtricsResources = [
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
-];
-
-
 /**
  * Load a resource from a URL only if it is not already loaded
  * @param {string} url - The URL of the resource to load
@@ -42,6 +36,11 @@ function loadResource(url, resourceType) {
 }
 
 async function loadReactApp(qualtricsSurveyEngine) {
+
+	let qualtricsResources = [
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
+	];
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
@@ -147,6 +146,12 @@ async function loadReactApp(qualtricsSurveyEngine) {
 }
 
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
+
+	let qualtricsResources = [
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
+	];
+	
 	console.log("[Qualtrics Loader] qualtricsSurveyEngine", qualtricsSurveyEngine)
 	console.log("[Qualtrics Loader] type", type)
 	if (type == "next") {
