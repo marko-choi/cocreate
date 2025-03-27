@@ -595,7 +595,7 @@ const Canvas: React.FC = () => {
   // }, []);
 
   return (
-    <div className="canvas-container" style={{ display: 'absolute' }}>
+    <div className="canvas-container" style={{ display: 'absolute', maxHeight: "70vh" }}>
         <img
           src={imageSrc}
           alt="Rendering"
