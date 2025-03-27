@@ -172,8 +172,6 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		// Extract the image as a link
 		const image = document.querySelector('.question-content img')
 		if (image) {
-			// Show the image again
-			image.style.removeProperty('display');
 			const imageLink = image.src
 			qualtricsSurveyEngine.setJSEmbeddedData("image", imageLink);
 
