@@ -68,8 +68,8 @@ const Canvas: React.FC = () => {
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
 
-    console.log("Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
-    console.log("Window inner height: " + window.innerHeight);
+    console.log("[Cocreate] Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    console.log("[Cocreate] Window inner height: " + window.innerHeight);
     const screenHeight = window.innerHeight;
     const originalImageHeight = img.naturalHeight;
     
@@ -112,7 +112,7 @@ const Canvas: React.FC = () => {
     const height = Math.min(screenHeight, imageHeight);
     const aspectRatio = imageHeight / imageWidth;
     const width = height / aspectRatio;
-    console.log("Initializing canvas dimensions: " + width + ", " + height);
+    console.log("[Cocreate] Initializing canvas dimensions: " + width + ", " + height);
     setCanvasWidth(width);
     setCanvasHeight(height);
     
@@ -141,11 +141,11 @@ const Canvas: React.FC = () => {
       
       if (loadedImage instanceof HTMLImageElement) {
         if (loadedImage.complete) {
-          console.log("Image already loaded");
+          console.log("[Cocreate] Image already loaded");
           resizeCanvasDimensions(loadedImage);
         } else {
           loadedImage.addEventListener("load", function() {
-            console.log("Image loaded");
+            console.log("[Cocreate] Image loaded");
             console.log(this);
             resizeCanvasDimensions(this);
         });
@@ -158,30 +158,37 @@ const Canvas: React.FC = () => {
   }, [imageDimensions]);
 
   useEffect(() => {
-    console.log("Initializing canvas dimensions");
-    const questionBodyImage = document.querySelector("#question-QID1 img");
+    console.log("[Cocreate] Initializing canvas dimensions");
+    const rootContainer = document.querySelector("#cocreate-root")
+    if (!rootContainer) {
+      console.log("[Cocreate] No root container found");
+      return
+    }
+      
+    const questionId = rootContainer.getAttribute("data-question-id")
+    const questionBodyImage = document.querySelector(`#question-${questionId} img`);
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
-      console.log("Scraping image from question body");
-      console.log("Question Body Image: " + questionBodyImage);
+      console.log("[Cocreate] Scraping image from question body");
+      console.log("[Cocreate] Question Body Image: " + questionBodyImage);
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
 
       // find image with classname rendering-image
       var loadedImage = undefined
       while (!loadedImage) {
         loadedImage = document.querySelector(".rendering-image");
-        console.log("Waiting for rendering image to load");
+        console.log("[Cocreate] Waiting for rendering image to load");
       }
       if (loadedImage instanceof HTMLImageElement) {
         // Wait for the image to load before calling initCanvasDimensions
         if (loadedImage.complete) {
             // The image is already loaded
-            console.log("Image already loaded");
+            console.log("[Cocreate] Image already loaded");
             initCanvasDimensions(loadedImage);
         } else {
             // Add an event listener to handle when the image finishes loading
             loadedImage.addEventListener("load", function() {
-                console.log("Image loaded");
+                console.log("[Cocreate] Image loaded");
                 initCanvasDimensions(this);
             });
         }

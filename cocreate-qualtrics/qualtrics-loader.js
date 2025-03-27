@@ -102,6 +102,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 			let appContainer = document.createElement('div');
 			appContainer.id = 'cocreate-root';
+			appContainer.dataset.questionId = questionData.QuestionID;
 
 			// if (questionButton) {
 			// 	questionContainer.insertBefore(appContainer, questionButton);
