@@ -12,7 +12,7 @@ const qualtricsResources = [
  */
 function loadResource(url, resourceType) {
 	return new Promise((resolve, reject) => {
-			const selector = type === 'script'
+			const selector = resourceType === 'script'
 				? `script[src="${url}"]`
 				: `link[href="${url}"]`;
 
