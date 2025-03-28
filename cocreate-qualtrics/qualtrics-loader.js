@@ -39,7 +39,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 	let qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DJdpblcO.css'
 	];
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
@@ -146,12 +146,6 @@ async function loadReactApp(qualtricsSurveyEngine) {
 }
 
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
-
-	let qualtricsResources = [
-		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
-	];
-
 	console.log("[Qualtrics Loader] qualtricsSurveyEngine", qualtricsSurveyEngine)
 	console.log("[Qualtrics Loader] type", type)
 	if (type == "next") {
