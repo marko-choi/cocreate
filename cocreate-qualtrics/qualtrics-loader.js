@@ -37,15 +37,6 @@ function loadResource(url, resourceType) {
 
 async function loadReactApp(qualtricsSurveyEngine) {
 
-	// Create root if not exists
-	const questionBlockContainer = document.querySelector('.question-block-container');
-	const rootElement = document.querySelector('#cocreate-root');
-	if (!rootElement) {
-		const root = document.createElement('div');
-		root.id = 'cocreate-root';
-		document.body.appendChild(root);
-	}
-
 	let qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DJdpblcO.css'
@@ -117,17 +108,8 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 		if (questionContainer) {
 
-				// image via graphics
-				const questionGraphics = questionContainer.querySelector('.question-content img')
-				console.log("[Qualtrics Loader] questionGraphics", questionGraphics)
-				if (questionGraphics) {
-					questionGraphics.style.display = 'none';
-					console.log("[Qualtrics Loader] Updated question graphics")
-				}
-
-
-			let appContainer = questionContainer.createElement('div');
-			appContainer.id = 'cocreate-question-root';
+			let appContainer = document.createElement('div');
+			appContainer.id = 'cocreate-root';
 			appContainer.dataset.questionId = questionData.QuestionID;
 
 			// if (questionButton) {
@@ -136,8 +118,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			questionContainer.appendChild(appContainer);
 			// }
 
-
-			const rootDiv = questionContainer.querySelector('#cocreate-question-root');
+			const rootDiv = document.querySelector('#cocreate-root');
 			if (rootDiv) {
 				rootDiv.style.display = 'flex';
 				rootDiv.style.alignItems = 'center';
@@ -166,7 +147,7 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		const questionId = questionInfo.QuestionID
 
 		// Destroy the main container #cocreate-root
-		const rootDiv = questionContainer.querySelector('#cocreate-root');
+		const rootDiv = document.querySelector('#cocreate-root');
 		if (rootDiv) {
 			rootDiv.remove();
 		}
