@@ -15076,16 +15076,27 @@ const App = () => {
     }
   );
 };
-let rootInstance = null;
-function mountApp() {
-  const rootElement = document.getElementById("cocreate-root");
-  console.log("[Cocreate] Checking for root element:", rootElement);
-  if (rootElement) {
-    rootInstance = clientExports.createRoot(rootElement);
-    rootInstance.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
-    console.log("[Cocreate] React app mounted!");
-  } else {
-    setTimeout(mountApp, 50);
-  }
+const observeAndRenderCocreate = () => {
+  const observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.type === "childList") {
+        const rootElement2 = document.querySelector("#cocreate-root");
+        if (rootElement2 && !rootElement2.hasAttribute("data-react-mounted")) {
+          const root = clientExports.createRoot(rootElement2);
+          root.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
+          rootElement2.setAttribute("data-react-mounted", "true");
+        }
+      }
+    }
+  });
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true
+  });
+};
+const rootElement = document.querySelector("#cocreate-root");
+if (rootElement) {
+  const root = clientExports.createRoot(rootElement);
+  root.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
 }
-mountApp();
+observeAndRenderCocreate();
