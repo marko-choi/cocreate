@@ -14887,6 +14887,7 @@ const Canvas = () => {
     setSelectionEnd(null);
   };
   const openPictureSelectionFeedback = (e) => {
+    console.log("Opening picture-wide selection feedback");
     setIsEnteringFeedback(true);
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
@@ -14897,6 +14898,8 @@ const Canvas = () => {
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
       const mouseCoordinates = getMouseCoordinates(e);
+      mouseCoordinates.x -= imageOffset.x;
+      mouseCoordinates.y -= imageOffset.y;
       setActiveSelectionIndex(pictureSelectionIndex);
       setTooltipPosition(mouseCoordinates);
       setIsSelecting(false);

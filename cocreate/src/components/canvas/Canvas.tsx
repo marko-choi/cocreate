@@ -440,7 +440,7 @@ const Canvas: React.FC = () => {
   };
 
   const openPictureSelectionFeedback = (e: React.MouseEvent) => {
-    // console.log("Opening picture-wide selection feedback");
+    console.log("Opening picture-wide selection feedback");
     setIsEnteringFeedback(true);
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
@@ -459,6 +459,10 @@ const Canvas: React.FC = () => {
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
       const mouseCoordinates = getMouseCoordinates(e);
+
+      // Adjust mouse coordinates to account for image offset/padding
+      mouseCoordinates.x -= imageOffset.x;
+      mouseCoordinates.y -= imageOffset.y;
 
       // console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
       
