@@ -38,10 +38,10 @@ function loadResource(url, resourceType) {
 async function loadReactApp(qualtricsSurveyEngine) {
 
 	// Create root if not exists
-	const questionBlockContainer = document.querySelector('.content');
-	const rootElement = questionBlockContainer.querySelector('#cocreate-root');
+	const questionBlockContainer = document.querySelector('.question-block-container');
+	const rootElement = document.querySelector('#cocreate-root');
 	if (!rootElement) {
-		const root = questionBlockContainer.createElement('div');
+		const root = document.createElement('div');
 		root.id = 'cocreate-root';
 		document.body.appendChild(root);
 	}
