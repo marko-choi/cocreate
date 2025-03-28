@@ -132,7 +132,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 				rootDiv.style.alignItems = 'center';
 				rootDiv.style.justifyContent = 'center';
 				rootDiv.style.overflow = 'visible';
-				rootDiv.style.height = '75vh';s
+				rootDiv.style.height = '72.5vh';
 			}	
 
 			console.log('React app loaded!');
