@@ -128,11 +128,11 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 			const rootDiv = document.querySelector('#cocreate-root');
 			if (rootDiv) {
-				// rootDiv.style.display = 'flex';
+				rootDiv.style.display = 'flex';
 				rootDiv.style.alignItems = 'center';
 				rootDiv.style.justifyContent = 'center';
 				rootDiv.style.overflow = 'visible';
-				rootDiv.style.height = '75vh';
+				rootDiv.style.height = '75vh';s
 			}	
 
 			console.log('React app loaded!');
@@ -151,7 +151,7 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DcZ2BxwU.css'
 	];
-	
+
 	console.log("[Qualtrics Loader] qualtricsSurveyEngine", qualtricsSurveyEngine)
 	console.log("[Qualtrics Loader] type", type)
 	if (type == "next") {
