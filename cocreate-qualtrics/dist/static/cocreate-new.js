@@ -14613,17 +14613,6 @@ const Canvas = () => {
   const [imageScaleFactor, setImageScaleFactor] = reactExports.useState(1);
   const [imageOffset, setImageOffset] = reactExports.useState({ x: 0, y: 0 });
   reactExports.useEffect(() => {
-    var _a;
-    const imgElement = document.querySelector(".canvas-container img");
-    if (imgElement) {
-      const rect = imgElement.getBoundingClientRect();
-      const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
-      const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
-      const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
-      setImageOffset({ x: offsetX, y: offsetY });
-    }
-  }, []);
-  reactExports.useEffect(() => {
     localStorage.removeItem("cocreate-canvasSize");
     localStorage.removeItem("cocreate-canvasSelections");
   }, []);
@@ -14675,6 +14664,7 @@ const Canvas = () => {
   }, [imageDimensions]);
   reactExports.useEffect(() => {
     const handleResize = () => {
+      var _a;
       var loadedImage = void 0;
       do {
         loadedImage = document.querySelector(".rendering-image");
@@ -14690,6 +14680,15 @@ const Canvas = () => {
             resizeCanvasDimensions(this);
           });
         }
+      }
+      const imgElement = document.querySelector(".canvas-container img");
+      console.log("[Cocreate] Image element: " + imgElement);
+      if (imgElement) {
+        const rect = imgElement.getBoundingClientRect();
+        const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
+        const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
+        const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
+        setImageOffset({ x: offsetX, y: offsetY });
       }
     };
     window.addEventListener("resize", handleResize);

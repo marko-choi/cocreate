@@ -50,19 +50,6 @@ const Canvas: React.FC = () => {
   const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
 
   const [imageOffset, setImageOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-
-  useEffect(() => {
-    const imgElement = document.querySelector(".canvas-container img");
-    if (imgElement) {
-      const rect = imgElement.getBoundingClientRect();
-      const parentRect = imgElement.parentElement?.getBoundingClientRect();
-
-      const offsetX = rect.left - (parentRect?.left ?? 0);
-      const offsetY = rect.top - (parentRect?.top ?? 0);
-
-      setImageOffset({ x: offsetX, y: offsetY });
-    }
-  }, []);
   
   // Clear selections from localStorage when component mounts
   useEffect(() => {
@@ -151,6 +138,7 @@ const Canvas: React.FC = () => {
   useEffect(() => {
     const handleResize = () => {
       
+      // Update the image dimensions
       var loadedImage = undefined
       do { loadedImage = document.querySelector(".rendering-image"); } while (!loadedImage) 
       
@@ -166,11 +154,25 @@ const Canvas: React.FC = () => {
         });
         }
       }
+
+      // Update the image offset
+      const imgElement = document.querySelector(".canvas-container img");
+      console.log("[Cocreate] Image element: " + imgElement);
+      if (imgElement) {
+        const rect = imgElement.getBoundingClientRect();
+        const parentRect = imgElement.parentElement?.getBoundingClientRect();
+
+        const offsetX = rect.left - (parentRect?.left ?? 0);
+        const offsetY = rect.top - (parentRect?.top ?? 0);
+
+        setImageOffset({ x: offsetX, y: offsetY });
+      }
     };
   
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
+
 
   useEffect(() => {
     console.log("[Cocreate] Initializing canvas dimensions");
