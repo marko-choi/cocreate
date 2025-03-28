@@ -646,6 +646,7 @@ const Canvas: React.FC = () => {
         />
         {/* Render selections div elements (same as original code) */}
         {selections.map((selection, index) => {
+          console.log("[Cocreate] Image offset: " + JSON.stringify(imageOffset));
           const x = Math.min(selection.start.x, selection.end.x) + imageOffset.x;
           const y = Math.min(selection.start.y, selection.end.y) + imageOffset.y;
           const width = Math.abs(selection.end.x - selection.start.x);

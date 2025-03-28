@@ -15020,6 +15020,7 @@ const Canvas = () => {
       }
     ),
     selections.map((selection, index) => {
+      console.log("[Cocreate] Image offset: " + JSON.stringify(imageOffset));
       const x = Math.min(selection.start.x, selection.end.x) + imageOffset.x;
       const y = Math.min(selection.start.y, selection.end.y) + imageOffset.y;
       const width2 = Math.abs(selection.end.x - selection.start.x);
