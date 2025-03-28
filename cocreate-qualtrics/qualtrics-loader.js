@@ -166,11 +166,31 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 			console.error("[Qualtrics Loader] No selections data found in localStorage.");
 		}
 
-		let existingEmbeddedImage = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("image"));
-		let existingQuestionIds = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("questionIds"));
-		let existingSelectionsData = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"));
-		let existingMetadata = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("metadata"));
+		let existingRawEmbeddedImage = qualtricsSurveyEngine.getJSEmbeddedData("image");
+		let existingRawQuestionIds = qualtricsSurveyEngine.getJSEmbeddedData("questionIds");
+		let existingRawSelectionsData = qualtricsSurveyEngine.getJSEmbeddedData("selectionsData");
+		let existingRawMetadata = qualtricsSurveyEngine.getJSEmbeddedData("metadata");
+
+		let existingEmbeddedImage = {};
+		let existingQuestionIds = [];
+		let existingSelectionsData = {};
+		let existingMetadata = {};
+
+		if (existingRawEmbeddedImage) {
+			existingEmbeddedImage = JSON.parse(existingRawEmbeddedImage);
+		}
 		
+		if (existingRawQuestionIds) {
+			existingQuestionIds = JSON.parse(existingRawQuestionIds);
+		}
+
+		if (existingRawSelectionsData) {
+			existingSelectionsData = JSON.parse(existingRawSelectionsData);
+		}
+
+		if (existingRawMetadata) {
+			existingMetadata = JSON.parse(existingRawMetadata);
+		}
 		console.log("[Qualtrics Loader] existingEmbeddedImage", existingEmbeddedImage)
 		console.log("[Qualtrics Loader] existingQuestionIds", existingQuestionIds)
 		console.log("[Qualtrics Loader] existingSelectionsData", existingSelectionsData)
