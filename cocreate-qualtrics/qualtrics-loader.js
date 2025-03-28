@@ -170,6 +170,11 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		let existingQuestionIds = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("questionIds"));
 		let existingSelectionsData = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"));
 		let existingMetadata = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("metadata"));
+		
+		console.log("[Qualtrics Loader] existingEmbeddedImage", existingEmbeddedImage)
+		console.log("[Qualtrics Loader] existingQuestionIds", existingQuestionIds)
+		console.log("[Qualtrics Loader] existingSelectionsData", existingSelectionsData)
+		console.log("[Qualtrics Loader] existingMetadata", existingMetadata)
 
 		// Extract the image as a link
 		let imageLink;
@@ -204,6 +209,11 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		qualtricsSurveyEngine.setJSEmbeddedData("image", JSON.stringify(existingEmbeddedImage))
 		qualtricsSurveyEngine.setJSEmbeddedData("questionIds", JSON.stringify(existingQuestionIds))
 		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(existingSelectionsData))
-		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(existingEmbeddedImage))
+		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(existingMetadata))
+
+		console.log("[Qualtrics Loader] new embeded image:", qualtricsSurveyEngine.getJSEmbeddedData("image"))
+		console.log("[Qualtrics Loader] new embeded questionIds:", qualtricsSurveyEngine.getJSEmbeddedData("questionIds"))
+		console.log("[Qualtrics Loader] new embeded selectionsData:", qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"))
+		console.log("[Qualtrics Loader] new embeded metadata:", qualtricsSurveyEngine.getJSEmbeddedData("metadata"))
 	}
 }
