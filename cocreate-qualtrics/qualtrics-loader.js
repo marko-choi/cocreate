@@ -166,28 +166,44 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 			console.error("[Qualtrics Loader] No selections data found in localStorage.");
 		}
 
-		// Extract image as a png image
-		// const canvas = document.querySelector('canvas')
-		// if (canvas) {
-		// 	const imageData = canvas.toDataURL("image/png")
-		// 	qualtricsSurveyEngine.setJSEmbeddedData("image", imageData);
-		// } else {
-		// 	qualtricsSurveyEngine.setJSEmbeddedData("image", null);
-		// }
+		let existingEmbeddedImage = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("image"));
+		let existingQuestionIds = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("questionIds"));
+		let existingSelectionsData = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"));
+		let existingMetadata = JSON.parse(qualtricsSurveyEngine.getJSEmbeddedData("metadata"));
 
 		// Extract the image as a link
+		let imageLink;
 		const image = document.querySelector('.question-content img')
-		if (image) {
-			const imageLink = image.src
-			qualtricsSurveyEngine.setJSEmbeddedData("image", imageLink);
+		if (image) { imageLink = image.src }
 
+		if (existingEmbeddedImage) {
+			existingEmbeddedImage[questionId] = imageLink;
 		} else {
-			qualtricsSurveyEngine.setJSEmbeddedData("image", null);
+			existingEmbeddedImage = { [questionId]: imageLink }
+		}
+
+		if (existingQuestionIds) {
+			existingQuestionIds.push(questionId);
+		} else {
+			existingQuestionIds = [questionId];
+		}
+
+		if (existingSelectionsData) {
+			existingSelectionsData[questionId] = selections;
+		} else {
+			existingSelectionsData = { [questionId]: selections }
+		}
+
+		if (existingMetadata) {
+			existingMetadata[questionId] = metadata;
+		} else {
+			existingMetadata = { [questionId]: metadata }
 		}
 
 		// Store question ID and selections
-		qualtricsSurveyEngine.setJSEmbeddedData("questionId", questionId)
-		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(selections))
-		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(metadata))
+		qualtricsSurveyEngine.setJSEmbeddedData("image", JSON.stringify(existingEmbeddedImage))
+		qualtricsSurveyEngine.setJSEmbeddedData("questionIds", JSON.stringify(existingQuestionIds))
+		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(existingSelectionsData))
+		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(existingEmbeddedImage))
 	}
 }
