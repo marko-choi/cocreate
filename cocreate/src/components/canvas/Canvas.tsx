@@ -48,6 +48,21 @@ const Canvas: React.FC = () => {
 
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
+
+  const [imageOffset, setImageOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const imgElement = document.querySelector(".canvas-container img");
+    if (imgElement) {
+      const rect = imgElement.getBoundingClientRect();
+      const parentRect = imgElement.parentElement?.getBoundingClientRect();
+
+      const offsetX = rect.left - (parentRect?.left ?? 0);
+      const offsetY = rect.top - (parentRect?.top ?? 0);
+
+      setImageOffset({ x: offsetX, y: offsetY });
+    }
+  }, []);
   
   // Clear selections from localStorage when component mounts
   useEffect(() => {
@@ -631,8 +646,8 @@ const Canvas: React.FC = () => {
         />
         {/* Render selections div elements (same as original code) */}
         {selections.map((selection, index) => {
-          const x = Math.min(selection.start.x, selection.end.x);
-          const y = Math.min(selection.start.y, selection.end.y);
+          const x = Math.min(selection.start.x, selection.end.x) + imageOffset.x;
+          const y = Math.min(selection.start.y, selection.end.y) + imageOffset.y;
           const width = Math.abs(selection.end.x - selection.start.x);
           const height = Math.abs(selection.end.y - selection.start.y);
 

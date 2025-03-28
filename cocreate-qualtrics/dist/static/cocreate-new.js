@@ -14611,6 +14611,18 @@ const Canvas = () => {
   const [canvasHeight, setCanvasHeight] = reactExports.useState(534);
   const [imageDimensions, setImageDimensions] = reactExports.useState(null);
   const [imageScaleFactor, setImageScaleFactor] = reactExports.useState(1);
+  const [imageOffset, setImageOffset] = reactExports.useState({ x: 0, y: 0 });
+  reactExports.useEffect(() => {
+    var _a;
+    const imgElement = document.querySelector(".canvas-container img");
+    if (imgElement) {
+      const rect = imgElement.getBoundingClientRect();
+      const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
+      const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
+      const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
+      setImageOffset({ x: offsetX, y: offsetY });
+    }
+  }, []);
   reactExports.useEffect(() => {
     localStorage.removeItem("cocreate-canvasSize");
     localStorage.removeItem("cocreate-canvasSelections");
@@ -15008,8 +15020,8 @@ const Canvas = () => {
       }
     ),
     selections.map((selection, index) => {
-      const x = Math.min(selection.start.x, selection.end.x);
-      const y = Math.min(selection.start.y, selection.end.y);
+      const x = Math.min(selection.start.x, selection.end.x) + imageOffset.x;
+      const y = Math.min(selection.start.y, selection.end.y) + imageOffset.y;
       const width2 = Math.abs(selection.end.x - selection.start.x);
       const height2 = Math.abs(selection.end.y - selection.start.y);
       return /* @__PURE__ */ jsxRuntimeExports.jsx(
