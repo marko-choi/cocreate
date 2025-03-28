@@ -135,28 +135,26 @@ const Canvas: React.FC = () => {
 
   }, [imageDimensions]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      
-      // Update the image dimensions
-      var loadedImage = undefined
-      do { loadedImage = document.querySelector(".rendering-image"); } while (!loadedImage) 
-      
-      if (loadedImage instanceof HTMLImageElement) {
-        if (loadedImage.complete) {
-          console.log("[Cocreate] Image already loaded");
-          resizeCanvasDimensions(loadedImage);
-        } else {
-          loadedImage.addEventListener("load", function() {
-            console.log("[Cocreate] Image loaded");
-            console.log(this);
-            resizeCanvasDimensions(this);
-        });
-        }
+  const updateImageDimensions = () => {
+    var loadedImage = undefined
+    do { loadedImage = document.querySelector(".rendering-image"); } while (!loadedImage) 
+    
+    if (loadedImage instanceof HTMLImageElement) {
+      if (loadedImage.complete) {
+        console.log("[Cocreate] Image already loaded");
+        resizeCanvasDimensions(loadedImage);
+      } else {
+        loadedImage.addEventListener("load", function() {
+          console.log("[Cocreate] Image loaded");
+          console.log(this);
+          resizeCanvasDimensions(this);
+      });
       }
+    }
+  }
 
-      // Update the image offset
-      const imgElement = document.querySelector(".canvas-container img");
+  const updateImageOffset = () => {
+    const imgElement = document.querySelector(".canvas-container img");
       console.log("[Cocreate] Image element: " + imgElement);
       if (imgElement) {
         const rect = imgElement.getBoundingClientRect();
@@ -165,16 +163,11 @@ const Canvas: React.FC = () => {
         const offsetX = rect.left - (parentRect?.left ?? 0);
         const offsetY = rect.top - (parentRect?.top ?? 0);
 
-        setImageOffset({ x: offsetX, y: offsetY });
-      }
-    };
-  
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [imageDimensions]);
+      setImageOffset({ x: offsetX, y: offsetY });
+    }
+  }
 
-
-  useEffect(() => {
+  const initializeCanvas = () => {
     console.log("[Cocreate] Initializing canvas dimensions");
     const rootContainer = document.querySelector("#cocreate-root")
     if (!rootContainer) {
@@ -196,20 +189,21 @@ const Canvas: React.FC = () => {
         loadedImage = document.querySelector(".rendering-image");
         console.log("[Cocreate] Waiting for rendering image to load");
       }
+      // Wait for the image to load before calling initCanvasDimensions
       if (loadedImage instanceof HTMLImageElement) {
-        // Wait for the image to load before calling initCanvasDimensions
         if (loadedImage.complete) {
-            // The image is already loaded
             console.log("[Cocreate] Image already loaded");
             initCanvasDimensions(loadedImage);
+            updateImageOffset();
         } else {
             // Add an event listener to handle when the image finishes loading
             loadedImage.addEventListener("load", function() {
                 console.log("[Cocreate] Image loaded");
                 initCanvasDimensions(this);
+                updateImageOffset();
             });
         }
-    }
+      }
 
     } else {
       
@@ -219,7 +213,7 @@ const Canvas: React.FC = () => {
         defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
     }
-  }, []);
+  }
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -380,8 +374,6 @@ const Canvas: React.FC = () => {
   setSelectionEnd(null);
 };
 
-  
-
   const checkIfMouseIsInsideCanvas = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -396,7 +388,6 @@ const Canvas: React.FC = () => {
     }
     return false;
   }
-
 
   const handleMouseUp = (e: React.MouseEvent) => {
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
@@ -586,6 +577,25 @@ const Canvas: React.FC = () => {
   //   }
   // };
   
+
+  // Initialize Canvas
+  useEffect(() => {
+    initializeCanvas();
+  }, []);
+
+
+  // Resize Handler
+  useEffect(() => {
+    const handleResize = () => {
+      updateImageDimensions();
+      updateImageOffset();
+    };
+  
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [imageDimensions]);
+
+
   useEffect(() => {
     if (imageDimensions) {
       setSelections(prevSelections =>

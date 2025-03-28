@@ -14662,39 +14662,37 @@ const Canvas = () => {
     if (!imageDimensions) return;
     setImageScaleFactor(img.width / imageDimensions.width);
   }, [imageDimensions]);
-  reactExports.useEffect(() => {
-    const handleResize = () => {
-      var _a;
-      var loadedImage = void 0;
-      do {
-        loadedImage = document.querySelector(".rendering-image");
-      } while (!loadedImage);
-      if (loadedImage instanceof HTMLImageElement) {
-        if (loadedImage.complete) {
-          console.log("[Cocreate] Image already loaded");
-          resizeCanvasDimensions(loadedImage);
-        } else {
-          loadedImage.addEventListener("load", function() {
-            console.log("[Cocreate] Image loaded");
-            console.log(this);
-            resizeCanvasDimensions(this);
-          });
-        }
+  const updateImageDimensions = () => {
+    var loadedImage = void 0;
+    do {
+      loadedImage = document.querySelector(".rendering-image");
+    } while (!loadedImage);
+    if (loadedImage instanceof HTMLImageElement) {
+      if (loadedImage.complete) {
+        console.log("[Cocreate] Image already loaded");
+        resizeCanvasDimensions(loadedImage);
+      } else {
+        loadedImage.addEventListener("load", function() {
+          console.log("[Cocreate] Image loaded");
+          console.log(this);
+          resizeCanvasDimensions(this);
+        });
       }
-      const imgElement = document.querySelector(".canvas-container img");
-      console.log("[Cocreate] Image element: " + imgElement);
-      if (imgElement) {
-        const rect = imgElement.getBoundingClientRect();
-        const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
-        const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
-        const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
-        setImageOffset({ x: offsetX, y: offsetY });
-      }
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [imageDimensions]);
-  reactExports.useEffect(() => {
+    }
+  };
+  const updateImageOffset = () => {
+    var _a;
+    const imgElement = document.querySelector(".canvas-container img");
+    console.log("[Cocreate] Image element: " + imgElement);
+    if (imgElement) {
+      const rect = imgElement.getBoundingClientRect();
+      const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
+      const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
+      const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
+      setImageOffset({ x: offsetX, y: offsetY });
+    }
+  };
+  const initializeCanvas = () => {
     console.log("[Cocreate] Initializing canvas dimensions");
     const rootContainer = document.querySelector("#cocreate-root");
     if (!rootContainer) {
@@ -14716,10 +14714,12 @@ const Canvas = () => {
         if (loadedImage.complete) {
           console.log("[Cocreate] Image already loaded");
           initCanvasDimensions(loadedImage);
+          updateImageOffset();
         } else {
           loadedImage.addEventListener("load", function() {
             console.log("[Cocreate] Image loaded");
             initCanvasDimensions(this);
+            updateImageOffset();
           });
         }
       }
@@ -14730,7 +14730,7 @@ const Canvas = () => {
         defaultImage.onload = () => initCanvasDimensions(defaultImage);
       }
     }
-  }, []);
+  };
   reactExports.useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas == null ? void 0 : canvas.getContext("2d");
@@ -14968,6 +14968,17 @@ const Canvas = () => {
       setAllowPictureSelection(true);
     }
   };
+  reactExports.useEffect(() => {
+    initializeCanvas();
+  }, []);
+  reactExports.useEffect(() => {
+    const handleResize = () => {
+      updateImageDimensions();
+      updateImageOffset();
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [imageDimensions]);
   reactExports.useEffect(() => {
     if (imageDimensions) {
       setSelections(
