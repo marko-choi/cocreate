@@ -14727,7 +14727,10 @@ const Canvas = () => {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        defaultImage.onload = () => initCanvasDimensions(defaultImage);
+        defaultImage.onload = () => {
+          initCanvasDimensions(defaultImage);
+          updateImageOffset();
+        };
       }
     }
   };
@@ -15004,7 +15007,6 @@ const Canvas = () => {
         alt: "Rendering",
         className: "rendering-image",
         style: {
-          // maxWidth: MAX_IMAGE_WIDTH, 
           maxHeight: "100%",
           width: "auto",
           display: "block"
@@ -15018,11 +15020,7 @@ const Canvas = () => {
         width: canvasWidth,
         height: canvasHeight,
         className: "canvas",
-        style: {
-          cursor: isEnteringFeedback ? "default" : "crosshair"
-          // width: "100%",
-          // height: "auto",
-        },
+        style: { cursor: isEnteringFeedback ? "default" : "crosshair" },
         onMouseDown: handleMouseDown,
         onMouseMove: handleMouseMove,
         onMouseUp: handleMouseUp,
@@ -15073,8 +15071,8 @@ const Canvas = () => {
       Tooltip,
       {
         index: activeSelectionIndex,
-        x: tooltipPosition.x,
-        y: tooltipPosition.y,
+        x: tooltipPosition.x + imageOffset.x,
+        y: tooltipPosition.y + imageOffset.y,
         selection: selections[activeSelectionIndex],
         setSelections,
         setActiveSelectionIndex,

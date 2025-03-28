@@ -210,7 +210,10 @@ const Canvas: React.FC = () => {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-        defaultImage.onload = () => initCanvasDimensions(defaultImage);
+        defaultImage.onload = () => {
+          initCanvasDimensions(defaultImage)
+          updateImageOffset();
+        };
       }
     }
   }
