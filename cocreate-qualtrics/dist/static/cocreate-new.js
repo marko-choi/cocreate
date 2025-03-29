@@ -14716,12 +14716,12 @@ const Canvas = (props) => {
       console.log("[Cocreate] No root container found for instanceId: " + instanceId);
       return;
     }
-    const questionId = instanceRootContainer.getAttribute("data-question-id");
-    const questionBodyImage = instanceRootContainer.querySelector(`#question-${questionId} img`);
+    const questionBodyImage = instanceRootContainer.querySelector(`.question-content img`);
     console.log("[Cocreate] Question Body Image: " + questionBodyImage);
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
+      console.log("[Cocreate] Question Body Image Src: " + questionBodyImage.getAttribute("src"));
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       var loadedImage = void 0;
       while (!loadedImage) {
