@@ -44,12 +44,6 @@ const observeAndRenderCocreate = () => {
   });
 };
 
-// Initial render
-const rootElement = document.querySelector('#cocreate-root');
-if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(<App />);
-}
-
-// Start observing for dynamic content changes
+// Initial render and observe for dynamic content changes
+renderAllCocreateApps();
 observeAndRenderCocreate();

@@ -14596,7 +14596,8 @@ const Tooltip = (props) => {
 };
 const DEFAULT_IMAGE_SRC = "./rendering.jpg";
 const MAX_IMAGE_WIDTH = 800;
-const Canvas = () => {
+const Canvas = (props) => {
+  const { instanceId } = props;
   const canvasRef = reactExports.useRef(null);
   const [isSelecting, setIsSelecting] = reactExports.useState(false);
   const [selectionStart, setSelectionStart] = reactExports.useState(null);
@@ -14663,9 +14664,14 @@ const Canvas = () => {
     setImageScaleFactor(img.width / imageDimensions.width);
   }, [imageDimensions]);
   const updateImageDimensions = () => {
+    const instanceRootContainer = getInstanceRootContainer();
+    if (!instanceRootContainer) {
+      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
+      return;
+    }
     var loadedImage = void 0;
     do {
-      loadedImage = document.querySelector(".rendering-image");
+      loadedImage = instanceRootContainer.querySelector(".rendering-image");
     } while (!loadedImage);
     if (loadedImage instanceof HTMLImageElement) {
       if (loadedImage.complete) {
@@ -14680,9 +14686,20 @@ const Canvas = () => {
       }
     }
   };
+  const getInstanceRootContainer = () => {
+    const rootContainers = document.querySelectorAll(".cocreate-root");
+    return Array.from(rootContainers).find(
+      (container) => container.getAttribute("data-question-id") === instanceId
+    );
+  };
   const updateImageOffset = () => {
     var _a;
-    const imgElement = document.querySelector(".canvas-container img");
+    const instanceRootContainer = getInstanceRootContainer();
+    if (!instanceRootContainer) {
+      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
+      return;
+    }
+    const imgElement = instanceRootContainer.querySelector(".canvas-container img");
     console.log("[Cocreate] Image element: " + imgElement);
     if (imgElement) {
       const rect = imgElement.getBoundingClientRect();
@@ -14694,20 +14711,20 @@ const Canvas = () => {
   };
   const initializeCanvas = () => {
     console.log("[Cocreate] Initializing canvas dimensions");
-    const rootContainer = document.querySelector("#cocreate-root");
-    if (!rootContainer) {
-      console.log("[Cocreate] No root container found");
+    const instanceRootContainer = getInstanceRootContainer();
+    if (!instanceRootContainer) {
+      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
       return;
     }
-    const questionId = rootContainer.getAttribute("data-question-id");
-    const questionBodyImage = document.querySelector(`#question-${questionId} img`);
+    const questionId = instanceRootContainer.getAttribute("data-question-id");
+    const questionBodyImage = instanceRootContainer.querySelector(`#question-${questionId} img`);
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
       var loadedImage = void 0;
       while (!loadedImage) {
-        loadedImage = document.querySelector(".rendering-image");
+        loadedImage = instanceRootContainer.querySelector(".rendering-image");
         console.log("[Cocreate] Waiting for rendering image to load");
       }
       if (loadedImage instanceof HTMLImageElement) {
@@ -15086,7 +15103,8 @@ const Canvas = () => {
     )
   ] });
 };
-const App = () => {
+const App = (props) => {
+  const { instanceId } = props;
   return /* @__PURE__ */ jsxRuntimeExports.jsx(
     "div",
     {
@@ -15097,31 +15115,44 @@ const App = () => {
         height: "100%",
         width: "100%"
       },
-      children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, {})
+      children: /* @__PURE__ */ jsxRuntimeExports.jsx(Canvas, { instanceId })
     }
   );
 };
+const generateInstanceId = () => {
+  const INSTANCE_PREFIX = "QID";
+  return INSTANCE_PREFIX + Math.random().toString(36).substring(2, 15);
+};
+const renderAllCocreateApps = () => {
+  const rootElements = document.querySelectorAll(".cocreate-root");
+  rootElements.forEach((rootElement) => {
+    if (!rootElement.hasAttribute("data-react-mounted")) {
+      const root = clientExports.createRoot(rootElement);
+      const instanceId = rootElement.getAttribute("data-question-id");
+      if (instanceId) {
+        root.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, { instanceId }));
+      } else {
+        console.log("[Cocreate] No instanceId found for root element");
+        const generatedInstanceId = generateInstanceId();
+        rootElement.setAttribute("data-question-id", generatedInstanceId);
+        root.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, { instanceId: generatedInstanceId }));
+      }
+      rootElement.setAttribute("data-react-mounted", "true");
+    }
+  });
+};
 const observeAndRenderCocreate = () => {
   const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
+    mutations.forEach((mutation) => {
       if (mutation.type === "childList") {
-        const rootElement2 = document.querySelector("#cocreate-root");
-        if (rootElement2 && !rootElement2.hasAttribute("data-react-mounted")) {
-          const root = clientExports.createRoot(rootElement2);
-          root.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
-          rootElement2.setAttribute("data-react-mounted", "true");
-        }
+        renderAllCocreateApps();
       }
-    }
+    });
   });
   observer.observe(document.body, {
     childList: true,
     subtree: true
   });
 };
-const rootElement = document.querySelector("#cocreate-root");
-if (rootElement) {
-  const root = clientExports.createRoot(rootElement);
-  root.render(/* @__PURE__ */ jsxRuntimeExports.jsx(App, {}));
-}
+renderAllCocreateApps();
 observeAndRenderCocreate();
