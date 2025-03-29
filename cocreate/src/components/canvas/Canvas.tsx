@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import Tooltip from "../tooltip/Tooltip";
 import "./canvas.css";
 import { Point } from "../../types/global";
+import { InstanceId } from "../../App";
 
 export interface SelectionCoordinates {
   x: number;
@@ -31,7 +32,12 @@ export interface ResizeRatio {
 const DEFAULT_IMAGE_SRC = "./rendering.jpg";
 const MAX_IMAGE_WIDTH = 800;
 
-const Canvas: React.FC = () => {
+export interface CanvasProps {
+  instanceId?: InstanceId;
+}
+
+const Canvas: React.FC<CanvasProps> = (props) => {
+  const { instanceId } = props;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<Point | null>(null);
@@ -136,8 +142,14 @@ const Canvas: React.FC = () => {
   }, [imageDimensions]);
 
   const updateImageDimensions = () => {
+    const instanceRootContainer = getInstanceRootContainer();
+    if (!instanceRootContainer) {
+      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
+      return;
+    }
+
     var loadedImage = undefined
-    do { loadedImage = document.querySelector(".rendering-image"); } while (!loadedImage) 
+    do { loadedImage = instanceRootContainer.querySelector(".rendering-image"); } while (!loadedImage) 
     
     if (loadedImage instanceof HTMLImageElement) {
       if (loadedImage.complete) {
@@ -153,9 +165,22 @@ const Canvas: React.FC = () => {
     }
   }
 
+  const getInstanceRootContainer = () => {
+    const rootContainers = document.querySelectorAll(".cocreate-root")
+    return Array.from(rootContainers).find(
+      (container) => container.getAttribute("data-question-id") === instanceId
+    )
+  }
+
   const updateImageOffset = () => {
-    const imgElement = document.querySelector(".canvas-container img");
-      console.log("[Cocreate] Image element: " + imgElement);
+    const instanceRootContainer = getInstanceRootContainer();
+    if (!instanceRootContainer) {
+      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
+      return;
+    }
+
+    const imgElement = instanceRootContainer.querySelector(".canvas-container img");
+    console.log("[Cocreate] Image element: " + imgElement);
       if (imgElement) {
         const rect = imgElement.getBoundingClientRect();
         const parentRect = imgElement.parentElement?.getBoundingClientRect();
@@ -169,14 +194,14 @@ const Canvas: React.FC = () => {
 
   const initializeCanvas = () => {
     console.log("[Cocreate] Initializing canvas dimensions");
-    const rootContainer = document.querySelector("#cocreate-root")
-    if (!rootContainer) {
-      console.log("[Cocreate] No root container found");
-      return
+    const instanceRootContainer = getInstanceRootContainer();
+    if (!instanceRootContainer) {
+      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
+      return;
     }
       
-    const questionId = rootContainer.getAttribute("data-question-id")
-    const questionBodyImage = document.querySelector(`#question-${questionId} img`);
+    const questionId = instanceRootContainer.getAttribute("data-question-id")
+    const questionBodyImage = instanceRootContainer.querySelector(`#question-${questionId} img`);
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       
       console.log("[Cocreate] Scraping image from question body");
@@ -186,7 +211,7 @@ const Canvas: React.FC = () => {
       // find image with classname rendering-image
       var loadedImage = undefined
       while (!loadedImage) {
-        loadedImage = document.querySelector(".rendering-image");
+        loadedImage = instanceRootContainer.querySelector(".rendering-image");
         console.log("[Cocreate] Waiting for rendering image to load");
       }
       // Wait for the image to load before calling initCanvasDimensions
@@ -206,7 +231,6 @@ const Canvas: React.FC = () => {
       }
 
     } else {
-      
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);

@@ -2,7 +2,19 @@ import React from "react";
 import "./App.css";
 import Canvas from "./components/canvas/Canvas";
 
-const App: React.FC = () => {
+/**
+ * The instanceId is the id of the question in Qualtrics.
+ * It is used to identify the question and the data associated with it.
+ * Sample instanceId: "QID1"
+ */
+export type InstanceId = string;
+
+export interface AppProps {
+  instanceId?: InstanceId;
+}
+
+const App: React.FC<AppProps> = (props) => {
+  const { instanceId } = props;
   return (
     <div
       style={{
@@ -13,7 +25,7 @@ const App: React.FC = () => {
         width: '100%',
       }}
     >
-      <Canvas />
+      <Canvas instanceId={instanceId} />
     </div>
   );
 };
