@@ -5,35 +5,34 @@
  * @returns {Promise} - A promise that resolves when the resource is loaded
  */
 function loadResource(url, resourceType) {
-	return new Promise((resolve, reject) => {
-			const selector = resourceType === 'script'
-				? `script[src="${url}"]`
-				: `link[href="${url}"]`;
+  return new Promise((resolve, reject) => {
+    const selector =
+      resourceType === 'script'
+        ? `script[src="${url}"]`
+        : `link[href="${url}"]`;
 
-			if (document.querySelector(selector)) {
-				console.log("[Qualtrics Loader] Removing resource:", url);
-				// remove it
-				const element = document.querySelector(selector);
-				if (element) {
-					element.remove();
-					console.log("[Qualtrics Loader] Removed resource:", element);
-				}
-			}
+    // If it's already loaded, resolve immediately
+    if (document.querySelector(selector)) {
+      console.log('[Qualtrics Loader] Resource already loaded:', url);
+      resolve();
+      return;
+    }
 
-			const element = document.createElement(resourceType);
+    const element = document.createElement(resourceType);
 
-			if (resourceType === 'script') {
-				Object.assign(element, { src: url, async: true });
-			} else {
-				Object.assign(element, { href: url, rel: 'stylesheet' });
-			}
+    if (resourceType === 'script') {
+      Object.assign(element, { src: url, async: true });
+    } else {
+      Object.assign(element, { href: url, rel: 'stylesheet' });
+    }
 
-			element.onload = resolve;
-			element.onerror = reject;
-			document.head.appendChild(element);
-			console.log("[Qualtrics Loader] Loaded resource:", url);
-	});
+    element.onload = resolve;
+    element.onerror = reject;
+    document.head.appendChild(element);
+    console.log('[Qualtrics Loader] Loaded resource:', url);
+  });
 }
+
 
 async function loadReactApp(qualtricsSurveyEngine) {
 
