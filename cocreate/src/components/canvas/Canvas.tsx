@@ -208,6 +208,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
+      console.log("[Cocreate] Question Body Image Src: " + questionBodyImage.getAttribute("src"));
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
 
       // find image with classname rendering-image
