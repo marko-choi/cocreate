@@ -10,7 +10,7 @@ import Canvas from "./components/canvas/Canvas";
 export type InstanceId = string;
 
 export interface AppProps {
-  instanceId?: InstanceId;
+  instanceId: InstanceId;
 }
 
 const App: React.FC<AppProps> = (props) => {

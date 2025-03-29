@@ -14618,12 +14618,34 @@ const Canvas = (props) => {
     localStorage.removeItem("cocreate-canvasSelections");
   }, []);
   reactExports.useEffect(() => {
-    localStorage.setItem("cocreate-canvasSize", JSON.stringify({
-      width: canvasWidth,
-      height: canvasHeight,
-      imageScaleFactor
-    }));
-    localStorage.setItem("cocreate-canvasSelections", JSON.stringify(selections));
+    const currentCocreateCanvasSize = localStorage.getItem("cocreate-canvasSize");
+    const newCocreateCanvasSize = {
+      [instanceId]: {
+        width: canvasWidth,
+        height: canvasHeight,
+        imageScaleFactor
+      }
+    };
+    if (currentCocreateCanvasSize) {
+      localStorage.setItem("cocreate-canvasSize", JSON.stringify({
+        ...JSON.parse(currentCocreateCanvasSize),
+        ...newCocreateCanvasSize
+      }));
+    } else {
+      localStorage.setItem("cocreate-canvasSize", JSON.stringify(newCocreateCanvasSize));
+    }
+    const currentCocreateCanvasSelections = localStorage.getItem("cocreate-canvasSelections");
+    const newCocreateCanvasSelections = {
+      [instanceId]: selections
+    };
+    if (currentCocreateCanvasSelections) {
+      localStorage.setItem("cocreate-canvasSelections", JSON.stringify({
+        ...JSON.parse(currentCocreateCanvasSelections),
+        ...newCocreateCanvasSelections
+      }));
+    } else {
+      localStorage.setItem("cocreate-canvasSelections", JSON.stringify(newCocreateCanvasSelections));
+    }
   }, [selections]);
   const initCanvasDimensions = (img) => {
     console.log("[Cocreate] Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);

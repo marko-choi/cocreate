@@ -132,13 +132,15 @@ async function loadReactApp(qualtricsSurveyEngine) {
 }
 
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
-	console.log("[Qualtrics Loader] qualtricsSurveyEngine", qualtricsSurveyEngine)
-	console.log("[Qualtrics Loader] type", type)
+	const questionInfo = pageInfo.getQuestionInfo()
+	const questionId = questionInfo.QuestionID
+
+	console.log(`[Qualtrics Loader][${questionId}] qualtricsSurveyEngine`, qualtricsSurveyEngine)
+	console.log(`[Qualtrics Loader][${questionId}] type`, type)
+
 	if (type == "next") {
 		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
 		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
-		const questionInfo = pageInfo.getQuestionInfo()
-		const questionId = questionInfo.QuestionID
 
 		// Destroy the main container #cocreate-root
 		const rootDiv = document.querySelector('#cocreate-root');
@@ -147,9 +149,9 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		}
 
 		if (selections) {
-			console.log("[Qualtrics Loader] Selections data:", selections);
+			console.log(`[Qualtrics Loader][${questionId}] Selections data:`, selections);
 		} else {
-			console.error("[Qualtrics Loader] No selections data found in localStorage.");
+			console.error(`[Qualtrics Loader][${questionId}] No selections data found in localStorage.`);
 		}
 
 		let existingRawEmbeddedImage = qualtricsSurveyEngine.getJSEmbeddedData("image");
@@ -165,7 +167,7 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		if (existingRawEmbeddedImage) {
 			existingEmbeddedImage = JSON.parse(existingRawEmbeddedImage);
 		}
-		
+
 		if (existingRawQuestionIds) {
 			existingQuestionIds = JSON.parse(existingRawQuestionIds);
 		}
@@ -177,10 +179,10 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		if (existingRawMetadata) {
 			existingMetadata = JSON.parse(existingRawMetadata);
 		}
-		console.log("[Qualtrics Loader] existingEmbeddedImage", existingEmbeddedImage)
-		console.log("[Qualtrics Loader] existingQuestionIds", existingQuestionIds)
-		console.log("[Qualtrics Loader] existingSelectionsData", existingSelectionsData)
-		console.log("[Qualtrics Loader] existingMetadata", existingMetadata)
+		console.log(`[Qualtrics Loader][${questionId}] existingEmbeddedImage`, existingEmbeddedImage)
+		console.log(`[Qualtrics Loader][${questionId}] existingQuestionIds`, existingQuestionIds)
+		console.log(`[Qualtrics Loader][${questionId}] existingSelectionsData`, existingSelectionsData)
+		console.log(`[Qualtrics Loader][${questionId}] existingMetadata`, existingMetadata)
 
 		// Extract the image as a link
 		let imageLink;
@@ -200,15 +202,15 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		}
 
 		if (existingSelectionsData) {
-			existingSelectionsData[questionId] = selections;
+			existingSelectionsData[questionId] = selections[questionId];
 		} else {
-			existingSelectionsData = { [questionId]: selections }
+			existingSelectionsData = { [questionId]: selections[questionId] }
 		}
 
 		if (existingMetadata) {
-			existingMetadata[questionId] = metadata;
+			existingMetadata[questionId] = metadata[questionId];
 		} else {
-			existingMetadata = { [questionId]: metadata }
+			existingMetadata = { [questionId]: metadata[questionId] }
 		}
 
 		// Store question ID and selections
@@ -217,9 +219,9 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(existingSelectionsData))
 		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(existingMetadata))
 
-		console.log("[Qualtrics Loader] new embeded image:", qualtricsSurveyEngine.getJSEmbeddedData("image"))
-		console.log("[Qualtrics Loader] new embeded questionIds:", qualtricsSurveyEngine.getJSEmbeddedData("questionIds"))
-		console.log("[Qualtrics Loader] new embeded selectionsData:", qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"))
-		console.log("[Qualtrics Loader] new embeded metadata:", qualtricsSurveyEngine.getJSEmbeddedData("metadata"))
+		console.log(`[Qualtrics Loader][${questionId}] new embeded image:`, qualtricsSurveyEngine.getJSEmbeddedData("image"))
+		console.log(`[Qualtrics Loader][${questionId}] new embeded questionIds:`, qualtricsSurveyEngine.getJSEmbeddedData("questionIds"))
+		console.log(`[Qualtrics Loader][${questionId}] new embeded selectionsData:`, qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"))
+		console.log(`[Qualtrics Loader][${questionId}] new embeded metadata:`, qualtricsSurveyEngine.getJSEmbeddedData("metadata"))
 	}
 }
