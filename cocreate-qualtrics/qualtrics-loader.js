@@ -100,7 +100,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		if (questionContainer) {
 
 			// Hide the question image
-			const questionImage = document.querySelector('.question-display img')
+			const questionImage = questionContainer.querySelector('.question-content img')
 			console.log("[Qualtrics Loader] questionImage", questionImage)
 			if (questionImage) {
 				questionImage.style.display = 'none';
@@ -121,7 +121,6 @@ async function loadReactApp(qualtricsSurveyEngine) {
 				appContainer.style.overflow = 'visible';
 				appContainer.style.height = '65vh';
 			}	
-			
 
 			console.log('React app loaded!');
 		} else {
