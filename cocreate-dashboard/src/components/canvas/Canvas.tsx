@@ -90,13 +90,16 @@ const Canvas = (props: CanvasProps) => {
       // Convert heatmap values to pixel data
       for (let i = 0; i < heatmap.length; i++) {
         const count = heatmap[i];
-        const intensity = Math.min(255, Math.floor((count / maxCount) * 255));
+
+        // maximum alpha = 80%
+        const alpha = Math.min(255, Math.floor((count / maxCount) * 255));
 
         const index = i * 4;
-        data[index] = 255;         // Red
-        data[index + 1] = 0;       // Green
-        data[index + 2] = 0;       // Blue
-        data[index + 3] = intensity; // Alpha
+        // Color: #424E64
+        data[index] = 66;         // Red
+        data[index + 1] = 78;       // Green
+        data[index + 2] = 120;       // Blue
+        data[index + 3] = alpha; // Alpha
       }
 
       ctx.putImageData(imageData, 0, 0);

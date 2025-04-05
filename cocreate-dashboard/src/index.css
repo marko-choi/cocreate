@@ -1,15 +1,18 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
 
-@custom-variant dark (&:is(.dark *));
+/* @custom-variant dark (&:is(.dark *)); */
 
 :root {
   font-family: Avenir, Inter, system-ui, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  /* color-scheme: light dark; */
+  /* color: rgba(255, 255, 255, 0.87); */
+  /* background-color: #242424; */
+
+  background-color: #FAFAFA;
+  border-color: #E8E8E8 !important;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -81,4 +84,16 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
     }
+}
+
+.container {
+  background-color: #F9FAFB !important;
+}
+
+.scrollable-container {
+  background-color: #fff;
+}
+
+* {
+  border-color: #EBEDF0;
 }

@@ -60,7 +60,7 @@ function App() {
   ])
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedTenures, setSelectedTenures] = useState<string[]>([])
-  const [selectedViewMode, setSelectedViewMode] = useState<"selection" | "heatmap" | "flatHeatmap">("selection") // "flatHeatmap" | "heatmap" | "selection"
+  const [selectedViewMode, setSelectedViewMode] = useState<"selection" | "heatmap" | "flatHeatmap">("flatHeatmap") // "flatHeatmap" | "heatmap" | "selection"
 
   const [feedbackFilters, setFeedbackFilters] = useState<FeedbackFilterGroup[]>([
     {
@@ -95,7 +95,7 @@ function App() {
     const fieldFilters = feedbackFilters.filter(fg => fg.groupType === 'field').flatMap(fg => fg.filters)
     const valueFilters = feedbackFilters.filter(fg => fg.groupType === 'value').flatMap(fg => fg.filters)
     if (!fieldFilters || !valueFilters) return false
-    
+
     var showElgibility = false
     for (const field of fieldFilters) {
       console.log("Checking field: ", field)
@@ -109,15 +109,15 @@ function App() {
 
     console.log(showElgibility, selection)
     return showElgibility
-  } 
+  }
 
   const handleFilterChange = (
     questionId: number,
-    filterGroup: string, 
-    fieldName: string, 
+    filterGroup: string,
+    fieldName: string,
     value: string
   ) => {
-    
+
     const filterGroupChanged = feedbackFilters.find(fg => fg.group === filterGroup)
     if (!filterGroupChanged) return
 
@@ -139,7 +139,7 @@ function App() {
     const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
       const updatedQuestions = question.map((annotation) => {
         if (annotation.questionId !== questionId) return annotation
-        const updatedSelections = annotation.selections.map((selection) => 
+        const updatedSelections = annotation.selections.map((selection) =>
           ({ ...selection, show: checkSelectionShowEligibility(selection, updatedFilters) }))
         return { ...annotation, selections: updatedSelections }
       })
@@ -169,7 +169,7 @@ function App() {
 
     Papa.parse(csvFile, {
       header: true,
-      complete: function(results: any) { 
+      complete: function(results: any) {
         console.log(results)
         let annotationsDto: AnnotationsDto[] = results.data
         let annotations: Annotation[] = []
@@ -217,8 +217,8 @@ function App() {
     setAggregatedAnnotations(buckets)
     }
 
-  const currentAnnotationComments = 
-    activeAnnotation === -1 
+  const currentAnnotationComments =
+    activeAnnotation === -1
       ? aggregatedAnnotations.flat().flatMap(annotation => annotation.selections)
       : aggregatedAnnotations[activeAnnotation]
         ?.flatMap(annotation => annotation.selections) ?? []
@@ -230,12 +230,12 @@ function App() {
     const maxSelectionPerAnnotation = 20
     const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
-    
+
     const generatedData = generateCoCreateData(
-      numQuestions, 
-      maxAnnotation, 
-      minSelectionPerAnnotation, 
-      maxSelectionPerAnnotation, 
+      numQuestions,
+      maxAnnotation,
+      minSelectionPerAnnotation,
+      maxSelectionPerAnnotation,
       imageSize,
       pictureRange
     );
@@ -264,7 +264,7 @@ function App() {
 
   const checkForIniitalShowEligibility = (selection: Selection) => {
     return (
-      selection.aestheticValue !== null 
+      selection.aestheticValue !== null
       || selection.functionValue !== null
     )
   }
@@ -305,7 +305,7 @@ function App() {
     const cleanedSearchText = searchText.trim().toLowerCase()
     const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
       const updatedQuestions = question.map((annotation) => {
-        const updatedSelections = annotation.selections.map((selection) => 
+        const updatedSelections = annotation.selections.map((selection) =>
           ({ ...selection, show: selection.comment.toLowerCase().includes(cleanedSearchText) }))
         return { ...annotation, selections: updatedSelections }
       })
@@ -313,29 +313,29 @@ function App() {
     })
     setAggregatedAnnotations(updatedAggregatedAnnotations)
   }
-      
-    
-    
+
+
+
 
   return (
     <>
       {/* Header */}
       <Header />
-      
+
       {/* Body */}
-      <ResizablePanelGroup 
-        direction='horizontal' 
-        className="h-[100vh] rounded-lg"
+      <ResizablePanelGroup
+        direction='horizontal'
+        className="h-[100vh]"
       >
         {
           showSidebar &&
-          <ResizablePanel minSize={30} className="bg-[#202020] border-2 border-[#333]">
-            <div className="h-[92.5vh] w-[100%] border-2 border-[#333] p-5 gap-y-2 flex flex-col">
-              
+          <ResizablePanel minSize={30} className="border">
+            <div className="container h-[92.5vh] w-[100%] border border-[#E8E8E8] p-5 gap-y-2 flex flex-col">
+
               <div className='flex justify-between items-center'>
-                <h1 className="text-2xl font-bold pb-3">Annotations</h1>
-                  <Button 
-                    className="bg-blue-500 hover:bg-blue-600 hover:cursor-pointer text-white p-2"
+                <h1 className="text-2xl font-bold">Annotations</h1>
+                  <Button
+                    className="bg-black hover:bg-[#333] text-white hover:cursor-pointer"
                     onClick={importAnnotations}
                   >
                   Import
@@ -345,507 +345,361 @@ function App() {
               {/* Search Bar */}
               <div className="flex justify-between items-center flex-wrap-reverse gap-2 ">
                 <div className="flex w-[65%] gap-2">
-                  <input 
-                    type="text" placeholder="Search annotations" 
-                    className="border border-[#333] dark:border-[#333] bg-[#111] p-1 max-w-[80%] w-[100%]" 
+                  <input
+                    type="text" placeholder="Search annotations"
+                    className="border p-1 max-w-[80%] w-[100%] bg-[#f3f3f3]"
                     onChange={(e) => handleSearchAnnotations(e.target.value)}
                   />
-                  {/* <button className="bg-blue-500 border-blue-500 border-2 text-white p-1">
-                    Search
-                  </button> */}
                 </div>
-
-                <div className="flex justify-end gap-2">
-                  <Button 
-                    className={cn(
-                      "p-2 cursor-pointer",
-                      { "bg-blue-500 text-white": annotationViewMode === "single" }, // Always active for now
-                      { "bg-gray-700 text-gray-400": annotationViewMode !== "single" } // Always inactive for now
-                    )}
-                    onClick={handleAnnotationViewModeChange}
-                  >
-                    Single View
-                  </Button>
-                  <Button 
-                    className={cn(
-                      "p-2 cursor-pointer",
-                      { "bg-blue-500 text-white": annotationViewMode === "grid" }, // Always inactive for now
-                      { "bg-gray-700 text-gray-400": annotationViewMode !== "grid" } // Always active for now
-                    )}
-                    onClick={handleAnnotationViewModeChange}
-                  >
-                    Grid View
-                  </Button>
-                </div>
-
               </div>
 
-              {
-                annotationViewMode === "grid" &&
-                <div className='mx-auto h-[90vh] overflow-scroll w-[100%]'>
-                  <div 
-                    className={cn(
-                      "p-3 flex flex-wrap justify-center gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
-                      "min-w-[100%]",
-                      // "p-3 flex flex-wrap gap-5 h-[90vh] border-2 border-[#444] overflow-scroll",
-                      "bg-[#111]" // Dark Mode
-                    )}
-                    >
-                    {aggregatedAnnotations.filter(annotation => annotation[0]?.show).length === 0 &&
-                      <div className="flex text-gray-400 justify-center items-center w-full h-full">
-                        No annotations found
-                      </div>
-                    }
-                      
-                      
-                    {aggregatedAnnotations
-                      .filter(annotation => annotation[0]?.show)
-                      .map((annotation, questionIndex) =>  {
-                    
-                      let aestheticValues = annotation
-                        .flatMap(annotation => annotation.selections)
-                        .map(selection => selection.aestheticValue)
-                        .reduce((acc, curr) => {
-                          switch (curr) {
-                            case 'good': acc.likes++; break;
-                            case 'bad': acc.dislikes++; break;
-                            default: acc.blank++; break;
-                          }
-                          return acc;
-                        }, { likes: 0, dislikes: 0, blank: 0 })
-
-
-                      let functionValues = annotation
-                        .flatMap(annotation => annotation.selections)
-                        .map(selection => selection.functionValue)
-                        .reduce((acc, curr) => {
-                          switch (curr) {
-                            case 'good': acc.likes++; break;
-                            case 'bad': acc.dislikes++; break;
-                            default: acc.blank++; break;
-                          }
-                          return acc;
-                        }, { likes: 0, dislikes: 0, blank: 0 })
-
-                        let functionDislikePercentage = functionValues.dislikes / (functionValues.likes + functionValues.dislikes) * 100
-                        let functionLikePercetange = functionValues.likes / (functionValues.likes + functionValues.dislikes) * 100
-                        let functionDislikePercentageWidth = functionValues.dislikes === functionValues.likes  ? `50%` : `${functionDislikePercentage}%`
-                        let functionLikePercentageWidth = functionValues.likes === functionValues.dislikes  ? `50%` : `${functionLikePercetange}%`
-
-                      return (
-                      <div
-                        key={questionIndex} 
-                        className={cn(
-                          "flex jusify-content-center items-center relative cursor-pointer",
-                          "hover:scale-105 transform transition duration-300 ease-in-out",
-                          "border-3 border-transparent",
-                          { "border-blue-500": activeAnnotation === questionIndex }
-                        )}
-                      >
-                        <div className="relative w-full max-w-80 mx-auto border border-[#333] aspect-[3/2]">
-                          {annotation[0]?.imagePath !== undefined && 
-                            <img 
-                              src={annotation[0].imagePath}
-                              alt="rendering" 
-                              className="w-full h-full object-contain"
-                              onClick={handleSelection(questionIndex)}
-                            />
-                          }
-                          {/* Overlay to show the number of annotations */}
-                          <div className="absolute bottom-0 left-0 w-full bg-[#111111cc] text-white z-30 flex flex-wrap-reverse">
-                            <div className="w-full bg-[#111111cc] text-white p-1 z-30 text-ellipsis overflow-hidden whitespace-nowrap">
-                              [{questionIndex + 1}] {annotation[0].imageName} - {annotation.length} entries
-                            </div>
-                            <div className='w-full flex'>
-                                <div 
-                                  className="text-xs bg-green-800 text-white p-0.5 z-30 text-ellipsis overflow-hidden whitespace-nowrap"
-                                  style={{ width: functionLikePercentageWidth }}
-                                >
-                                  {functionValues.likes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(100 - functionDislikePercentage)}%]
-                                </div>
-                                <div className="text-xs bg-red-800 text-white p-0.5 z-30 text-ellipsis overflow-hidden whitespace-nowrap"
-                                  style={{ width: functionDislikePercentageWidth }}
-                                >
-                                      {functionValues.dislikes} [{isNaN(functionDislikePercentage) ? 'N/A' : Math.round(functionDislikePercentage)}%]
-                                </div>
-                            </div>
-                          </div>
-                        </div>
-                        
-                      </div>
-                    )}
+              <div className='mx-auto h-[90vh] overflow-scroll w-[100%]'>
+                <div
+                  className={cn(
+                    "scrollable-container",
+                    "p-3 flex flex-wrap justify-center gap-5  border overflow-scroll",
+                    "min-w-[100%]",
                   )}
-                  </div>
-                </div>
-              }
-              {
-                annotationViewMode === "single" &&
-                <div className="flex flex-col gap-3 h-[90vh] overflow-scroll">
-                  {aggregatedAnnotations.map((annotation, questionIndex) => (
-                    <div 
+                  >
+                  {aggregatedAnnotations.filter(annotation => annotation[0]?.show).length === 0 &&
+                    <div className="flex text-gray-400 justify-center items-center w-full h-full">
+                      No annotations found
+                    </div>
+                  }
+
+                  {aggregatedAnnotations
+                    .filter(annotation => annotation[0]?.show)
+                    .map((annotation, questionIndex) =>  {
+                    return (
+                    <div
                       key={questionIndex}
                       className={cn(
-                        "flex justify-between items-center p-2 cursor-pointer",
-                        "hover:bg-[#333] border-2 border-[#444]",
-                        { "bg-[#333]": activeAnnotation === questionIndex }
+                        "flex jusify-content-center items-center relative cursor-pointer",
+                        "hover:scale-105 transform transition duration-300 ease-in-out",
+                        "border-3 border-transparent bg-gray-200",
+                        { "border-blue-500 bg-blue-200": activeAnnotation === questionIndex }
                       )}
-                      onClick={handleSelection(questionIndex)}
+                      style={{
+                        borderColor: activeAnnotation === questionIndex ? '#1338BE' : '#E8E8E8',
+                        height: 'fit-content'
+                      }}
                     >
-                      {annotation[0].imagePath !== undefined &&
-                        <img
-                          src={annotation[0].imagePath}
-                          alt="rendering"
-                          className="w-20 h-20"
-                        />
-                      }
-                      <div className="flex flex-col gap-2">
-                        <div>View {questionIndex + 1} - {annotation[0].imageName} </div>
-                        {/* <div>{annotation.length} comments</div> */}
+                    <div className="relative w-full max-w-80 mx-auto border aspect-[3/2] ">
+                        {annotation[0]?.imagePath !== undefined &&
+                          <img
+                            src={annotation[0].imagePath}
+                            alt="rendering"
+                            className="w-full object-contain"
+                            onClick={handleSelection(questionIndex)}
+                          />
+                        }
+                        {/* Overlay to show the number of annotations */}
+                        <div className="absolute bottom-0 left-0 w-full bg-[#696969cc] text- z-30 flex flex-wrap-reverse">
+                          <div className="w-full bg-[#c9c9c93e] text-white p-1 z-30 text-ellipsis overflow-hidden whitespace-nowrap">
+                            [{questionIndex + 1}] {annotation[0].imageName} - {annotation.length} entries
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  )}
+                )}
                 </div>
-              }
+              </div>
 
             </div>
           </ResizablePanel>
         }
         <ResizableHandle withHandle />
-        <ResizablePanel minSize={40} className="bg-[#202020] border-4 border-l-0 border-[#333] h-[90vh]">
+        <ResizablePanel minSize={40} className="border border-l-0">
           <ResizablePanelGroup direction="vertical">
-            <div className="h-[100%] overflow-scroll">
+            <div className="container h-[92.5vh] w-[100%] border border-[#E8E8E8] p-5 gap-y-2 flex flex-col overflow-scroll">
 
+            {/* Annotation */}
             {activeAnnotation !== -1 &&
+              <Card className="rounded-xl">
+                <CardHeader className="rounded-xl m-2 flex flex-row justify-between items-center">
+                  <div>
+                    Mosque {activeAnnotation + 1} of {aggregatedAnnotations.length}
+                  </div>
 
-              <div className="flex flex-col p-3 gap-3 max-h-[60%] overflow-scroll">
-                {/* Annotation */}
-                {
-                  
-                  <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl h-[100%]">
-                    <CardHeader className="bg-[#161616] rounded-xl m-2 flex flex-row justify-between items-center">
-                      <div>
-                        Mosque {activeAnnotation + 1} of {aggregatedAnnotations.length}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          className="bg-blue-500 hover:bg-blue-600 text-white p-2 cursor-pointer text-sm"
-                          onClick={() => setShowExecutiveSummary(!showExecutiveSummary)}
-                        >
-                          {showExecutiveSummary ? 'Hide Executive Summary' : 'Show Executive Summary'}
-                        </Button>
-                        <Button 
-                          className="bg-blue-500 hover:bg-blue-600 text-white p-2 cursor-pointer text-sm"
-                          onClick={() => setShowSidebar(!showSidebar)}
-                        >
-                          {showSidebar ? 'Hide Sidebar' : 'Show Sidebar'}
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-3 h-[90%]">
-                      
-                      {/* Data */}
-                      <p className='text-warp text-sm'>
-                        Question ID: {JSON.stringify(aggregatedAnnotations[activeAnnotation][0]?.questionId)}
-                      </p>
+                  <div className="flex gap-2">
+                    <Button
+                      className="bg-black hover:bg-[#333] text-white p-2 cursor-pointer text-sm"
+                      onClick={() => setShowExecutiveSummary(!showExecutiveSummary)}
+                    >
+                      {showExecutiveSummary ? 'Hide Executive Summary' : 'Show Executive Summary'}
+                    </Button>
+                    <Button
+                      className="bg-black hover:bg-[#333] text-white p-2 cursor-pointer text-sm"
+                      onClick={() => setShowSidebar(!showSidebar)}
+                    >
+                      {showSidebar ? 'Hide Sidebar' : 'Show Sidebar'}
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-3 h-[90%]">
 
-                      <div className="flex flex-col lg:flex-row h-[98.5%]">
-                        {/* Canvas */}
-                        <div className="flex justify-center items-center w-[100%] lg:w-[80%]">
-                          <Canvas
-                            annotations={aggregatedAnnotations[activeAnnotation]}
-                            activeComment={activeComment}
-                            // imagePath={aggregatedAnnotations[activeAnnotation]}
-                            canvasWidth={410}
-                            canvasHeight={270}
-                            viewMode={selectedViewMode} // "flatHeatmap" | "heatmap" | "selection"
-                          />
-                      </div>
-                        {/* Search & Filters */}
-                        <div className="min-w-[200px] w-[100%] lg:w-[30%] flex flex-row lg:flex-col lg:items-center gap-2 flex-wrap">
+                  {/* Data */}
+                  <p className='text-warp text-sm'>
+                    Question ID: {JSON.stringify(aggregatedAnnotations[activeAnnotation][0]?.questionId)}
+                  </p>
 
-                          {/* Selector for view mode */}
-                          <div className="w-[100%]">
-                            <Select onValueChange={(value) => setSelectedViewMode(value as "selection" | "heatmap" | "flatHeatmap")}>
-                              <SelectTrigger className="bg-[#111] hover:bg-[#333] text-white border-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]">
-                                <SelectValue placeholder="Select View Mode" />
-                              </SelectTrigger>
-                              <SelectContent className="bg-[#111] w-[100%]">
-                                <SelectItem className="bg-[#111] hover:bg-[#2e2e2e] text-white border-t-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]" value="selection">Selection</SelectItem>
-                                <SelectItem className="bg-[#111] hover:bg-[#2e2e2e] text-white border-t-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]" value="heatmap">Heatmap</SelectItem>
-                                <SelectItem className="bg-[#111] hover:bg-[#2e2e2e] text-white border-t-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]" value="flatHeatmap">Flat Heatmap</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <Card className="w-[100%] border-[#333] bg-[#111]">  
-                            <CardHeader className="m-2 p-3 bg-[#000] border-[#333] border-1 rounded-lg">
-                              <b className="text-xs">Feedback Properties</b>
-                            </CardHeader>
-                            <CardContent className="px-3 w-[100%]">
-                              {
-                                feedbackFilters.map((filterGroup, index) => (
-                                  <>
-                                    <div key={index} className="w-[100%] flex justify-between">
-                                      <span className="text-xs font-medium">{filterGroup.group}</span>
-                                      <span className="text-xs font-medium">Total: {filterGroup.groupCount}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1 my-2">
-                                      {
-                                        filterGroup.filters.map((filter, index) => (
-                                          <CheckboxWithText 
-                                            key={index} 
-                                            id={filter.id} 
-                                            label={filter.label} 
-                                            checked={filter.active}
-                                            onCheckedChange={() => handleFilterChange(
-                                              aggregatedAnnotations[activeAnnotation][0]?.questionId,
-                                              filterGroup.group, 
-                                              filter.fieldName, 
-                                              filter.value
-                                            )}
-                                          />
-                                        ))
-                                      }
-                                    </div>
-                                  </>
-                                ))
-                              }
-                            </CardContent>
-                          </Card>
-
-                          <Card className="w-[100%] border-[#333] bg-[#111]">
-                            <CardHeader className="m-2 p-3 bg-[#000] border-[#333] border-1 rounded-lg">
-                              <b className="text-xs">User Demographics</b>
-                            </CardHeader>
-                            <CardContent className="px-3 w-[100%]">
-                              <div className="w-[100%] flex justify-between">
-                                <span className="text-xs font-medium">Role</span>
-                              </div>
-                              <div className="flex flex-col gap-1 my-2">
-                                <MultiSelect
-                                  className='dark:bg-[#202020] dark:border-[#1b1b1b]'
-                                  options={rolesList}
-                                  onValueChange={setSelectedRoles}
-                                  defaultValue={selectedRoles}
-                                  placeholder="Select Roles"
-                                  maxCount={3}
-                                />
-                              </div>
-                              <div className="w-[100%] flex justify-between">
-                                <span className="text-xs font-medium">Tenure</span>
-                              </div>
-                              <div className="flex flex-col gap-1 my-2">
-                                <MultiSelect
-                                  className='dark:bg-[#202020] dark:border-[#1b1b1b]'
-                                  options={tenureList}
-                                  onValueChange={setSelectedTenures}
-                                  defaultValue={selectedTenures}
-                                  placeholder="Select Tenures"
-                                  maxCount={3}
-                                />
-                              </div>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </div>
-                      {/* <div className="flex gap-2">
-                        <PieChartComponent title=""
-                          chartData={[
-                            { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
-                            { browser: "safari", visitors: generateNumber(), fill: "var(--color-safari)" },
-                            { browser: "firefox", visitors: generateNumber(), fill: "var(--color-firefox)" },
-                            { browser: "edge", visitors: generateNumber(), fill: "var(--color-edge)" },
-                            { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
-                          ]}
-                          />
-                        <PieChartComponent title=""
-                          chartData={[
-                            { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
-                            { browser: "safari", visitors: generateNumber(), fill: "var(--color-safari)" },
-                            { browser: "firefox", visitors: generateNumber(), fill: "var(--color-firefox)" },
-                            { browser: "edge", visitors: generateNumber(), fill: "var(--color-edge)" },
-                            { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
-                          ]}
-                        />
-                        <PieChartComponent title="" 
-                          chartData={[
-                            { browser: "chrome", visitors: generateNumber(), fill: "var(--color-chrome)" },
-                            { browser: "safari", visitors: generateNumber(), fill: "var(--color-safari)" },
-                            { browser: "firefox", visitors: generateNumber(), fill: "var(--color-firefox)" },
-                            { browser: "edge", visitors: generateNumber(), fill: "var(--color-edge)" },
-                            { browser: "other", visitors: generateNumber(), fill: "var(--color-other)" },
-                          ]}
-                        />
-                      </div> */}
-                      <div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                }
-                </div>
-            }
-              <div className="flex flex-col p-3 gap-3 max-h-[100%] overflow-scroll">
-
-                {/* Executive Summary */}
-                {
-                  showExecutiveSummary &&
-                  <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
-                    <CardHeader className="bg-[#161616] rounded-xl m-2">
-                      <div className="flex items-center justify-between ">
-                        <div>
-                          <CardTitle>Executive Summary</CardTitle>
-                          <CardDescription className="text-gray-400">View {activeAnnotation + 1}</CardDescription>
-                        </div>
-                        <div className='flex gap-2 flex-col md:flex-row'>
-                          <div className='flex items-center gap-2'>
-                            <Ping />
-                            <span className="text-sm text-gray-400">65% Positive</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Ping />
-                            <span className="text-sm text-gray-400">82% Response Rate</span>
-                          </div>
-                          <div className='flex items-center gap-2'>
-                            <Ping />
-                            <span className="text-sm text-gray-400">
-                              {currentAnnotationComments.length} Comments
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    {/* <div className="border-t border-gray-400 mx-3"></div> */}
-                    <CardContent>
-
-                        <div>
-                          <h2>Key Findings</h2>
-                          <p className='text-gray-400 text-sm'>
-                            Overall positive sentiment (65%) with strong appreciation for modern design elements.
-                            Primary concerns center around functional aspects in the upper floor layout.
-                          </p>
-                        </div>
-                        <div className="border-t border-gray-400 my-3"></div>
-                        <div>
-                          <h2>Critical Analysis</h2>
-                          <ul className='list-inside list-disc text-gray-400 text-sm'> 
-                            <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
-                            <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
-                            <li>Consistent feedback across different stakeholder groups on sustainability features</li>
-                          </ul>
-                        </div>
-
-                    </CardContent>
-
-                    <CardFooter>
-                      <div className='flex flex-col gap-2 w-[100%]'>
-                        <div className='flex gap-2 flex-wrap md:flex-nowrap'>
-
-                          <div className='bg-green-600/40 text-green-200 flex flex-col md:w-1/2 p-2'>
-                            <b>Strengths</b>
-                            <span className='text-sm'>
-                              Modern aesthetic, sustainable materials, natural lighting
-                            </span>
-                          </div>
-
-                          <div className='bg-red-500/50 text-red-200 flex flex-col md:w-1/2 p-2'>
-                            <b>Area of Improvements</b>
-                            <span className='text-sm'>
-                              Functional layout, lack of storage, limited natural light
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-center">
-                          <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
-                        </div>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                }
-
-
-                {/* Feedback Comments */}
-                <Card className="border-[#444] bg-[#1f1f1f] rounded-xl shadow-2xl">
-                  
-                  <CardHeader className='flex flex-row justify-between items-baseline bg-[#161616] rounded-xl mb-2 pb-3'>
-                    <CardTitle>Feedback Comments</CardTitle>
-
-                    <CardDescription className="text-gray-400">
-                      Showing {currentAnnotationComments.length} comments 
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent>
-                    {/* Comment Searchbar */}
-                    <div className="flex justify-between items-center">
-                      <input 
-                        type="text" placeholder="Search comments" 
-                        className="border border-[#333] dark:border-[#333] bg-[#111] p-1 w-[80%]" 
-                        onChange={(e) => handleSearchComments(e.target.value)}
+                  <div className="flex flex-col lg:flex-row">
+                    {/* Canvas */}
+                    <div className="flex justify-center items-center w-[100%] lg:w-[80%]">
+                      <Canvas
+                        annotations={aggregatedAnnotations[activeAnnotation]}
+                        activeComment={activeComment}
+                        canvasWidth={410}
+                        canvasHeight={270}
+                        viewMode={selectedViewMode} // "flatHeatmap" | "heatmap" | "selection"
                       />
-                      <Button className="bg-blue-500 border-blue-500 border-2 text-white p-1 py-0 my-0 hover:bg-blue-600 hover:cursor-pointer">
-                        Search
-                      </Button>
-                    </div>
-                  
-                    <div className="flex flex-col">
-                      {/* Flat map on selections */}
-                      {currentAnnotationComments
-                        .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
-                        .filter((selection) => selection.show)
-                        .map((selection, index) => 
+                  </div>
+                    {/* Search & Filters */}
+                    <div className="min-w-[200px] w-[100%] lg:w-[30%] flex flex-row lg:flex-col lg:items-center gap-2 flex-wrap">
+
+                      {/* Selector for view mode */}
+                      <div className="w-[100%]">
+                        <Select
+                          onValueChange={(value) => setSelectedViewMode(value as "selection" | "heatmap" | "flatHeatmap")}
+                          defaultValue={selectedViewMode}
+                        >
+                          <SelectTrigger className="border-2 p-2 cursor-pointer text-sm w-[100%]">
+                            <SelectValue placeholder="Select View Mode" />
+                          </SelectTrigger>
+                          <SelectContent className="w-[100%] bg-[#F9FAFB]">
+                            <SelectItem className="hover:bg-white border-[#EBEAEB] border-t-2 p-2 cursor-pointer text-sm w-[100%]" value="selection">Selection</SelectItem>
+                            <SelectItem className="hover:bg-white border-[#EBEAEB] border-t-2 p-2 cursor-pointer text-sm w-[100%]" value="heatmap">Heatmap</SelectItem>
+                            <SelectItem className="hover:bg-white border-[#EBEAEB] border-t-2 p-2 cursor-pointer text-sm w-[100%]" value="flatHeatmap">Flat Heatmap</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Card className="w-[100%]">
+                        <CardHeader className="m-2 p-3 border-1 rounded-lg bg-[#f3f3f3]">
+                          <b className="text-xs">Feedback Properties</b>
+                        </CardHeader>
+                        <CardContent className="px-3 w-[100%]">
                           {
-                            const aestheticValue = extractSelectionFieldValue(selection.aestheticValue)
-                            const functionValue = extractSelectionFieldValue(selection.functionValue)
-                            return (
-                            <div key={index} className="flex flex-col gap-2">
-                              <Button 
-                                size='lg'
-                                className={cn(
-                                  "flex flex-row justify-start w-[100%] py-2 my-1",
-                                  "hover:bg-[#333] hover:cursor-pointer",
-                                  "border-2 border-transparent",
-                                  // odd bg color
-                                  { "bg-[#171717]": index % 2 === 0 },
-                                  // even bg color
-                                  { "bg-[#1d1d1d]": index % 2 !== 0 },
-                                  { "border-2 border-blue-500": activeComment === selection.uid }
-                                )}
-                                onClick={() => setActiveComment(selection.uid)}
-                              >
-                                <div className='flex w-[100%] justify-between gap-2'>
-                                  <div className='w-[80%]'>
-                                    <div className="flex justify-start gap-2 ">
-                                      <span>Architect</span> |
-                                      <span>{functionValue} <b>Functional</b></span> |
-                                      <span>{aestheticValue} <b>Aesthetic</b></span> 
-                                    </div>
-                                    <div className="flex justify-start text-sm text-gray-400 break-words">
-                                      {selection.comment.slice(0, 40)}
-                                    </div>
+                            feedbackFilters.map((filterGroup, index) => (
+                              <>
+                                <div key={index} className="w-[100%] flex justify-between">
+                                  <span className="text-xs font-medium">{filterGroup.group}</span>
+                                  <span className="text-xs font-medium">Total: {filterGroup.groupCount}</span>
+                                </div>
+                                <div className="flex flex-col gap-1 my-2">
+                                  {
+                                    filterGroup.filters.map((filter, index) => (
+                                      <CheckboxWithText
+                                        key={index}
+                                        id={filter.id}
+                                        label={filter.label}
+                                        checked={filter.active}
+                                        onCheckedChange={() => handleFilterChange(
+                                          aggregatedAnnotations[activeAnnotation][0]?.questionId,
+                                          filterGroup.group,
+                                          filter.fieldName,
+                                          filter.value
+                                        )}
+                                      />
+                                    ))
+                                  }
+                                </div>
+                              </>
+                            ))
+                          }
+                        </CardContent>
+                      </Card>
+
+                      <Card className="w-[100%]">
+                        <CardHeader className="m-2 p-3 border-1 rounded-lg bg-[#f3f3f3]">
+                          <b className="text-xs">User Demographics</b>
+                        </CardHeader>
+                        <CardContent className="px-3 w-[100%]">
+                          <div className="w-[100%] flex justify-between">
+                            <span className="text-xs font-medium">Role</span>
+                          </div>
+                          <div className="flex flex-col gap-1 my-2">
+                            <MultiSelect
+                              // className='dark:bg-[#202020] dark:border-[#1b1b1b]'
+                              options={rolesList}
+                              onValueChange={setSelectedRoles}
+                              defaultValue={selectedRoles}
+                              className="bg-[#f3f3f3]"
+                              placeholder="Select Roles"
+                              maxCount={3}
+                            />
+                          </div>
+                          <div className="w-[100%] flex justify-between">
+                            <span className="text-xs font-medium">Tenure</span>
+                          </div>
+                          <div className="flex flex-col gap-1 my-2">
+                            <MultiSelect
+                              // className='dark:bg-[#202020] dark:border-[#1b1b1b]'
+                              options={tenureList}
+                              onValueChange={setSelectedTenures}
+                              defaultValue={selectedTenures}
+                              className="bg-[#f3f3f3]"
+                              placeholder="Select Tenures"
+                              maxCount={3}
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            }
+
+            {/* Executive Summary */}
+            {
+              showExecutiveSummary &&
+              <Card className="rounded-xl">
+                <CardHeader className="mb-2 border-b-2 border-gray-600 pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle>Executive Summary</CardTitle>
+                      <CardDescription>View {activeAnnotation + 1}</CardDescription>
+                    </div>
+                    <div className='flex gap-2 flex-col md:flex-row'>
+                      <div className='flex items-center gap-2'>
+                        <Ping />
+                        <span className="text-sm">65% Positive</span>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Ping />
+                        <span className="text-sm">82% Response Rate</span>
+                      </div>
+                      <div className='flex items-center gap-2'>
+                        <Ping />
+                        <span className="text-sm">
+                          {currentAnnotationComments.length} Comments
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                    <div>
+                      <h2>Key Findings</h2>
+                      <p className='text-gray-600 text-sm'>
+                        Overall positive sentiment (65%) with strong appreciation for modern design elements.
+                        Primary concerns center around functional aspects in the upper floor layout.
+                      </p>
+                    </div>
+                    <div className="border-t border-gray-600 my-3"></div>
+                    <div>
+                      <h2>Critical Analysis</h2>
+                      <ul className='list-inside list-disc text-gray-600 text-sm'>
+                        <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
+                        <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
+                        <li>Consistent feedback across different stakeholder groups on sustainability features</li>
+                      </ul>
+                    </div>
+
+                </CardContent>
+
+                <CardFooter>
+                  <div className='flex flex-col gap-2 w-[100%]'>
+                    <div className='flex gap-2 flex-wrap md:flex-nowrap'>
+
+                      <div className='bg-[#F4FDF7] text-[#85A389] flex flex-col md:w-1/2 p-2'>
+                        <b>Strengths</b>
+                        <span className='text-sm'>
+                          Modern aesthetic, sustainable materials, natural lighting
+                        </span>
+                      </div>
+
+                      <div className='bg-[#FEF5F5] text-[#CB7D7A] flex flex-col md:w-1/2 p-2'>
+                        <b>Area of Improvements</b>
+                        <span className='text-sm'>
+                          Functional layout, lack of storage, limited natural light
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
+                    </div>
+                  </div>
+                </CardFooter>
+              </Card>
+            }
+
+            {/* Feedback Comments */}
+            {
+              <Card>
+                <CardHeader className='flex flex-row justify-between items-baseline mb-2 pb-3 border-b-2 border-gray-600'>
+                  <CardTitle>Feedback Comments</CardTitle>
+                  <CardDescription className="text-gray-400">
+                    Showing {currentAnnotationComments.length} comments
+                  </CardDescription>
+                </CardHeader>
+
+                <CardContent>
+                  {/* Comment Searchbar */}
+                  <div className="flex justify-between items-center">
+                    <input
+                      type="text" placeholder="Search comments"
+                      className="border p-1 w-[80%]"
+                      onChange={(e) => handleSearchComments(e.target.value)}
+                    />
+                    <Button className="bg-black hover:bg-[#333] border-2 text-white p-1 py-0 my-0 hover:cursor-pointer">
+                      Search
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col">
+                    {/* Flat map on selections */}
+                    {currentAnnotationComments
+                      .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
+                      .filter((selection) => selection.show)
+                      .map((selection, index) =>
+                        {
+                          const aestheticValue = extractSelectionFieldValue(selection.aestheticValue)
+                          const functionValue = extractSelectionFieldValue(selection.functionValue)
+                          return (
+                          <div key={index} className="flex flex-col gap-2">
+                            <Button
+                              size='lg'
+                              className={cn(
+                                "flex flex-row justify-start w-[100%] py-2 my-1",
+                                "hover:bg-[#e7e7e7] hover:cursor-pointer",
+                                // odd bg color
+                                { "bg-[#F2F2F2]": index % 2 === 0 },
+                                // even bg color
+                                { "bg-[#FAFAFA]": index % 2 !== 0 },
+                                { "border-2 border-blue-500": activeComment === selection.uid }
+                              )}
+                              onClick={() => setActiveComment(selection.uid)}
+                            >
+                              <div className='flex w-[100%] justify-between gap-2'>
+                                <div className='w-[80%]'>
+                                  <div className="flex justify-start gap-2 ">
+                                    <span>Architect</span> |
+                                    <span>{functionValue} <b>Functional</b></span> |
+                                    <span>{aestheticValue} <b>Aesthetic</b></span>
                                   </div>
-                                  <div className="text-sm text-gray-400 w-[20%]">
-                                    4 days ago
+                                  <div className="flex justify-start text-sm text-gray-400 break-words">
+                                    {selection.comment.slice(0, 40)}
                                   </div>
                                 </div>
-                              </Button>
-                            </div>
-                        )})}
-                    </div>
-                  </CardContent>
-                </Card>
-
-              </div>
-            {/* <ResizableHandle withHandle />  
-            <ResizablePanel minSize={35} className="bg-[#202020] border-2 border-[#333]">
-            
-            </ResizablePanel> */}
+                                <div className="text-sm text-gray-400 w-[20%]">
+                                  4 days ago
+                                </div>
+                              </div>
+                            </Button>
+                          </div>
+                      )})}
+                  </div>
+                </CardContent>
+              </Card>
+            }
             </div>
           </ResizablePanelGroup>
         </ResizablePanel>
-      </ResizablePanelGroup>
-
+    </ResizablePanelGroup>
     </>
   )
 }

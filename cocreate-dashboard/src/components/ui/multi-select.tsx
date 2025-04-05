@@ -39,7 +39,7 @@ const multiSelectVariants = cva(
     variants: {
       variant: {
         default:
-          "border-foreground/10 text-foreground bg-card hover:bg-card/80 dark:bg-[#111] dark:border-[#111111a5] dark:hover:bg-[#222] dark:hover:border-[#111111a5]",
+          "border-foreground/10 text-foreground bg-card hover:bg-card/80",
         secondary:
           "border-foreground/10 bg-secondary text-secondary-foreground hover:bg-secondary/80",
         destructive:
@@ -218,7 +218,7 @@ export const MultiSelect = React.forwardRef<
                         className={cn(
                           isAnimating ? "animate-bounce" : "",
                           multiSelectVariants({ variant }),
-                          "z-[10]"
+                          "z-[10] bg-[#e3e3e3]"
                         )}
                         style={{ animationDuration: `${animation}s` }}
                       >
@@ -282,7 +282,7 @@ export const MultiSelect = React.forwardRef<
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 dark:bg-[#1d1d1d] border-[#111111a5] border-2"
+          className="w-auto p-0 bg-[#fff] border-2"
           align="start"
           onEscapeKeyDown={() => setIsPopoverOpen(false)}
         >
@@ -297,11 +297,11 @@ export const MultiSelect = React.forwardRef<
                 <CommandItem
                   key="all"
                   onSelect={toggleAll}
-                  className="cursor-pointer"
+                  className="cursor-pointer hover:bg-[#f3f3f3]"
                 >
                   <div
                     className={cn(
-                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                      "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border",
                       selectedValues.length === options.length
                         ? "bg-primary text-primary-foreground"
                         : "opacity-50 [&_svg]:invisible"
@@ -317,7 +317,7 @@ export const MultiSelect = React.forwardRef<
                     <CommandItem
                       key={option.value}
                       onSelect={() => toggleOption(option.value)}
-                      className="cursor-pointer"
+                      className="cursor-pointer hover:bg-[#f3f3f3]"
                     >
                       <div
                         className={cn(
@@ -344,7 +344,7 @@ export const MultiSelect = React.forwardRef<
                     <>
                       <CommandItem
                         onSelect={handleClear}
-                        className="flex-1 justify-center cursor-pointer"
+                        className="flex-1 justify-center cursor-pointer hover:bg-[#f3f3f3]"
                       >
                         Clear
                       </CommandItem>
@@ -356,7 +356,7 @@ export const MultiSelect = React.forwardRef<
                   )}
                   <CommandItem
                     onSelect={() => setIsPopoverOpen(false)}
-                    className="flex-1 justify-center cursor-pointer max-w-full"
+                    className="flex-1 justify-center cursor-pointer max-w-full hover:bg-[#f3f3f3]"
                   >
                     Close
                   </CommandItem>
