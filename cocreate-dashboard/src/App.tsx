@@ -15,6 +15,7 @@ import { MultiSelect } from './components/ui/multi-select'
 import { json } from 'stream/consumers'
 import Papa from 'papaparse'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
+import SelectionThumbnail from './components/selection-thumbnail/SelectionThumbnail'
 
 interface MultiSelectType {
   value: string;
@@ -38,8 +39,6 @@ interface FeedbackFilter {
 
 function App() {
   // const generateNumber = () => Math.floor(Math.random() * 1000)
-
-  const [annotationViewMode, setAnnotationViewMode] = useState<'single' | 'grid'>('grid')
   const [showSidebar, setShowSidebar] = useState<boolean>(true)
   const [showExecutiveSummary, setShowExecutiveSummary] = useState<boolean>(true)
 
@@ -277,10 +276,6 @@ function App() {
     )
   }
 
-  const handleAnnotationViewModeChange = () => {
-    setAnnotationViewMode(annotationViewMode === 'single' ? 'grid' : 'single')
-  }
-
   const extractSelectionFieldValue = (value: string | null) => {
     switch (value) {
       case 'good': return '👍'
@@ -397,38 +392,16 @@ function App() {
                     .filter(annotation => annotation[0]?.show)
                     .map((annotation, questionIndex) =>  {
                     return (
-                    <div
-                      key={questionIndex}
-                      className={cn(
-                        "flex jusify-content-center items-center relative cursor-pointer",
-                        "hover:scale-105 transform transition duration-300 ease-in-out",
-                        "border-3 border-transparent bg-gray-200",
-                        { "border-blue-500 bg-blue-200": activeAnnotation === questionIndex }
-                      )}
-                      style={{
-                        borderColor: activeAnnotation === questionIndex ? '#1338BE' : '#E8E8E8',
-                        height: 'fit-content'
-                      }}
-                    >
-                      <div className="relative w-full max-w-80 mx-auto border aspect-[3/2]">
-                        {annotation[0]?.imagePath !== undefined &&
-                          <img
-                            src={annotation[0].imagePath}
-                            alt="rendering"
-                            className="w-full h-full object-contain"
-                            onClick={handleSelection(questionIndex)}
-                          />
-                        }
-                        {/* Overlay to show the number of annotations */}
-                        <div className="absolute bottom-0 left-0 w-full bg-[#696969cc] text- z-30 flex flex-wrap-reverse">
-                          <div className="w-full bg-[#c9c9c93e] text-white p-1 z-30 text-ellipsis overflow-hidden whitespace-nowrap">
-                            [{questionIndex + 1}] {annotation[0].imageName} - {annotation.length} entries
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                )}
+                      <SelectionThumbnail
+                        key={questionIndex}
+                        annotation={annotation[0]}
+                        width={410}
+                        height={270}
+                        onClick={handleSelection(questionIndex)}
+                        isActive={activeAnnotation === questionIndex}
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
@@ -698,6 +671,9 @@ function App() {
                                 { "bg-[#FAFAFA]": index % 2 !== 0 },
                                 { "border-2 border-blue-500": activeComment === selection.uid }
                               )}
+                              style={{
+                                borderColor: activeComment === selection.uid ? '#1338BE' : '#E8E8E8',
+                              }}
                               onClick={() => setActiveComment(selection.uid)}
                             >
                               <div className='flex w-[100%] justify-between gap-2'>
