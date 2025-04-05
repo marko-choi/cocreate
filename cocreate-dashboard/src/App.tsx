@@ -234,9 +234,9 @@ function App() {
 
   const generateRandomData = () => {
     const numQuestions = 10
-    const maxAnnotation = 10
+    const maxAnnotation = 200
     const minSelectionPerAnnotation = 5
-    const maxSelectionPerAnnotation = 10
+    const maxSelectionPerAnnotation = 400
     const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
 
@@ -681,7 +681,7 @@ function App() {
                     <div>
                       <h2>Critical Analysis</h2>
                       <ul className='list-inside list-disc text-gray-600 text-sm'>
-                        <li>StrongStorng consensus on exterior design elements, particularly in the facade treament</li>
+                        <li>Strong consensus on exterior design elements, particularly in the facade treament</li>
                         <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
                         <li>Consistent feedback across different stakeholder groups on sustainability features</li>
                       </ul>

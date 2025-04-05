@@ -110,12 +110,12 @@ const Canvas = (props: CanvasProps) => {
 
                 let fillStyle = "rgba(200, 200, 200, 0.3)";
                 let strokeStyle = "white";
-                let lineWidth = 2;
+                let lineWidth = 1;
 
                 if (isActive) {
                   fillStyle = "rgba(250, 123, 123, 0.3)";
                   strokeStyle = "red";
-                  lineWidth = 3;
+                  lineWidth = 1;
                 }
 
                 const x = selection.start.x;
@@ -273,6 +273,41 @@ const Canvas = (props: CanvasProps) => {
     }
   };
 
+  // Add a function to draw the active comment selection
+  const drawActiveCommentSelection = (ctx: CanvasRenderingContext2D) => {
+    if (!activeComment) return;
+
+    // Find the selection with the matching uid
+    let activeSelection = null;
+    for (const annotation of annotations) {
+      for (const selection of annotation.selections) {
+        if (selection.uid === activeComment) {
+          activeSelection = selection;
+          break;
+        }
+      }
+      if (activeSelection) break;
+    }
+
+    if (activeSelection) {
+      const x = Math.min(activeSelection.start.x, activeSelection.end.x);
+      const y = Math.min(activeSelection.start.y, activeSelection.end.y);
+      const width = Math.abs(activeSelection.end.x - activeSelection.start.x);
+      const height = Math.abs(activeSelection.end.y - activeSelection.start.y);
+
+      drawSelection(
+        ctx,
+        x,
+        y,
+        width,
+        height,
+        "rgba(250, 123, 123, 0.3)", // Light red fill
+        "red", // Red stroke
+        3 // Thicker line
+      );
+    }
+  };
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -336,6 +371,8 @@ const Canvas = (props: CanvasProps) => {
       if (currentSelection) {
         drawPersistentSelection(ctx);
       }
+      // Draw active comment selection on top of everything
+      drawActiveCommentSelection(ctx);
     }
     else if (viewMode === "heatmap") {
       const imageData = ctx.createImageData(canvasWidth, canvasHeight);
@@ -406,6 +443,8 @@ const Canvas = (props: CanvasProps) => {
       if (currentSelection) {
         drawPersistentSelection(ctx);
       }
+      // Draw active comment selection on top of everything
+      drawActiveCommentSelection(ctx);
     }
     else {
       // Default selection view
@@ -433,12 +472,12 @@ const Canvas = (props: CanvasProps) => {
       allSelections.forEach(({ selection, isActive }) => {
         let fillStyle = "rgba(200, 200, 200, 0.3)";
         let strokeStyle = "white";
-        let lineWidth = 2;
+        let lineWidth = 1;
 
         if (isActive) {
           fillStyle = "rgba(250, 123, 123, 0.3)";
           strokeStyle = "red";
-          lineWidth = 3;
+          lineWidth = 1;
         }
 
         const x = selection.start.x;
@@ -454,6 +493,8 @@ const Canvas = (props: CanvasProps) => {
       if (currentSelection) {
         drawPersistentSelection(ctx);
       }
+      // Draw active comment selection on top of everything
+      drawActiveCommentSelection(ctx);
     }
   }, [annotations, activeComment, viewMode, canvasWidth, canvasHeight, isSelecting, selectionStart, selectionEnd, currentSelection]);
 
