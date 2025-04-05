@@ -8,14 +8,13 @@ import Ping from './components/ping/Ping'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card'
 import { Button } from './components/ui/button'
 import Canvas from './components/canvas/Canvas'
-// import { PieChartComponent } from './components/pie-chart/Test'
 import Header from './components/layout/Header'
 import { CheckboxWithText } from './components/ui/checkbox'
 import { MultiSelect } from './components/ui/multi-select'
-import { json } from 'stream/consumers'
 import Papa from 'papaparse'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 import SelectionThumbnail from './components/selection-thumbnail/SelectionThumbnail'
+import { getContainedSelections, isSelectionContained } from './utils/selection-utils'
 
 interface MultiSelectType {
   value: string;
@@ -41,11 +40,13 @@ function App() {
   // const generateNumber = () => Math.floor(Math.random() * 1000)
   const [showSidebar, setShowSidebar] = useState<boolean>(true)
   const [showExecutiveSummary, setShowExecutiveSummary] = useState<boolean>(true)
+  const [showThumbnailHeatmap, setShowThumbnailHeatmap] = useState<boolean>(true)
 
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
   const [activeComment, setActiveComment] = useState<string | null>(null)
+  const [activeSelection, setActiveSelection] = useState<Selection | null>(null)
 
   const [rolesList, setRolesList] = useState<MultiSelectType[]>([
     { value: "architect", label: "Architect" },
@@ -98,6 +99,10 @@ function App() {
     selection: Selection,
     feedbackFilters: FeedbackFilterGroup[]
   ) => {
+    // First check if the selection is contained within the active selection
+    if (activeSelection && !isSelectionContained(activeSelection, selection)) {
+      return false;
+    }
 
     const fieldFilters = feedbackFilters.filter(fg => fg.groupType === 'field').flatMap(fg => fg.filters)
     const valueFilters = feedbackFilters.filter(fg => fg.groupType === 'value').flatMap(fg => fg.filters)
@@ -105,16 +110,13 @@ function App() {
 
     var showElgibility = false
     for (const field of fieldFilters) {
-      console.log("Checking field: ", field)
       for (const value of valueFilters) {
         let fieldName = field.fieldName as keyof Selection
         let hasEligibility = selection[fieldName] === value.value && value.active
-        console.log(fieldName, hasEligibility, selection)
         if (hasEligibility) return true
       }
     }
 
-    console.log(showElgibility, selection)
     return showElgibility
   }
 
@@ -234,7 +236,7 @@ function App() {
     const numQuestions = 10
     const maxAnnotation = 10
     const minSelectionPerAnnotation = 5
-    const maxSelectionPerAnnotation = 20
+    const maxSelectionPerAnnotation = 10
     const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
 
@@ -320,7 +322,31 @@ function App() {
   // Calculate pagination values
   const filteredComments = currentAnnotationComments
     .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
-    .filter((selection) => selection.show);
+    .filter((selection) => selection.show)
+    .filter((selection) => {
+      // If there's an active selection, only show comments for selections contained within it
+      if (activeSelection) {
+        return isSelectionContained(activeSelection, selection);
+      }
+      return true;
+    });
+
+  // Calculate feedback counts
+  const positiveCount = filteredComments.filter(selection =>
+    selection.aestheticValue === 'good' || selection.functionValue === 'good'
+  ).length;
+
+  const negativeCount = filteredComments.filter(selection =>
+    selection.aestheticValue === 'bad' || selection.functionValue === 'bad'
+  ).length;
+
+  const aestheticCount = filteredComments.filter(selection =>
+    selection.aestheticValue !== null
+  ).length;
+
+  const functionalCount = filteredComments.filter(selection =>
+    selection.functionValue !== null
+  ).length;
 
   const totalPages = Math.ceil(filteredComments.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -335,6 +361,27 @@ function App() {
   // Handle items per page change
   const handleItemsPerPageChange = (value: string) => {
     setItemsPerPage(parseInt(value));
+  };
+
+  const handleSelectionCreated = (selection: Selection) => {
+    setActiveSelection(selection);
+    // Update filters to show only contained selections
+    const containedSelections = getContainedSelections(selection, aggregatedAnnotations[activeAnnotation].flatMap(a => a.selections));
+    const updatedFilters = feedbackFilters.map(filterGroup => ({
+      ...filterGroup,
+      groupCount: containedSelections.length
+    }));
+    setFeedbackFilters(updatedFilters);
+  };
+
+  const handleSelectionCleared = () => {
+    setActiveSelection(null);
+    // Reset filters to show all selections
+    const updatedFilters = feedbackFilters.map(filterGroup => ({
+      ...filterGroup,
+      groupCount: aggregatedAnnotations[activeAnnotation].flatMap(a => a.selections).length
+    }));
+    setFeedbackFilters(updatedFilters);
   };
 
   return (
@@ -354,12 +401,20 @@ function App() {
 
               <div className='flex justify-between items-center'>
                 <h1 className="text-2xl font-bold">Annotations</h1>
+                <div className="flex gap-2">
+                  <Button
+                    className="bg-black hover:bg-[#333] text-white hover:cursor-pointer"
+                    onClick={() => setShowThumbnailHeatmap(!showThumbnailHeatmap)}
+                  >
+                    {showThumbnailHeatmap ? 'Hide Heatmaps' : 'Show Heatmaps'}
+                  </Button>
                   <Button
                     className="bg-black hover:bg-[#333] text-white hover:cursor-pointer"
                     onClick={importAnnotations}
                   >
-                  Import
+                    Import
                   </Button>
+                </div>
               </div>
 
               {/* Search Bar */}
@@ -394,11 +449,12 @@ function App() {
                     return (
                       <SelectionThumbnail
                         key={questionIndex}
-                        annotation={annotation[0]}
+                        annotations={annotation}
                         width={410}
                         height={270}
                         onClick={handleSelection(questionIndex)}
                         isActive={activeAnnotation === questionIndex}
+                        showHeatmap={showThumbnailHeatmap}
                       />
                     );
                   })}
@@ -425,6 +481,13 @@ function App() {
 
                   <div className="flex gap-2">
                     <Button
+                      disabled={activeSelection === null}
+                      className="bg-black hover:bg-[#333] text-white p-2 cursor-pointer text-sm"
+                      onClick={handleSelectionCleared}
+                    >
+                      Clear Selection
+                    </Button>
+                    <Button
                       className="bg-black hover:bg-[#333] text-white p-2 cursor-pointer text-sm"
                       onClick={() => setShowExecutiveSummary(!showExecutiveSummary)}
                     >
@@ -448,14 +511,20 @@ function App() {
                   <div className="flex flex-col lg:flex-row">
                     {/* Canvas */}
                     <div className="flex justify-center items-center w-[100%] lg:w-[80%]">
-                      <Canvas
-                        annotations={aggregatedAnnotations[activeAnnotation]}
-                        activeComment={activeComment}
-                        canvasWidth={410}
-                        canvasHeight={270}
-                        viewMode={selectedViewMode} // "flatHeatmap" | "heatmap" | "selection"
-                      />
-                  </div>
+                      {/* <div className="flex flex-col items-center"> */}
+                        <Canvas
+                          annotations={aggregatedAnnotations[activeAnnotation]}
+                          activeComment={activeComment}
+                          canvasWidth={410}
+                          canvasHeight={270}
+                          viewMode={selectedViewMode}
+                          onSelectionCreated={handleSelectionCreated}
+                          onSelectionCleared={handleSelectionCleared}
+                          onClearSelection={handleSelectionCleared}
+                        />
+                      {/* </div> */}
+                    </div>
+
                     {/* Search & Filters */}
                     <div className="min-w-[200px] w-[100%] lg:w-[30%] flex flex-row lg:flex-col lg:items-center gap-2 flex-wrap">
 
@@ -491,18 +560,37 @@ function App() {
                                 <div className="flex flex-col gap-1 my-2">
                                   {
                                     filterGroup.filters.map((filter, index) => (
-                                      <CheckboxWithText
-                                        key={index}
-                                        id={filter.id}
-                                        label={filter.label}
-                                        checked={filter.active}
-                                        onCheckedChange={() => handleFilterChange(
-                                          aggregatedAnnotations[activeAnnotation][0]?.questionId,
-                                          filterGroup.group,
-                                          filter.fieldName,
-                                          filter.value
+                                      <div key={index} className="flex justify-between items-center">
+                                        <CheckboxWithText
+                                          id={filter.id}
+                                          label={filter.label}
+                                          checked={filter.active}
+                                          onCheckedChange={() => handleFilterChange(
+                                            aggregatedAnnotations[activeAnnotation][0]?.questionId,
+                                            filterGroup.group,
+                                            filter.fieldName,
+                                            filter.value
+                                          )}
+                                        />
+                                        {filterGroup.group === "Sentiment" && (
+                                          <span className="text-xs">
+                                            {filter.value === "good" ? (
+                                              <span className="text-green-600">{positiveCount}</span>
+                                            ) : (
+                                              <span className="text-red-600">{negativeCount}</span>
+                                            )}
+                                          </span>
                                         )}
-                                      />
+                                        {filterGroup.group === "Category" && (
+                                          <span className="text-xs">
+                                            {filter.value === "aesthetic" ? (
+                                              <span className="text-blue-600">{aestheticCount}</span>
+                                            ) : (
+                                              <span className="text-purple-600">{functionalCount}</span>
+                                            )}
+                                          </span>
+                                        )}
+                                      </div>
                                     ))
                                   }
                                 </div>
@@ -634,7 +722,7 @@ function App() {
                 <CardHeader className='flex flex-row rounded-t-xl m-2 justify-between items-baseline mb-2 pb-3 border-b-2 bg-white'>
                   <CardTitle>Feedback Comments</CardTitle>
                   <CardDescription className="text-gray-400">
-                    Showing {currentAnnotationComments.length} comments
+                    Total Comments: {currentAnnotationComments.length}
                   </CardDescription>
                 </CardHeader>
 
