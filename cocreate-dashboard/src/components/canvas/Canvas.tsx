@@ -5,9 +5,9 @@ import { Annotation } from "@/types/global";
 export interface CanvasProps {
   annotations: Annotation[];
   activeComment: string | null;
-  // imagePath: string;
   canvasWidth: number;
   canvasHeight: number;
+  viewMode: "selection" | "heatmap" | "flatHeatmap";
 }
 
 const Canvas = (props: CanvasProps) => {
@@ -15,11 +15,11 @@ const Canvas = (props: CanvasProps) => {
     annotations, 
     activeComment,
     canvasWidth,
-    canvasHeight
+    canvasHeight,
+    viewMode
   } = props;
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
 
   const drawSelection = (
     ctx: CanvasRenderingContext2D,
@@ -32,87 +32,169 @@ const Canvas = (props: CanvasProps) => {
     lineWidth: number = 2,
     radius: number = 15
   ) => {
-    // console.log("drawSelection", x, y, width, height);
     ctx.fillStyle = fillStyle;
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
-  
-    // Draw the rectangle with rounded corners
+
     ctx.beginPath();
-    ctx.moveTo(x, y); // Move to the top-left corner
-    ctx.lineTo(x + width, y); // Draw line to the top-right corner
-    ctx.lineTo(x + width, y + height); // Draw line to the bottom-right corner
-    ctx.lineTo(x, y + height); // Draw line to the bottom-left corner
-    ctx.closePath(); // Close the path to the top-left corner
+    ctx.moveTo(x, y);
+    ctx.lineTo(x + width, y);
+    ctx.lineTo(x + width, y + height);
+    ctx.lineTo(x, y + height);
+    ctx.closePath();
     
-    ctx.fill(); // Fill the rounded rectangle
-    ctx.stroke(); // Stroke the rounded rectangle
+    ctx.fill();
+    ctx.stroke();
   };
 
-  // useEffect(() => { 
-  //   console.log("Updating active comment", activeComment);
-  //   if (activeComment === null) return;
-  //   const canvas = canvasRef.current;
-  //   if (!canvas) return
-
-  //   const ctx = canvas.getContext("2d");
-  //   if (!ctx) return
-
-  //   const allSelections = annotations.flatMap((annotation) => annotation.selections);
-  //   const activeSelection = allSelections.find((selection) => selection.uid === activeComment);
-  //   console.log("activeComment", activeComment, activeSelection);
-  //   if (!activeSelection) return;
-
-  //   const { start, end } = activeSelection;
-  //   const x = start.x
-  //   const y = start.y
-  //   const width = end.x - start.x
-  //   const height = end.y - start.y
-  //   drawSelection(ctx, x, y, width, height, "rgba(200, 200, 200, 0.6)", "red", 4);
-  // }, [activeComment, annotations]);
-
   useEffect(() => {
-    // console.log("updating canvas");
     const canvas = canvasRef.current;
-    if (!canvas) return
+    if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return
+    if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    annotations.forEach((annotation) => {
-      const { selections } = annotation;
-      selections.forEach((selection) => {
-        // console.log(selection.show, selection);
-        var fillStyle = "rgba(200, 200, 200, 0.3)";
-        var strokeStyle = "white";
 
-        if (selection.uid === activeComment) {
-          fillStyle = "rgba(250, 123, 123, 0.3)";
-          strokeStyle = "red";
-        } 
-        
-        if (!selection.show) return;
-        const x = selection.start.x
-        const y = selection.start.y
-        const width = selection.end.x - selection.start.x
-        const height = selection.end.y - selection.start.y
-        drawSelection(ctx, x, y, width, height, fillStyle, strokeStyle);
+    if (viewMode == "flatHeatmap") {
+      const imageData = ctx.createImageData(canvasWidth, canvasHeight);
+      const data = imageData.data;
+      const heatmap = new Uint16Array(canvasWidth * canvasHeight);
+
+      // Fill the heatmap with overlap counts
+      annotations.forEach((annotation) => {
+        annotation.selections.forEach((selection) => {
+          if (!selection.show) return;
+          const xStart = Math.max(0, Math.floor(selection.start.x));
+          const yStart = Math.max(0, Math.floor(selection.start.y));
+          const xEnd = Math.min(canvasWidth, Math.ceil(selection.end.x));
+          const yEnd = Math.min(canvasHeight, Math.ceil(selection.end.y));
+
+          for (let y = yStart; y < yEnd; y++) {
+            for (let x = xStart; x < xEnd; x++) {
+              heatmap[y * canvasWidth + x]++;
+            }
+          }
+        });
       });
-    });
-  }
-  , [activeComment, annotations]);
+
+      let maxCount = 0;
+      for (let i = 0; i < heatmap.length; i++) {
+        if (heatmap[i] > maxCount) {
+          maxCount = heatmap[i];
+        }
+      }
+
+      if (maxCount === 0) return;
+
+      // Convert heatmap values to pixel data
+      for (let i = 0; i < heatmap.length; i++) {
+        const count = heatmap[i];
+        const intensity = Math.min(255, Math.floor((count / maxCount) * 255));
+
+        const index = i * 4;
+        data[index] = 255;         // Red
+        data[index + 1] = 0;       // Green
+        data[index + 2] = 0;       // Blue
+        data[index + 3] = intensity; // Alpha
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+    else if (viewMode === "heatmap") {
+      const imageData = ctx.createImageData(canvasWidth, canvasHeight);
+      const data = imageData.data;
+      const heatmap = new Uint16Array(canvasWidth * canvasHeight);
+
+      // Fill the heatmap with overlap counts
+      annotations.forEach((annotation) => {
+        annotation.selections.forEach((selection) => {
+          if (!selection.show) return;
+          const xStart = Math.max(0, Math.floor(selection.start.x));
+          const yStart = Math.max(0, Math.floor(selection.start.y));
+          const xEnd = Math.min(canvasWidth, Math.ceil(selection.end.x));
+          const yEnd = Math.min(canvasHeight, Math.ceil(selection.end.y));
+
+          for (let y = yStart; y < yEnd; y++) {
+            for (let x = xStart; x < xEnd; x++) {
+              heatmap[y * canvasWidth + x]++;
+            }
+          }
+        });
+      });
+
+      let maxCount = 0;
+      for (let i = 0; i < heatmap.length; i++) {
+        if (heatmap[i] > maxCount) {
+          maxCount = heatmap[i];
+        }
+      }
+
+      if (maxCount === 0) return;
+
+      for (let i = 0; i < heatmap.length; i++) {
+        const count = heatmap[i];
+        const intensity = count / maxCount;
+
+        // Map intensity to hue (60° = yellow, 300° = purple)
+        const hue = 60 + intensity * (300 - 60);
+        const saturation = 100;
+        const lightness = 50;
+
+        const h = hue / 360;
+        const s = saturation / 100;
+        const l = lightness / 100;
+
+        const a = s * Math.min(l, 1 - l);
+        const f = (n: number) => {
+          const k = (n + h * 12) % 12;
+          const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+          return Math.round(255 * color);
+        };
+
+        const index = i * 4;
+        data[index] = f(0);     // Red
+        data[index + 1] = f(8); // Green
+        data[index + 2] = f(4); // Blue
+
+        let dynamicAlpha = Math.min(255, Math.floor(intensity * 255));
+        let staticAlpha = 100;
+
+        data[index + 3] = dynamicAlpha;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    } else {
+      // Default selection view
+      annotations.forEach((annotation) => {
+        annotation.selections.forEach((selection) => {
+          if (!selection.show) return;
+
+          let fillStyle = "rgba(200, 200, 200, 0.3)";
+          let strokeStyle = "white";
+
+          if (selection.uid === activeComment) {
+            fillStyle = "rgba(250, 123, 123, 0.3)";
+            strokeStyle = "red";
+          }
+
+          const x = selection.start.x;
+          const y = selection.start.y;
+          const width = selection.end.x - selection.start.x;
+          const height = selection.end.y - selection.start.y;
+          drawSelection(ctx, x, y, width, height, fillStyle, strokeStyle);
+        });
+      });
+    }
+  }, [annotations, activeComment, viewMode, canvasWidth, canvasHeight]);
 
   return (
     <div 
       className="canvas-container flex justify-center items-center"
       style={{
-        // paddingTop: `${(canvasHeight / canvasWidth) * 100}%`,  // create empty space for the canvas (aspect ratio'd)
-        // maxHeight: '75vh', // Maximum height of 90% of the viewport
-        aspectRatio: `${canvasWidth} / ${canvasHeight}`, // Maintain aspect ratio
-        // width: "100%",
-        maxWidth: `${(canvasWidth / canvasHeight) * 75}vh`, // Max width based on aspect ratio and 90vh cap
-        maxHeight: '75vh', // Cap height at 90% viewport
+        aspectRatio: `${canvasWidth} / ${canvasHeight}`,
+        maxWidth: `${(canvasWidth / canvasHeight) * 75}vh`,
+        maxHeight: '75vh',
         position: 'relative',
         justifyContent: "center",
         alignItems: "center",
@@ -120,20 +202,20 @@ const Canvas = (props: CanvasProps) => {
       }}
     >
       <img
-          src={annotations[0].imagePath}
-          alt="Rendering"
-          className="rendering-image overflow-scroll aspect-auto"
-          style={{ 
-            top: '50%',
-            left: '50%',
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
-            transform: 'translate(-50%, -50%)',
-          }}
-        />
+        src={annotations[0].imagePath}
+        alt="Rendering"
+        className="rendering-image overflow-scroll aspect-auto"
+        style={{
+          top: '50%',
+          left: '50%',
+          width: "100%",
+          height: "100%",
+          objectFit: "contain",
+          transform: 'translate(-50%, -50%)',
+        }}
+      />
 
-     <canvas
+      <canvas
         ref={canvasRef}
         width={canvasWidth}
         height={canvasHeight}
@@ -148,9 +230,8 @@ const Canvas = (props: CanvasProps) => {
           transform: 'translate(-50%, -50%)',
         }}
       />
-    
     </div>
   );
-}
+};
 
 export default Canvas;

@@ -14,6 +14,7 @@ import { CheckboxWithText } from './components/ui/checkbox'
 import { MultiSelect } from './components/ui/multi-select'
 import { json } from 'stream/consumers'
 import Papa from 'papaparse'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 
 interface MultiSelectType {
   value: string;
@@ -46,7 +47,6 @@ function App() {
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
   const [activeComment, setActiveComment] = useState<string | null>(null)
-  
 
   const [rolesList, setRolesList] = useState<MultiSelectType[]>([
     { value: "architect", label: "Architect" },
@@ -60,6 +60,7 @@ function App() {
   ])
   const [selectedRoles, setSelectedRoles] = useState<string[]>([])
   const [selectedTenures, setSelectedTenures] = useState<string[]>([])
+  const [selectedViewMode, setSelectedViewMode] = useState<"selection" | "heatmap" | "flatHeatmap">("selection") // "flatHeatmap" | "heatmap" | "selection"
 
   const [feedbackFilters, setFeedbackFilters] = useState<FeedbackFilterGroup[]>([
     {
@@ -224,9 +225,9 @@ function App() {
 
   const generateRandomData = () => {
     const numQuestions = 10
-    const maxAnnotation = 3
-    const minSelectionPerAnnotation = 1
-    const maxSelectionPerAnnotation = 4
+    const maxAnnotation = 10
+    const minSelectionPerAnnotation = 5
+    const maxSelectionPerAnnotation = 20
     const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
     
@@ -557,10 +558,25 @@ function App() {
                             // imagePath={aggregatedAnnotations[activeAnnotation]}
                             canvasWidth={410}
                             canvasHeight={270}
+                            viewMode={selectedViewMode} // "flatHeatmap" | "heatmap" | "selection"
                           />
                       </div>
                         {/* Search & Filters */}
                         <div className="min-w-[200px] w-[100%] lg:w-[30%] flex flex-row lg:flex-col lg:items-center gap-2 flex-wrap">
+
+                          {/* Selector for view mode */}
+                          <div className="w-[100%]">
+                            <Select onValueChange={(value) => setSelectedViewMode(value as "selection" | "heatmap" | "flatHeatmap")}>
+                              <SelectTrigger className="bg-[#111] hover:bg-[#333] text-white border-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]">
+                                <SelectValue placeholder="Select View Mode" />
+                              </SelectTrigger>
+                              <SelectContent className="bg-[#111] w-[100%]">
+                                <SelectItem className="bg-[#111] hover:bg-[#2e2e2e] text-white border-t-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]" value="selection">Selection</SelectItem>
+                                <SelectItem className="bg-[#111] hover:bg-[#2e2e2e] text-white border-t-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]" value="heatmap">Heatmap</SelectItem>
+                                <SelectItem className="bg-[#111] hover:bg-[#2e2e2e] text-white border-t-2 border-[#333] p-2 cursor-pointer text-sm w-[100%]" value="flatHeatmap">Flat Heatmap</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
 
                           <Card className="w-[100%] border-[#333] bg-[#111]">  
                             <CardHeader className="m-2 p-3 bg-[#000] border-[#333] border-1 rounded-lg">
