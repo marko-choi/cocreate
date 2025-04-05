@@ -1,6 +1,6 @@
 const Header = () => {
   return (
-    <div className="flex justify-between items-center p-8 h-[7.5vh]">
+    <div className="flex justify-between items-center p-8 h-[7.5vh] bg-white">
       <div className="flex items-center gap-5">
         {/* <img src="../logo.png" alt="logo" className="w-10 h-10" /> */}
         <h1 className="text-2xl font-bold">CoCreate</h1>
@@ -14,5 +14,5 @@ const Header = () => {
     </div>
   );
 }
- 
+
 export default Header;

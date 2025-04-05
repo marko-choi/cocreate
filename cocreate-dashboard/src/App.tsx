@@ -83,6 +83,14 @@ function App() {
     }
   ])
 
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(5);
+
+  // Reset to first page when items per page changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [itemsPerPage]);
+
   // function formatBase64Image(image: string) {
   //   return image.startsWith("data:image") ? image : `data:image/png;base64,${image}`;
   // }
@@ -314,8 +322,25 @@ function App() {
     setAggregatedAnnotations(updatedAggregatedAnnotations)
   }
 
+  // Calculate pagination values
+  const filteredComments = currentAnnotationComments
+    .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
+    .filter((selection) => selection.show);
 
+  const totalPages = Math.ceil(filteredComments.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredComments.slice(indexOfFirstItem, indexOfLastItem);
 
+  // Handle page change
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  // Handle items per page change
+  const handleItemsPerPageChange = (value: string) => {
+    setItemsPerPage(parseInt(value));
+  };
 
   return (
     <>
@@ -325,12 +350,12 @@ function App() {
       {/* Body */}
       <ResizablePanelGroup
         direction='horizontal'
-        className="h-[100vh]"
+        className="h-[100vh] w-[100%]"
       >
         {
           showSidebar &&
           <ResizablePanel minSize={30} className="border">
-            <div className="container h-[92.5vh] w-[100%] border border-[#E8E8E8] p-5 gap-y-2 flex flex-col">
+            <div className="main-container h-[92.5vh] w-[100%] border border-[#E8E8E8] p-5 gap-y-2 flex flex-col">
 
               <div className='flex justify-between items-center'>
                 <h1 className="text-2xl font-bold">Annotations</h1>
@@ -347,7 +372,7 @@ function App() {
                 <div className="flex w-[65%] gap-2">
                   <input
                     type="text" placeholder="Search annotations"
-                    className="border p-1 max-w-[80%] w-[100%] bg-[#f3f3f3]"
+                    className="border p-1 max-w-[80%] w-[100%] bg-white"
                     onChange={(e) => handleSearchAnnotations(e.target.value)}
                   />
                 </div>
@@ -356,9 +381,10 @@ function App() {
               <div className='mx-auto h-[90vh] overflow-scroll w-[100%]'>
                 <div
                   className={cn(
-                    "scrollable-container",
-                    "p-3 flex flex-wrap justify-center gap-5  border overflow-scroll",
+                    "scrollable-main-container",
+                    "p-3 flex flex-wrap justify-center gap-5 max-h-[90vh] border overflow-scroll",
                     "min-w-[100%]",
+                    "bg-white"
                   )}
                   >
                   {aggregatedAnnotations.filter(annotation => annotation[0]?.show).length === 0 &&
@@ -384,12 +410,12 @@ function App() {
                         height: 'fit-content'
                       }}
                     >
-                    <div className="relative w-full max-w-80 mx-auto border aspect-[3/2] ">
+                      <div className="relative w-full max-w-80 mx-auto border aspect-[3/2]">
                         {annotation[0]?.imagePath !== undefined &&
                           <img
                             src={annotation[0].imagePath}
                             alt="rendering"
-                            className="w-full object-contain"
+                            className="w-full h-full object-contain"
                             onClick={handleSelection(questionIndex)}
                           />
                         }
@@ -410,14 +436,16 @@ function App() {
           </ResizablePanel>
         }
         <ResizableHandle withHandle />
-        <ResizablePanel minSize={40} className="border border-l-0">
-          <ResizablePanelGroup direction="vertical">
-            <div className="container h-[92.5vh] w-[100%] border border-[#E8E8E8] p-5 gap-y-2 flex flex-col overflow-scroll">
+        <ResizablePanel minSize={40} className="border border-l-0 bg-red-200">
+          {/* <ResizablePanelGroup direction="vertical"> */}
+            <div
+              className="main-container h-[92.5vh] w-[100%] p-5 gap-y-2 overflow-scroll"
+            >
 
             {/* Annotation */}
             {activeAnnotation !== -1 &&
               <Card className="rounded-xl">
-                <CardHeader className="rounded-xl m-2 flex flex-row justify-between items-center">
+                <CardHeader className="rounded-t-xl m-2 flex flex-row justify-between items-center bg-white">
                   <div>
                     Mosque {activeAnnotation + 1} of {aggregatedAnnotations.length}
                   </div>
@@ -556,7 +584,7 @@ function App() {
             {
               showExecutiveSummary &&
               <Card className="rounded-xl">
-                <CardHeader className="mb-2 border-b-2 border-gray-600 pb-3">
+                <CardHeader className="rounded-t-xl m-2 border-b-2 border-gray-600 pb-3 bg-white">
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle>Executive Summary</CardTitle>
@@ -592,7 +620,7 @@ function App() {
                     <div>
                       <h2>Critical Analysis</h2>
                       <ul className='list-inside list-disc text-gray-600 text-sm'>
-                        <li>Storng consensus on exterior design elements, particularly in the facade treament</li>
+                        <li>StrongStorng consensus on exterior design elements, particularly in the facade treament</li>
                         <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
                         <li>Consistent feedback across different stakeholder groups on sustainability features</li>
                       </ul>
@@ -630,7 +658,7 @@ function App() {
             {/* Feedback Comments */}
             {
               <Card>
-                <CardHeader className='flex flex-row justify-between items-baseline mb-2 pb-3 border-b-2 border-gray-600'>
+                <CardHeader className='flex flex-row rounded-t-xl m-2 justify-between items-baseline mb-2 pb-3 border-b-2 bg-white'>
                   <CardTitle>Feedback Comments</CardTitle>
                   <CardDescription className="text-gray-400">
                     Showing {currentAnnotationComments.length} comments
@@ -639,10 +667,11 @@ function App() {
 
                 <CardContent>
                   {/* Comment Searchbar */}
-                  <div className="flex justify-between items-center">
+                  <div className="flex justify-between items-center my-2">
                     <input
-                      type="text" placeholder="Search comments"
-                      className="border p-1 w-[80%]"
+                      type="text"
+                      placeholder="Search comments"
+                      className="border p-1 w-[80%] bg-white"
                       onChange={(e) => handleSearchComments(e.target.value)}
                     />
                     <Button className="bg-black hover:bg-[#333] border-2 text-white p-1 py-0 my-0 hover:cursor-pointer">
@@ -652,10 +681,7 @@ function App() {
 
                   <div className="flex flex-col">
                     {/* Flat map on selections */}
-                    {currentAnnotationComments
-                      .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
-                      .filter((selection) => selection.show)
-                      .map((selection, index) =>
+                    {currentItems.map((selection, index) =>
                         {
                           const aestheticValue = extractSelectionFieldValue(selection.aestheticValue)
                           const functionValue = extractSelectionFieldValue(selection.functionValue)
@@ -693,11 +719,124 @@ function App() {
                           </div>
                       )})}
                   </div>
+
+                  {/* Pagination Controls */}
+                  {filteredComments.length > 0 && (
+                    <div className="flex justify-between items-center mt-4">
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-500">
+                          Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredComments.length)} of {filteredComments.length} comments
+                        </div>
+
+
+
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* Previous page arrow */}
+                        <Button
+                          key="prev"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="px-2"
+                        >
+                          ←
+                        </Button>
+
+                        {/* Always show first page */}
+                        <Button
+                          key="first"
+                          variant={currentPage === 1 ? "default" : "outline"}
+                          size="sm"
+                          onClick={() => handlePageChange(1)}
+                          className={currentPage === 1 ? "bg-black text-white" : ""}
+                        >
+                          1
+                        </Button>
+
+                        {/* Show ellipsis if we're not near the beginning */}
+                        {currentPage > 3 && (
+                          <span className="px-2">...</span>
+                        )}
+
+                        {/* Show pages around current page */}
+                        {[...Array(totalPages)].map((_, i) => {
+                          const pageNum = i + 1;
+                          // Only show pages that are within 2 of the current page
+                          if (pageNum > 1 && pageNum < totalPages &&
+                              pageNum >= currentPage - 2 &&
+                              pageNum <= currentPage + 2) {
+                            return (
+                              <Button
+                                key={pageNum}
+                                variant={currentPage === pageNum ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => handlePageChange(pageNum)}
+                                className={currentPage === pageNum ? "bg-black text-white" : ""}
+                              >
+                                {pageNum}
+                              </Button>
+                            );
+                          }
+                          return null;
+                        })}
+
+                        {/* Show ellipsis if we're not near the end */}
+                        {currentPage < totalPages - 2 && (
+                          <span className="px-2">...</span>
+                        )}
+
+                        {/* Always show last page if there's more than one page */}
+                        {totalPages > 1 && (
+                          <Button
+                            key="last"
+                            variant={currentPage === totalPages ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => handlePageChange(totalPages)}
+                            className={currentPage === totalPages ? "bg-black text-white" : ""}
+                          >
+                            {totalPages}
+                          </Button>
+                        )}
+
+                        {/* Next page arrow */}
+                        <Button
+                          key="next"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage === totalPages}
+                          className="px-2"
+                        >
+                          →
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-500">Records per page:</span>
+                          <Select
+                            value={itemsPerPage.toString()}
+                            onValueChange={handleItemsPerPageChange}
+                          >
+                            <SelectTrigger className="h-8 w-[70px]">
+                              <SelectValue placeholder={itemsPerPage} />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#F9FAFB]">
+                              <SelectItem className="hover:bg-[#F3F3F3] hover:cursor-pointer" value="5">5</SelectItem>
+                              <SelectItem className="hover:bg-[#F3F3F3] hover:cursor-pointer" value="10">10</SelectItem>
+                              <SelectItem className="hover:bg-[#F3F3F3] hover:cursor-pointer" value="20">20</SelectItem>
+                              <SelectItem className="hover:bg-[#F3F3F3] hover:cursor-pointer" value="50">50</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             }
             </div>
-          </ResizablePanelGroup>
+          {/* </ResizablePanelGroup> */}
         </ResizablePanel>
     </ResizablePanelGroup>
     </>

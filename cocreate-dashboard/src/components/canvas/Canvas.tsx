@@ -11,8 +11,8 @@ export interface CanvasProps {
 }
 
 const Canvas = (props: CanvasProps) => {
-  const { 
-    annotations, 
+  const {
+    annotations,
     activeComment,
     canvasWidth,
     canvasHeight,
@@ -42,7 +42,7 @@ const Canvas = (props: CanvasProps) => {
     ctx.lineTo(x + width, y + height);
     ctx.lineTo(x, y + height);
     ctx.closePath();
-    
+
     ctx.fill();
     ctx.stroke();
   };
@@ -156,43 +156,59 @@ const Canvas = (props: CanvasProps) => {
         };
 
         const index = i * 4;
+        let dynamicAlpha = Math.min(255, Math.floor(intensity * 255));
+        // let staticAlpha = 100;
+
         data[index] = f(0);     // Red
         data[index + 1] = f(8); // Green
         data[index + 2] = f(4); // Blue
-
-        let dynamicAlpha = Math.min(255, Math.floor(intensity * 255));
-        let staticAlpha = 100;
-
         data[index + 3] = dynamicAlpha;
       }
 
       ctx.putImageData(imageData, 0, 0);
     } else {
       // Default selection view
+
+      // First, collect all selections that should be drawn
+      const allSelections: { selection: any, isActive: boolean }[] = [];
+
       annotations.forEach((annotation) => {
         annotation.selections.forEach((selection) => {
           if (!selection.show) return;
 
-          let fillStyle = "rgba(200, 200, 200, 0.3)";
-          let strokeStyle = "white";
-
-          if (selection.uid === activeComment) {
-            fillStyle = "rgba(250, 123, 123, 0.3)";
-            strokeStyle = "red";
-          }
-
-          const x = selection.start.x;
-          const y = selection.start.y;
-          const width = selection.end.x - selection.start.x;
-          const height = selection.end.y - selection.start.y;
-          drawSelection(ctx, x, y, width, height, fillStyle, strokeStyle);
+          const isActive = selection.uid === activeComment;
+          allSelections.push({ selection, isActive });
         });
+      });
+
+      // Sort selections to put active ones last (so they're drawn on top)
+      allSelections.sort((a, b) => {
+        if (a.isActive && !b.isActive) return 1;
+        if (!a.isActive && b.isActive) return -1;
+        return 0;
+      });
+
+      // Draw all selections in the sorted order
+      allSelections.forEach(({ selection, isActive }) => {
+        let fillStyle = "rgba(200, 200, 200, 0.3)";
+        let strokeStyle = "white";
+
+        if (isActive) {
+          fillStyle = "rgba(250, 123, 123, 0.3)";
+          strokeStyle = "red";
+        }
+
+        const x = selection.start.x;
+        const y = selection.start.y;
+        const width = selection.end.x - selection.start.x;
+        const height = selection.end.y - selection.start.y;
+        drawSelection(ctx, x, y, width, height, fillStyle, strokeStyle);
       });
     }
   }, [annotations, activeComment, viewMode, canvasWidth, canvasHeight]);
 
   return (
-    <div 
+    <div
       className="canvas-container flex justify-center items-center"
       style={{
         aspectRatio: `${canvasWidth} / ${canvasHeight}`,
