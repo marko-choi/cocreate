@@ -721,25 +721,28 @@ function App() {
                   </div>
 
                   {/* Pagination Controls */}
-                  {filteredComments.length > 0 && (
+                  {/* {filteredComments.length > 0 && ( */}
                     <div className="flex justify-between items-center mt-4">
                       <div className="flex items-center gap-4">
                         <div className="text-sm text-gray-500">
-                          Showing {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredComments.length)} of {filteredComments.length} comments
+                          Showing {currentItems.length > 0 ? indexOfFirstItem + 1 : 0}-{Math.min(indexOfLastItem, filteredComments.length)} of {filteredComments.length} comments
                         </div>
-
-
 
                       </div>
                       <div className="flex items-center gap-1">
                         {/* Previous page arrow */}
                         <Button
                           key="prev"
-                          variant="outline"
+                          variant={currentPage === 1 ? "default" : "outline"}
                           size="sm"
                           onClick={() => handlePageChange(currentPage - 1)}
                           disabled={currentPage === 1}
-                          className="px-2"
+                          className={
+                            cn(
+                              currentPage === 1 ? "bg-black text-white" : "",
+                              "hover:bg-black hover:text-white"
+                            )
+                          }
                         >
                           ←
                         </Button>
@@ -750,7 +753,12 @@ function App() {
                           variant={currentPage === 1 ? "default" : "outline"}
                           size="sm"
                           onClick={() => handlePageChange(1)}
-                          className={currentPage === 1 ? "bg-black text-white" : ""}
+                          className={
+                            cn(
+                              currentPage === 1 ? "bg-black text-white" : "",
+                              "hover:bg-black hover:text-white"
+                            )
+                          }
                         >
                           1
                         </Button>
@@ -773,7 +781,11 @@ function App() {
                                 variant={currentPage === pageNum ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => handlePageChange(pageNum)}
-                                className={currentPage === pageNum ? "bg-black text-white" : ""}
+                                className={
+                                  cn(
+                                    currentPage === pageNum ? "bg-black text-white" : "",
+                                    "hover:bg-black hover:text-white"
+                                  )}
                               >
                                 {pageNum}
                               </Button>
@@ -794,7 +806,12 @@ function App() {
                             variant={currentPage === totalPages ? "default" : "outline"}
                             size="sm"
                             onClick={() => handlePageChange(totalPages)}
-                            className={currentPage === totalPages ? "bg-black text-white" : ""}
+                            className={
+                              cn(
+                                currentPage === totalPages ? "bg-black text-white" : "",
+                                "hover:bg-black hover:text-white"
+                              )
+                            }
                           >
                             {totalPages}
                           </Button>
@@ -803,11 +820,16 @@ function App() {
                         {/* Next page arrow */}
                         <Button
                           key="next"
-                          variant="outline"
+                          variant={currentPage === totalPages ? "default" : "outline"}
                           size="sm"
                           onClick={() => handlePageChange(currentPage + 1)}
                           disabled={currentPage === totalPages}
-                          className="px-2"
+                          className={
+                            cn(
+                              currentPage === totalPages ? "bg-black text-white" : "",
+                              "hover:bg-black hover:text-white"
+                            )
+                          }
                         >
                           →
                         </Button>
@@ -831,7 +853,7 @@ function App() {
                           </Select>
                         </div>
                     </div>
-                  )}
+                  {/* )} */}
                 </CardContent>
               </Card>
             }
