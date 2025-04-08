@@ -45,7 +45,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
 	console.log("[Qualtrics Loader] QuestionData:", questionData)
 
-	if (questionContainer) { 
+	if (questionContainer) {
 		questionContainer.style.overflow = 'visible';
 		questionContainer.style.padding = '0px';
 		questionContainer.style.paddingBottom = '0px !important';
@@ -88,7 +88,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	// 	questionButton.style.paddingTop = '0px';
 	// 	questionButton.style.paddingBottom = '0px';
 	// }
-	
+
 	try {
 
 		console.log("[Qualtrics Loader] loading script")
@@ -107,6 +107,19 @@ async function loadReactApp(qualtricsSurveyEngine) {
 				console.log("[Qualtrics Loader] Updated question image")
 			}
 
+			// Hide question image - inside text editor
+			const textEditorImage = questionContainer.querySelector('.question-display-wrapper img')
+			if (textEditorImage) {
+				textEditorImage.style.display = 'none';
+				console.log("[Qualtrics Loader] Updated image inside text editor")
+			}
+
+			// Hide question text area
+			const questionTextArea = questionContainer.querySelector('.question-content > textarea')
+			if (questionTextArea) {
+				questionTextArea.style.display = 'none';
+			}
+
 			let appContainer = document.createElement('div');
 			appContainer.id = `cocreate-root-${questionData.QuestionID}`;
 			appContainer.className = 'cocreate-root';
@@ -119,7 +132,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 				appContainer.style.justifyContent = 'center';
 				appContainer.style.overflow = 'visible';
 				appContainer.style.height = '65vh';
-			}	
+			}
 
 			console.log('React app loaded!');
 		} else {
@@ -211,6 +224,21 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 			existingMetadata[questionId] = metadata[questionId];
 		} else {
 			existingMetadata = { [questionId]: metadata[questionId] }
+		}
+
+		let responseData = {
+			image: existingEmbeddedImage,
+			questionIds: existingQuestionIds,
+			selectionsData: existingSelectionsData,
+			metadata: existingMetadata
+		}
+
+		let stringifiedResponseData = JSON.stringify(responseData)
+
+		// Store in textarea from question container
+		const questionTextArea = questionContainer.querySelector('.question-content > textarea')
+		if (questionTextArea) {
+			questionTextArea.value = stringifiedResponseData
 		}
 
 		// Store question ID and selections
