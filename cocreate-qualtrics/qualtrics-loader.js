@@ -117,7 +117,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			// Hide question text area
 			const questionTextArea = questionContainer.querySelector('.question-content textarea')
 			if (questionTextArea) {
-				// questionTextArea.style.display = 'none';
+				questionTextArea.style.display = 'none';
 				console.log("[Qualtrics Loader] Updated question text area")
 			}
 
