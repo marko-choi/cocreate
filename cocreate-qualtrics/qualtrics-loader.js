@@ -136,6 +136,8 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			}
 
 			console.log('React app loaded!');
+			createQuestionListeners(qualtricsSurveyEngine)
+
 		} else {
 			console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
 		}
@@ -145,103 +147,169 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	}
 }
 
+function createQuestionListeners(qualtricsSurveyEngine) {
+	let questionData = qualtricsSurveyEngine.getQuestionInfo()
+	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
+	let questionId = questionData.QuestionID
+
+	let textEditorImageContainer = ".question-display-wrapper img"
+	let questionImageContainer = ".question-content img"
+
+	const QUESTION_IMAGE_SOURCE = textEditorImageContainer
+	let imageLink = ""
+	let image = questionContainer.querySelector(QUESTION_IMAGE_SOURCE)
+	if (image) {
+		imageLink = image.src
+	}
+
+	const selectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections'))
+	const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'))
+	let responseData = {
+		image: imageLink,
+		selectionsData: selectionsData,
+		metadata: metadata
+	}
+
+	// Add localStorage event listener to update responseData and questionTextArea
+	window.addEventListener('storage', function(e) {
+		if (e.key === 'cocreate-canvasSelections' || e.key === 'cocreate-canvasSize') {
+			console.log(`[Qualtrics Loader][${questionId}] localStorage changed:`, e.key);
+
+			// Update responseData with new values
+			if (e.key === 'cocreate-canvasSelections') {
+				responseData.selectionsData = JSON.parse(e.newValue);
+			} else if (e.key === 'cocreate-canvasSize') {
+				responseData.metadata = JSON.parse(e.newValue);
+			}
+
+			// Update questionTextArea with new responseData
+			const questionTextArea = questionContainer.querySelector('.question-content textarea');
+			if (questionTextArea) {
+				questionTextArea.value = JSON.stringify(responseData);
+				console.log(`[Qualtrics Loader][${questionId}] Updated questionTextArea with new data`);
+			}
+		}
+	});
+
+	// Also listen for custom events that might be dispatched from the same window
+	window.addEventListener('localStorageUpdated', function(e) {
+		if (e.detail && (e.detail.key === 'cocreate-canvasSelections' || e.detail.key === 'cocreate-canvasSize')) {
+			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
+
+			// Update responseData with new values
+			if (e.detail.key === 'cocreate-canvasSelections') {
+				responseData.selectionsData = e.detail.value;
+			} else if (e.detail.key === 'cocreate-canvasSize') {
+				responseData.metadata = e.detail.value;
+			}
+
+			// Update questionTextArea with new responseData
+			const questionTextArea = questionContainer.querySelector('.question-content textarea');
+			if (questionTextArea) {
+				questionTextArea.value = JSON.stringify(responseData);
+				console.log(`[Qualtrics Loader][${questionId}] Updated questionTextArea with new data`);
+			}
+		}
+	});
+}
+
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
-	const questionInfo = pageInfo.getQuestionInfo()
-	const questionId = questionInfo.QuestionID
-	const questionContainer = pageInfo.getQuestionContainer()
+	// const questionInfo = pageInfo.getQuestionInfo()
+	// const questionId = questionInfo.QuestionID
+	// const questionContainer = pageInfo.getQuestionContainer()
 
-	console.log(`[Qualtrics Loader][${questionId}] qualtricsSurveyEngine`, qualtricsSurveyEngine)
-	console.log(`[Qualtrics Loader][${questionId}] type`, type)
+	// console.log(`[Qualtrics Loader][${questionId}] qualtricsSurveyEngine`, qualtricsSurveyEngine)
+	// console.log(`[Qualtrics Loader][${questionId}] type`, type)
 
-	if (type == "next") {
-		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
-		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
+	// if (type == "next") {
+	// 	const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
+	// 	const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
 
-		// Destroy the main container #cocreate-root
-		const rootDiv = document.querySelector('#cocreate-root');
-		if (rootDiv) {
-			rootDiv.remove();
-		}
+	// 	// Destroy the main container #cocreate-root
+	// 	const rootDiv = document.querySelector('#cocreate-root');
+	// 	if (rootDiv) {
+	// 		rootDiv.remove();
+	// 	}
 
-		if (selections) {
-			console.log(`[Qualtrics Loader][${questionId}] Selections data:`, selections);
-		} else {
-			console.error(`[Qualtrics Loader][${questionId}] No selections data found in localStorage.`);
-		}
+	// 	if (selections) {
+	// 		console.log(`[Qualtrics Loader][${questionId}] Selections data:`, selections);
+	// 	} else {
+	// 		console.error(`[Qualtrics Loader][${questionId}] No selections data found in localStorage.`);
+	// 	}
 
-		let existingRawEmbeddedImage = qualtricsSurveyEngine.getJSEmbeddedData("image");
-		let existingRawQuestionIds = qualtricsSurveyEngine.getJSEmbeddedData("questionIds");
-		let existingRawSelectionsData = qualtricsSurveyEngine.getJSEmbeddedData("selectionsData");
-		let existingRawMetadata = qualtricsSurveyEngine.getJSEmbeddedData("metadata");
+	// 	let existingRawEmbeddedImage = qualtricsSurveyEngine.getJSEmbeddedData("image");
+	// 	let existingRawQuestionIds = qualtricsSurveyEngine.getJSEmbeddedData("questionIds");
+	// 	let existingRawSelectionsData = qualtricsSurveyEngine.getJSEmbeddedData("selectionsData");
+	// 	let existingRawMetadata = qualtricsSurveyEngine.getJSEmbeddedData("metadata");
 
-		let existingEmbeddedImage = {};
-		let existingQuestionIds = [];
-		let existingSelectionsData = {};
-		let existingMetadata = {};
+	// 	let existingEmbeddedImage = {};
+	// 	let existingQuestionIds = [];
+	// 	let existingSelectionsData = {};
+	// 	let existingMetadata = {};
 
-		if (existingRawEmbeddedImage) {
-			existingEmbeddedImage = JSON.parse(existingRawEmbeddedImage);
-		}
+	// 	if (existingRawEmbeddedImage) {
+	// 		existingEmbeddedImage = JSON.parse(existingRawEmbeddedImage);
+	// 	}
 
-		if (existingRawQuestionIds) {
-			existingQuestionIds = JSON.parse(existingRawQuestionIds);
-		}
+	// 	if (existingRawQuestionIds) {
+	// 		existingQuestionIds = JSON.parse(existingRawQuestionIds);
+	// 	}
 
-		if (existingRawSelectionsData) {
-			existingSelectionsData = JSON.parse(existingRawSelectionsData);
-		}
+	// 	if (existingRawSelectionsData) {
+	// 		existingSelectionsData = JSON.parse(existingRawSelectionsData);
+	// 	}
 
-		if (existingRawMetadata) {
-			existingMetadata = JSON.parse(existingRawMetadata);
-		}
-		console.log(`[Qualtrics Loader][${questionId}] existingEmbeddedImage`, existingEmbeddedImage)
-		console.log(`[Qualtrics Loader][${questionId}] existingQuestionIds`, existingQuestionIds)
-		console.log(`[Qualtrics Loader][${questionId}] existingSelectionsData`, existingSelectionsData)
-		console.log(`[Qualtrics Loader][${questionId}] existingMetadata`, existingMetadata)
+	// 	if (existingRawMetadata) {
+	// 		existingMetadata = JSON.parse(existingRawMetadata);
+	// 	}
+	// 	console.log(`[Qualtrics Loader][${questionId}] existingEmbeddedImage`, existingEmbeddedImage)
+	// 	console.log(`[Qualtrics Loader][${questionId}] existingQuestionIds`, existingQuestionIds)
+	// 	console.log(`[Qualtrics Loader][${questionId}] existingSelectionsData`, existingSelectionsData)
+	// 	console.log(`[Qualtrics Loader][${questionId}] existingMetadata`, existingMetadata)
 
-		// Extract the image as a link
-		let imageLink;
-		const image = document.querySelector('.question-content img')
-		if (image) { imageLink = image.src }
+	// 	// Extract the image as a link
+	// 	let imageLink;
+	// 	const image = document.querySelector('.question-content img')
+	// 	if (image) { imageLink = image.src }
 
-		if (existingEmbeddedImage) {
-			existingEmbeddedImage[questionId] = imageLink;
-		} else {
-			existingEmbeddedImage = { [questionId]: imageLink }
-		}
+	// 	if (existingEmbeddedImage) {
+	// 		existingEmbeddedImage[questionId] = imageLink;
+	// 	} else {
+	// 		existingEmbeddedImage = { [questionId]: imageLink }
+	// 	}
 
-		if (existingQuestionIds) {
-			existingQuestionIds.push(questionId);
-		} else {
-			existingQuestionIds = [questionId];
-		}
+	// 	if (existingQuestionIds) {
+	// 		existingQuestionIds.push(questionId);
+	// 	} else {
+	// 		existingQuestionIds = [questionId];
+	// 	}
 
-		if (existingSelectionsData) {
-			existingSelectionsData[questionId] = selections[questionId];
-		} else {
-			existingSelectionsData = { [questionId]: selections[questionId] }
-		}
+	// 	if (existingSelectionsData) {
+	// 		existingSelectionsData[questionId] = selections[questionId];
+	// 	} else {
+	// 		existingSelectionsData = { [questionId]: selections[questionId] }
+	// 	}
 
-		if (existingMetadata) {
-			existingMetadata[questionId] = metadata[questionId];
-		} else {
-			existingMetadata = { [questionId]: metadata[questionId] }
-		}
+	// 	if (existingMetadata) {
+	// 		existingMetadata[questionId] = metadata[questionId];
+	// 	} else {
+	// 		existingMetadata = { [questionId]: metadata[questionId] }
+	// 	}
 
-		let responseData = {
-			image: existingEmbeddedImage,
-			questionIds: existingQuestionIds,
-			selectionsData: existingSelectionsData,
-			metadata: existingMetadata
-		}
+	// 	let responseData = {
+	// 		image: existingEmbeddedImage,
+	// 		questionIds: existingQuestionIds,
+	// 		selectionsData: existingSelectionsData,
+	// 		metadata: existingMetadata
+	// 	}
 
-		let stringifiedResponseData = JSON.stringify(responseData)
+	// 	let stringifiedResponseData = JSON.stringify(responseData)
 
-		// Store in textarea from question container
-		const questionTextArea = questionContainer.querySelector('.question-content textarea')
-		if (questionTextArea) {
-			questionTextArea.value = stringifiedResponseData
-		}
+	// 	// Store in textarea from question container
+	// 	const questionTextArea = questionContainer.querySelector('.question-content textarea')
+	// 	if (questionTextArea) {
+	// 		questionTextArea.value = stringifiedResponseData
+	// 	}
 
 		// Store question ID and selections
 		// qualtricsSurveyEngine.setJSEmbeddedData("image", JSON.stringify(existingEmbeddedImage))
