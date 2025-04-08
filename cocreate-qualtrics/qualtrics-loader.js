@@ -172,16 +172,22 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 
 	// Function to update the textarea with new data
 	function updateTextArea(newData) {
-		const questionTextArea = questionContainer.querySelector('.question-content textarea');
-		if (questionTextArea) {
+		const questionTextAreas = questionContainer.querySelectorAll('.question-content textarea');
+		if (questionTextAreas) {
 			// Update the value
-			questionTextArea.value = JSON.stringify(newData);
+			let stringifiedData = JSON.stringify(newData)
+			console.log(`[Qualtrics Loader][${questionId}] Updating questionTextArea with new data: ${stringifiedData}`);
+			questionTextAreas.forEach(textarea => {
+				textarea.value = stringifiedData;
+			});
 
 			// Trigger input and change events to ensure Qualtrics recognizes the change
 			const inputEvent = new Event('input', { bubbles: true });
 			const changeEvent = new Event('change', { bubbles: true });
-			questionTextArea.dispatchEvent(inputEvent);
-			questionTextArea.dispatchEvent(changeEvent);
+			questionTextAreas.forEach(textarea => {
+				textarea.dispatchEvent(inputEvent);
+				textarea.dispatchEvent(changeEvent);
+			});
 
 			console.log(`[Qualtrics Loader][${questionId}] Updated questionTextArea with new data: ${JSON.stringify(newData)}`);
 		}
