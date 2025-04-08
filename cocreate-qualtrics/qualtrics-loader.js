@@ -170,6 +170,23 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 		metadata: metadata
 	}
 
+	// Function to update the textarea with new data
+	function updateTextArea(newData) {
+		const questionTextArea = questionContainer.querySelector('.question-content textarea');
+		if (questionTextArea) {
+			// Update the value
+			questionTextArea.value = JSON.stringify(newData);
+
+			// Trigger input and change events to ensure Qualtrics recognizes the change
+			const inputEvent = new Event('input', { bubbles: true });
+			const changeEvent = new Event('change', { bubbles: true });
+			questionTextArea.dispatchEvent(inputEvent);
+			questionTextArea.dispatchEvent(changeEvent);
+
+			console.log(`[Qualtrics Loader][${questionId}] Updated questionTextArea with new data: ${JSON.stringify(newData)}`);
+		}
+	}
+
 	// Add localStorage event listener to update responseData and questionTextArea
 	window.addEventListener('storage', function(e) {
 		if (e.key === 'cocreate-canvasSelections' || e.key === 'cocreate-canvasSize') {
@@ -183,11 +200,7 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 			}
 
 			// Update questionTextArea with new responseData
-			const questionTextArea = questionContainer.querySelector('.question-content textarea');
-			if (questionTextArea) {
-				questionTextArea.value = JSON.stringify(responseData);
-				console.log(`[Qualtrics Loader][${questionId}] Updated questionTextArea with new data`);
-			}
+			updateTextArea(responseData);
 		}
 	});
 
@@ -204,13 +217,27 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 			}
 
 			// Update questionTextArea with new responseData
-			const questionTextArea = questionContainer.querySelector('.question-content textarea');
-			if (questionTextArea) {
-				questionTextArea.value = JSON.stringify(responseData);
-				console.log(`[Qualtrics Loader][${questionId}] Updated questionTextArea with new data`);
-			}
+			updateTextArea(responseData);
 		}
 	});
+
+	// Set up a MutationObserver to watch for changes to the textarea
+	const textAreaObserver = new MutationObserver(function(mutations) {
+		mutations.forEach(function(mutation) {
+			if (mutation.type === 'attributes' && mutation.attributeName === 'value') {
+				console.log(`[Qualtrics Loader][${questionId}] Textarea value changed via DOM:`, mutation.target.value);
+			}
+		});
+	});
+
+	// Start observing the textarea if it exists
+	const questionTextArea = questionContainer.querySelector('.question-content textarea');
+	if (questionTextArea) {
+		textAreaObserver.observe(questionTextArea, { attributes: true });
+	}
+
+	// Initial update of the textarea
+	updateTextArea(responseData);
 }
 
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) { }
