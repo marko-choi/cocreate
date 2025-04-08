@@ -148,6 +148,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 	const questionInfo = pageInfo.getQuestionInfo()
 	const questionId = questionInfo.QuestionID
+	const questionContainer = pageInfo.getQuestionContainer()
 
 	console.log(`[Qualtrics Loader][${questionId}] qualtricsSurveyEngine`, qualtricsSurveyEngine)
 	console.log(`[Qualtrics Loader][${questionId}] type`, type)
