@@ -115,9 +115,10 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			}
 
 			// Hide question text area
-			const questionTextArea = questionContainer.querySelector('.question-content > textarea')
+			const questionTextArea = questionContainer.querySelector('.question-content textarea')
 			if (questionTextArea) {
 				questionTextArea.style.display = 'none';
+				console.log("[Qualtrics Loader] Updated question text area")
 			}
 
 			let appContainer = document.createElement('div');
@@ -236,7 +237,7 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		let stringifiedResponseData = JSON.stringify(responseData)
 
 		// Store in textarea from question container
-		const questionTextArea = questionContainer.querySelector('.question-content > textarea')
+		const questionTextArea = questionContainer.querySelector('.question-content textarea')
 		if (questionTextArea) {
 			questionTextArea.value = stringifiedResponseData
 		}
