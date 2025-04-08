@@ -213,7 +213,7 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 	});
 }
 
-function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
+function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) { }
 	// const questionInfo = pageInfo.getQuestionInfo()
 	// const questionId = questionInfo.QuestionID
 	// const questionContainer = pageInfo.getQuestionContainer()
@@ -321,5 +321,4 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		// console.log(`[Qualtrics Loader][${questionId}] new embeded questionIds:`, qualtricsSurveyEngine.getJSEmbeddedData("questionIds"))
 		// console.log(`[Qualtrics Loader][${questionId}] new embeded selectionsData:`, qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"))
 		// console.log(`[Qualtrics Loader][${questionId}] new embeded metadata:`, qualtricsSurveyEngine.getJSEmbeddedData("metadata"))
-	}
-}
+	// }
