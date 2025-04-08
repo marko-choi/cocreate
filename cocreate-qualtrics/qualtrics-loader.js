@@ -244,14 +244,14 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 		}
 
 		// Store question ID and selections
-		qualtricsSurveyEngine.setJSEmbeddedData("image", JSON.stringify(existingEmbeddedImage))
-		qualtricsSurveyEngine.setJSEmbeddedData("questionIds", JSON.stringify(existingQuestionIds))
-		qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(existingSelectionsData))
-		qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(existingMetadata))
+		// qualtricsSurveyEngine.setJSEmbeddedData("image", JSON.stringify(existingEmbeddedImage))
+		// qualtricsSurveyEngine.setJSEmbeddedData("questionIds", JSON.stringify(existingQuestionIds))
+		// qualtricsSurveyEngine.setJSEmbeddedData("selectionsData", JSON.stringify(existingSelectionsData))
+		// qualtricsSurveyEngine.setJSEmbeddedData("metadata", JSON.stringify(existingMetadata))
 
-		console.log(`[Qualtrics Loader][${questionId}] new embeded image:`, qualtricsSurveyEngine.getJSEmbeddedData("image"))
-		console.log(`[Qualtrics Loader][${questionId}] new embeded questionIds:`, qualtricsSurveyEngine.getJSEmbeddedData("questionIds"))
-		console.log(`[Qualtrics Loader][${questionId}] new embeded selectionsData:`, qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"))
-		console.log(`[Qualtrics Loader][${questionId}] new embeded metadata:`, qualtricsSurveyEngine.getJSEmbeddedData("metadata"))
+		// console.log(`[Qualtrics Loader][${questionId}] new embeded image:`, qualtricsSurveyEngine.getJSEmbeddedData("image"))
+		// console.log(`[Qualtrics Loader][${questionId}] new embeded questionIds:`, qualtricsSurveyEngine.getJSEmbeddedData("questionIds"))
+		// console.log(`[Qualtrics Loader][${questionId}] new embeded selectionsData:`, qualtricsSurveyEngine.getJSEmbeddedData("selectionsData"))
+		// console.log(`[Qualtrics Loader][${questionId}] new embeded metadata:`, qualtricsSurveyEngine.getJSEmbeddedData("metadata"))
 	}
 }
