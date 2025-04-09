@@ -15148,7 +15148,9 @@ const generateInstanceId = () => {
   return INSTANCE_PREFIX + Math.random().toString(36).substring(2, 15);
 };
 const renderAllCocreateApps = () => {
+  console.log("[Cocreate] Rendering all Cocreate apps");
   const rootElements = document.querySelectorAll(".cocreate-root");
+  console.log("[Cocreate] Found", rootElements.length, "root elements");
   rootElements.forEach((rootElement) => {
     if (!rootElement.hasAttribute("data-react-mounted")) {
       const root = clientExports.createRoot(rootElement);

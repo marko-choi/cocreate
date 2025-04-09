@@ -7,8 +7,10 @@ const generateInstanceId = () => {
 }
 
 const renderAllCocreateApps = () => {
+  console.log("[Cocreate] Rendering all Cocreate apps");
   const rootElements = document.querySelectorAll(".cocreate-root");
 
+  console.log("[Cocreate] Found", rootElements.length, "root elements");
   rootElements.forEach((rootElement) => {
     if (!rootElement.hasAttribute("data-react-mounted")) {
       const root = createRoot(rootElement);
