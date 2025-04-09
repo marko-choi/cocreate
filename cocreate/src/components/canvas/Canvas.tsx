@@ -56,7 +56,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
 
   const [imageOffset, setImageOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
-  
+
   // Clear selections from localStorage when component mounts
   useEffect(() => {
     localStorage.removeItem('cocreate-canvasSize');
@@ -109,17 +109,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     console.log("[Cocreate] Window inner height: " + window.innerHeight);
     const screenHeight = window.innerHeight;
     const originalImageHeight = img.naturalHeight;
-    
+
     const imageHeight = img.height;
     const imageWidth = img.width;
-    
+
     // Scale width to fit within screen height
     const height = Math.min(screenHeight, imageHeight);
     const aspectRatio = imageHeight / imageWidth;
     const width = height / aspectRatio;
 
     const scaleFactor = imageHeight / originalImageHeight
-    
+
     console.log(img)
     console.log(
       "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\n" +
@@ -144,7 +144,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     const imageHeight = img.height;
     const imageWidth = img.width;
-  
+
     // Scale width to fit within screen height
     const height = Math.min(screenHeight, imageHeight);
     const aspectRatio = imageHeight / imageWidth;
@@ -152,14 +152,14 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     console.log("[Cocreate] Initializing canvas dimensions: " + width + ", " + height);
     setCanvasWidth(width);
     setCanvasHeight(height);
-    
+
     console.log(
       "Original Image Width: " + originalImageWidth +
       "\nOriginal Image Height: " + originalImageHeight +
       "\nImage Height: " + imageHeight +
       "\nImage Width: " + imageWidth +
-      "\nResized Canvas Width: " + width + 
-      "\nResized Canvas Height: " + height + 
+      "\nResized Canvas Width: " + width +
+      "\nResized Canvas Height: " + height +
       "\nScreen Height: " + screenHeight +
       "\nAspect Ratio: " + aspectRatio +
       "\nImage Scale Factor: " + imageHeight / originalImageHeight +
@@ -178,8 +178,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
 
     var loadedImage = undefined
-    do { loadedImage = instanceRootContainer.querySelector(".rendering-image"); } while (!loadedImage) 
-    
+    do { loadedImage = instanceRootContainer.querySelector(".rendering-image"); } while (!loadedImage)
+
     if (loadedImage instanceof HTMLImageElement) {
       if (loadedImage.complete) {
         console.log("[Cocreate] Image already loaded");
@@ -229,11 +229,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       return;
     }
 
-    const questionBodyImage = instanceRootContainer.parentElement?.querySelector(`.question-content img`);
+    const questionBodyImage = instanceRootContainer.parentElement?.querySelector(`.question-display-wrapper img`);
     console.log("[Cocreate] Question Body Image: " + questionBodyImage);
 
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
-      
+
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
       console.log("[Cocreate] Question Body Image Src: " + questionBodyImage.getAttribute("src"));
@@ -296,7 +296,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     ctx.fillStyle = fillStyle;
     ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = lineWidth;
-  
+
     // Draw the rectangle with rounded corners
     ctx.beginPath();
     ctx.moveTo(x + radius, y); // Move to the top-left corner, with rounded edge
@@ -305,7 +305,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     ctx.arcTo(x, y + height, x, y, radius); // Bottom-left corner
     ctx.arcTo(x, y, x + width, y, radius); // Top-left corner
     ctx.closePath();
-  
+
     ctx.fill(); // Fill the rounded rectangle
     ctx.stroke(); // Stroke the rounded rectangle
   };
@@ -326,7 +326,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const handleMouseDown = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     removeEmptyFeedback();
 
     if (isEnteringFeedback) {
@@ -350,7 +350,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     if (activeSelectionIndex !== null) {
       const selection = selections[activeSelectionIndex];
       if (
-        !selection.functionValue && 
+        !selection.functionValue &&
         !selection.aestheticValue &&
         !selection.comment
       ) {
@@ -365,11 +365,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isSelecting || !selectionStart || !canvasRef.current || isEnteringFeedback) return;
-  
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-  
+
     const rect = canvas.getBoundingClientRect();
     const currentEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
 
@@ -377,12 +377,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setSelectionEnd(currentEnd);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawSelections(ctx);
-  
+
     const x = Math.min(selectionStart.x, currentEnd.x);
     const y = Math.min(selectionStart.y, currentEnd.y);
     const width = Math.abs(currentEnd.x - selectionStart.x);
     const height = Math.abs(currentEnd.y - selectionStart.y);
-      
+
     // Draw the current selection being created
     drawSelection(ctx, x, y, width, height);
     checkIfMouseIsInsideCanvas(e);
@@ -415,7 +415,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       const height = clampedY - startY;
 
       console.log(
-        "Start [X, Y]: " + startX + ", " + startY, 
+        "Start [X, Y]: " + startX + ", " + startY,
         "\nEnd [X, Y]: " + clampedX + ", " + clampedY
       );
       // Clear the canvas and redraw existing selections if necessary
@@ -474,7 +474,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         openPictureSelectionFeedback(e);
         return;
       }
-      
+
     } else {
       createNewSelection(selectionStart, selectionEnd);
       setIsEnteringFeedback(true);
@@ -483,9 +483,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const x = Math.max(selectionStart.x, selectionEnd.x);
     const y = Math.max(selectionStart.y, selectionEnd.y);
 
-    setTooltipPosition({ 
-      x: x - 100, 
-      y: y - 100 
+    setTooltipPosition({
+      x: x - 100,
+      y: y - 100
     });
     setActiveSelectionIndex(selections.length);
 
@@ -503,8 +503,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const { width, height } = canvasElement.getBoundingClientRect();
     const pictureSelection = selections.find(selection => {
       return (
-        selection.start.x === 0 && 
-        selection.start.y === 0 && 
+        selection.start.x === 0 &&
+        selection.start.y === 0 &&
         selection.end.x === width &&
         selection.end.y === height
       );
@@ -520,7 +520,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       mouseCoordinates.y -= imageOffset.y;
 
       // console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
-      
+
       setActiveSelectionIndex(pictureSelectionIndex);
       setTooltipPosition(mouseCoordinates);
       setIsSelecting(false);
@@ -546,9 +546,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     // Only creates a selection if selections array does not contain a picture-wide selection
     let pictureWideSelection = selections.filter(selection => {
       return (
-        selection.start.x === 0 && 
-        selection.start.y === 0 && 
-        selection.end.x === width && 
+        selection.start.x === 0 &&
+        selection.start.y === 0 &&
+        selection.end.x === width &&
         selection.end.y === height
       );
     });
@@ -557,7 +557,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }
 
   const createNewSelection = (
-    selectionStart: SelectionCoordinates, 
+    selectionStart: SelectionCoordinates,
     selectionEnd: SelectionCoordinates
   ) => {
     const newSelection: Selection = {
@@ -572,7 +572,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         y: selectionEnd.y / imageScaleFactor,
       },
     };
-    setSelections((prev) => [...prev, newSelection]);  
+    setSelections((prev) => [...prev, newSelection]);
   }
 
   const createPictureSelection = (pictureWidth: number, pictureHeight: number) => {
@@ -582,7 +582,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       end: { x: pictureWidth, y: pictureHeight },
       unscaledStart: { x: 0, y: 0 },
       unscaledEnd: { x: imageDimensions?.width, y: imageDimensions?.height },
-    }; 
+    };
     // console.log("Creating picture-wide selection: \n" + JSON.stringify(newSelection));
     setSelections((prev) => [...prev, newSelection]);
   }
@@ -601,7 +601,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     // Check if the selection to be deleted is a picture-wide selection
     checkForPictureSelection(index);
-    
+
     setSelections((prev) => prev.filter((_, i) => i !== index));
     setTooltipPosition(null);
     setActiveSelectionIndex(null);
@@ -611,16 +611,16 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const checkForPictureSelection = (index?: number) => {
 
     if (allowPictureSelection) return
-    
+
     const selection = selections[index ?? activeSelectionIndex ?? 0];
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const { width, height } = canvas.getBoundingClientRect();
     if (
-      selection.start.x === 0 && 
-      selection.start.y === 0 && 
-      selection.end.x === width && 
+      selection.start.x === 0 &&
+      selection.start.y === 0 &&
+      selection.end.x === width &&
       selection.end.y === height
     ) {
       // console.log("allowing picture selection");
@@ -631,14 +631,14 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   // const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   // const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
   // const [selections, setSelections] = useState<{ start: { x: number; y: number }; end: { x: number; y: number } }[]>([]);
-  
+
   // const updateScaleFactor = (newWidth: number) => {
   //   if (imageDimensions) {
   //     const newScaleFactor = newWidth / imageDimensions.width;
   //     setImageScaleFactor(newScaleFactor);
   //   }
   // };
-  
+
 
   // Initialize Canvas
   useEffect(() => {
@@ -652,7 +652,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       updateImageDimensions();
       updateImageOffset();
     };
-  
+
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
@@ -675,12 +675,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  
-  
-  
+
+
+
 
   // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
-    
+
   // // Continuously updates mouse coordinates
   // useEffect(() => {
   //   const handleMouseMove = (e: MouseEvent) => {
@@ -696,7 +696,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           src={imageSrc}
           alt="Rendering"
           className="rendering-image"
-          style={{ 
+          style={{
             maxHeight: "100%",
             width: "auto",
             display: "block",
@@ -732,15 +732,15 @@ const Canvas: React.FC<CanvasProps> = (props) => {
                 height,
               }}
             >
-              <div className="selection-tooltip-box"> 
-                <IconButton 
+              <div className="selection-tooltip-box">
+                <IconButton
                   size="small"
                   className="edit-button"
                   onClick={() => handleEdit(index)}
                 >
                   <Edit />
                 </IconButton>
-                <IconButton 
+                <IconButton
                   size="small"
                   className="delete-button"
                   onClick={() => handleDelete(index)}
@@ -764,7 +764,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             onDelete={() => handleDelete(activeSelectionIndex)}
           />
         )}
-      </div> 
+      </div>
   );
 };
 
