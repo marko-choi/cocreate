@@ -234,9 +234,9 @@ function App() {
 
   const generateRandomData = () => {
     const numQuestions = 10
-    const maxAnnotation = 200
+    const maxAnnotation = 30
     const minSelectionPerAnnotation = 5
-    const maxSelectionPerAnnotation = 400
+    const maxSelectionPerAnnotation = 10
     const imageSize: [number, number] = [410, 270]
     const pictureRange = 4
 
