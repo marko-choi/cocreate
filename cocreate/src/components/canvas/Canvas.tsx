@@ -213,15 +213,19 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     const imgElement = instanceRootContainer.querySelector(".canvas-container img");
     console.log("[Cocreate] Image element: " + imgElement);
+    try {
       if (imgElement) {
         const rect = imgElement.getBoundingClientRect();
         const parentRect = imgElement.parentElement?.getBoundingClientRect();
 
         const offsetX = rect.left - (parentRect?.left ?? 0);
         const offsetY = rect.top - (parentRect?.top ?? 0);
-
-      setImageOffset({ x: offsetX, y: offsetY });
+        setImageOffset({ x: offsetX, y: offsetY });
+      }
+    } catch (error) {
+      console.error("[Cocreate] Error updating image offset: " + error);
     }
+
   }
 
   const initializeCanvas = () => {
