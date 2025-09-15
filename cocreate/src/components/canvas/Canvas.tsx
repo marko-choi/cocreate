@@ -232,7 +232,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       return;
     }
 
-    const questionBodyImage = instanceRootContainer.parentElement?.querySelector(`.question-display-wrapper img`);
+    const questionBodyImage = instanceRootContainer.parentElement?.querySelector(`.question-display-wrapper img`) ||
+                              instanceRootContainer.parentElement?.querySelector(`.QuestionText img`);
     console.log("[Cocreate] Question Body Image: " + questionBodyImage);
 
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {

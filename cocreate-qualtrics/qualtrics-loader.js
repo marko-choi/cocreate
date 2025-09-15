@@ -33,7 +33,6 @@ function loadResource(url, resourceType) {
   });
 }
 
-
 async function loadReactApp(qualtricsSurveyEngine) {
 
 	let qualtricsResources = [
@@ -56,38 +55,6 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		surveyCanvas.style.width = '100%';
 		surveyCanvas.style.margin = '0px';
 	}
-
-	// Legacy Qualtrics CSS
-	// let questionText = document.querySelector('.QuestionText')
-	// if (questionText) {
-	// 	questionText.style.padding = '0px';
-	// }
-
-	// let questionContainerInner = document.querySelector(".SkinInner")
-	// if (questionContainerInner) {
-	// 	questionContainerInner.style.width = '100%'
-	// 	questionContainerInner.style.paddingTop = '0px'
-	// }
-
-	// let questionSkinContainer = document.querySelector(".Skin #Questions")
-	// if (questionSkinContainer) {
-	// 	questionSkinContainer.style.overflow = 'visible';
-	// }
-
-	// let questionBody = document.querySelector('.QuestionBody')
-	// if (questionBody) {
-	// 	questionBody.style.padding = '0px !important';
-	// 	questionBody.style.paddingBottom = '0px !important';
-	// 	questionBody.style.paddingTop = '0px !important';
-	// 	questionBody.style.paddingLeft = '0px !important';
-	// 	questionBody.style.paddingRight = '0px !important';
-	// }
-
-	// let questionButton = document.querySelector('#Buttons')
-	// if (questionButton) {
-	// 	questionButton.style.paddingTop = '0px';
-	// 	questionButton.style.paddingBottom = '0px';
-	// }
 
 	try {
 

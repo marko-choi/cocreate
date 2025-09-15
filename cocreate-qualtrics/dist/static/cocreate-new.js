@@ -14734,14 +14734,14 @@ const Canvas = (props) => {
     }
   };
   const initializeCanvas = () => {
-    var _a;
+    var _a, _b;
     console.log("[Cocreate] Initializing canvas dimensions");
     const instanceRootContainer = getInstanceRootContainer();
     if (!instanceRootContainer) {
       console.log("[Cocreate] No root container found for instanceId: " + instanceId);
       return;
     }
-    const questionBodyImage = (_a = instanceRootContainer.parentElement) == null ? void 0 : _a.querySelector(`.question-display-wrapper img`);
+    const questionBodyImage = ((_a = instanceRootContainer.parentElement) == null ? void 0 : _a.querySelector(`.question-display-wrapper img`)) || ((_b = instanceRootContainer.parentElement) == null ? void 0 : _b.querySelector(`.QuestionText img`));
     console.log("[Cocreate] Question Body Image: " + questionBodyImage);
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("[Cocreate] Scraping image from question body");

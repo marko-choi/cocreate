@@ -33,8 +33,6 @@ function loadResource(url, resourceType) {
   });
 }
 
-
-
 async function loadReactApp(qualtricsSurveyEngine) {
 
 	const qualtricsResources = [
