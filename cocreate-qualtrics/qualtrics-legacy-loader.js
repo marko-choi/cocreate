@@ -94,15 +94,13 @@ async function loadReactApp(qualtricsSurveyEngine) {
 				questionImage.style.maxHeight = '85vh';
 				console.log("[Qualtrics Loader] Updated question image")
 			}
+
 			let appContainer = document.createElement('div');
 			appContainer.id = `cocreate-root-${questionData.QuestionID}`;
 			appContainer.className = 'cocreate-root';
 			appContainer.dataset.questionId = questionData.QuestionID;
-			if (questionButton) {
-				questionContainer.insertBefore(appContainer, questionButton);
-			} else {
-			questionContainer.appendChild(appContainer);
-			}
+			questionContainer.insertBefore(appContainer, questionContainer.firstChild);
+			console.log("[Qualtrics Loader] Inserted app container")
 
 			if (appContainer) {
 				appContainer.style.display = 'flex';
