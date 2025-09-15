@@ -87,13 +87,6 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		console.log("[Qualtrics Loader] Updated question button")
 	}
 
-
-		console.log("[Qualtrics Loader] loading script")
-		await loadResource(qualtricsResources[0], 'script'); // Load React App
-		console.log("[Qualtrics Loader] loading css")
-		await loadResource(qualtricsResources[1], 'link');   // Load CSS
-
-
 	if (questionContainer) {
 		// Hide question image
 		const questionImage = document.querySelector('.QuestionText img')
@@ -117,6 +110,16 @@ async function loadReactApp(qualtricsSurveyEngine) {
 			appContainer.style.overflow = 'visible';
 			appContainer.style.height = '65vh';
 		}
+
+		try {
+			console.log("[Qualtrics Loader] loading script")
+			await loadResource(qualtricsResources[0], 'script'); // Load React App
+			console.log("[Qualtrics Loader] loading css")
+			await loadResource(qualtricsResources[1], 'link');   // Load CSS
+		} catch (error) {
+			console.error("[Qualtrics Loader] Error loading resources:", error);
+		}
+
 		console.log('[Qualtrics Loader] React app loaded!');
 	} else {
 		console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
