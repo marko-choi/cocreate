@@ -88,14 +88,11 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	}
 
 
-	try {
 		console.log("[Qualtrics Loader] loading script")
 		await loadResource(qualtricsResources[0], 'script'); // Load React App
 		console.log("[Qualtrics Loader] loading css")
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
-	} catch (error) {
-		console.error("[Qualtrics Loader] Error loading resources:", error);
-	}
+
 
 	if (questionContainer) {
 		// Hide question image
