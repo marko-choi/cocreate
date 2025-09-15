@@ -1,9 +1,3 @@
-const qualtricsResources = [
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-	'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CacrYfD-.css'
-];
-
-
 /**
  * Load a resource from a URL only if it is not already loaded
  * @param {string} url - The URL of the resource to load
@@ -32,6 +26,11 @@ function loadResource(url, resourceType) {
 
 
 async function loadReactApp(qualtricsSurveyEngine) {
+
+	const qualtricsResources = [
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CacrYfD-.css'
+	];
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
@@ -80,43 +79,42 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		console.log("[Qualtrics Loader] Updated question button")
 	}
 
+
 	try {
 		console.log("[Qualtrics Loader] loading script")
 		await loadResource(qualtricsResources[0], 'script'); // Load React App
 		console.log("[Qualtrics Loader] loading css")
 		await loadResource(qualtricsResources[1], 'link');   // Load CSS
-
-		if (questionContainer) {
-			// Hide question image
-			const questionImage = document.querySelector('.QuestionText img')
-			if (questionImage) {
-				questionImage.style.display = 'none';
-				questionImage.style.maxHeight = '85vh';
-				console.log("[Qualtrics Loader] Updated question image")
-			}
-
-			let appContainer = document.createElement('div');
-			appContainer.id = `cocreate-root-${questionData.QuestionID}`;
-			appContainer.className = 'cocreate-root';
-			appContainer.dataset.questionId = questionData.QuestionID;
-			questionContainer.insertBefore(appContainer, questionContainer.firstChild);
-			console.log("[Qualtrics Loader] Inserted app container")
-
-			if (appContainer) {
-				appContainer.style.display = 'flex';
-				appContainer.style.alignItems = 'center';
-				appContainer.style.justifyContent = 'center';
-				appContainer.style.overflow = 'visible';
-				appContainer.style.height = '65vh';
-			}
-
-			console.log('[Qualtrics Loader] React app loaded!');
-		} else {
-			console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
-		}
-
 	} catch (error) {
 		console.error("[Qualtrics Loader] Error loading resources:", error);
+	}
+
+	if (questionContainer) {
+		// Hide question image
+		const questionImage = document.querySelector('.QuestionText img')
+		if (questionImage) {
+			questionImage.style.display = 'none';
+			questionImage.style.maxHeight = '85vh';
+			console.log("[Qualtrics Loader] Updated question image")
+		}
+
+		let appContainer = document.createElement('div');
+		appContainer.id = `cocreate-root-${questionData.QuestionID}`;
+		appContainer.className = 'cocreate-root';
+		appContainer.dataset.questionId = questionData.QuestionID;
+		questionContainer.insertBefore(appContainer, questionContainer.firstChild);
+		console.log("[Qualtrics Loader] Inserted app container")
+
+		if (appContainer) {
+			appContainer.style.display = 'flex';
+			appContainer.style.alignItems = 'center';
+			appContainer.style.justifyContent = 'center';
+			appContainer.style.overflow = 'visible';
+			appContainer.style.height = '65vh';
+		}
+		console.log('[Qualtrics Loader] React app loaded!');
+	} else {
+		console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
 	}
 }
 
