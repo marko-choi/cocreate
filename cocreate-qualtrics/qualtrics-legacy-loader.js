@@ -36,6 +36,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
 	console.log("[Qualtrics Loader] QuestionData:", questionData)
+	console.log("[Qualtrics Loader] QuestionContainer:", questionContainer)
 
 	if (questionContainer) {
 		questionContainer.style.overflow = 'visible';
@@ -46,17 +47,20 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	let questionText = document.querySelector('.QuestionText')
 	if (questionText) {
 		questionText.style.padding = '0px';
+		console.log("[Qualtrics Loader] Updated question text")
 	}
 
 	let questionContainerInner = document.querySelector(".SkinInner")
 	if (questionContainerInner) {
 		questionContainerInner.style.width = '100%'
 		questionContainerInner.style.paddingTop = '0px'
+		console.log("[Qualtrics Loader] Updated inner question container")
 	}
 
 	let questionSkinContainer = document.querySelector(".Skin #Questions")
 	if (questionSkinContainer) {
 		questionSkinContainer.style.overflow = 'visible';
+		console.log("[Qualtrics Loader] Updated question container")
 	}
 
 	let questionBody = document.querySelector('.QuestionBody')
@@ -66,16 +70,17 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		questionBody.style.paddingTop = '0px !important';
 		questionBody.style.paddingLeft = '0px !important';
 		questionBody.style.paddingRight = '0px !important';
+		console.log("[Qualtrics Loader] Updated question body")
 	}
 
 	let questionButton = document.querySelector('#Buttons')
 	if (questionButton) {
 		questionButton.style.paddingTop = '0px';
 		questionButton.style.paddingBottom = '0px';
+		console.log("[Qualtrics Loader] Updated question button")
 	}
 
 	try {
-
 		console.log("[Qualtrics Loader] loading script")
 		await loadResource(qualtricsResources[0], 'script'); // Load React App
 		console.log("[Qualtrics Loader] loading css")
