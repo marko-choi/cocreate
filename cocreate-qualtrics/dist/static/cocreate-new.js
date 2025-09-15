@@ -14594,8 +14594,10 @@ const Tooltip = (props) => {
     }
   );
 };
-const DEFAULT_IMAGE_SRC = "./rendering.jpg";
+const DEFAULT_IMAGE_SRC = "/cocreate/rendering.jpg";
 const MAX_IMAGE_WIDTH = 800;
+const CANVAS_SELECTIONS_KEY = "cocreate-canvasSelections";
+const CANVAS_SIZE_KEY = "cocreate-canvasSize";
 const Canvas = (props) => {
   const { instanceId } = props;
   const canvasRef = reactExports.useRef(null);
@@ -14614,11 +14616,11 @@ const Canvas = (props) => {
   const [imageScaleFactor, setImageScaleFactor] = reactExports.useState(1);
   const [imageOffset, setImageOffset] = reactExports.useState({ x: 0, y: 0 });
   reactExports.useEffect(() => {
-    localStorage.removeItem("cocreate-canvasSize");
-    localStorage.removeItem("cocreate-canvasSelections");
+    localStorage.removeItem(CANVAS_SIZE_KEY);
+    localStorage.removeItem(CANVAS_SELECTIONS_KEY);
   }, []);
   reactExports.useEffect(() => {
-    const currentCocreateCanvasSize = localStorage.getItem("cocreate-canvasSize");
+    const currentCocreateCanvasSize = localStorage.getItem(CANVAS_SIZE_KEY);
     const newCocreateCanvasSize = {
       [instanceId]: {
         width: canvasWidth,
@@ -14627,24 +14629,24 @@ const Canvas = (props) => {
       }
     };
     if (currentCocreateCanvasSize) {
-      localStorage.setItem("cocreate-canvasSize", JSON.stringify({
+      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify({
         ...JSON.parse(currentCocreateCanvasSize),
         ...newCocreateCanvasSize
       }));
     } else {
-      localStorage.setItem("cocreate-canvasSize", JSON.stringify(newCocreateCanvasSize));
+      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify(newCocreateCanvasSize));
     }
-    const currentCocreateCanvasSelections = localStorage.getItem("cocreate-canvasSelections");
+    const currentCocreateCanvasSelections = localStorage.getItem(CANVAS_SELECTIONS_KEY);
     const newCocreateCanvasSelections = {
       [instanceId]: selections
     };
     if (currentCocreateCanvasSelections) {
-      localStorage.setItem("cocreate-canvasSelections", JSON.stringify({
+      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify({
         ...JSON.parse(currentCocreateCanvasSelections),
         ...newCocreateCanvasSelections
       }));
     } else {
-      localStorage.setItem("cocreate-canvasSelections", JSON.stringify(newCocreateCanvasSelections));
+      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify(newCocreateCanvasSelections));
     }
   }, [selections]);
   const initCanvasDimensions = (img) => {

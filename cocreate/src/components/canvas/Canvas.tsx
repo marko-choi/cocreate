@@ -29,8 +29,11 @@ export interface ResizeRatio {
   currHeightRatio: number;
 }
 
-const DEFAULT_IMAGE_SRC = "./rendering.jpg";
+const DEFAULT_IMAGE_SRC = "/cocreate/rendering.jpg";
 const MAX_IMAGE_WIDTH = 800;
+
+const CANVAS_SELECTIONS_KEY = "cocreate-canvasSelections";
+const CANVAS_SIZE_KEY = "cocreate-canvasSize";
 
 export interface CanvasProps {
   instanceId: InstanceId;
@@ -59,15 +62,15 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   // Clear selections from localStorage when component mounts
   useEffect(() => {
-    localStorage.removeItem('cocreate-canvasSize');
-    localStorage.removeItem('cocreate-canvasSelections');
+    localStorage.removeItem(CANVAS_SIZE_KEY);
+    localStorage.removeItem(CANVAS_SELECTIONS_KEY);
   }, []);
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
 
     // Save canvas size to localStorage
-    const currentCocreateCanvasSize = localStorage.getItem('cocreate-canvasSize');
+    const currentCocreateCanvasSize = localStorage.getItem(CANVAS_SIZE_KEY);
     const newCocreateCanvasSize = {
       [instanceId]: {
         width: canvasWidth,
@@ -77,27 +80,27 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
 
     if (currentCocreateCanvasSize) {
-      localStorage.setItem('cocreate-canvasSize', JSON.stringify({
+      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify({
         ...JSON.parse(currentCocreateCanvasSize),
         ...newCocreateCanvasSize
       }));
     } else {
-      localStorage.setItem('cocreate-canvasSize', JSON.stringify(newCocreateCanvasSize));
+      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify(newCocreateCanvasSize));
     }
 
     // Save selections to localStorage
-    const currentCocreateCanvasSelections = localStorage.getItem('cocreate-canvasSelections');
+    const currentCocreateCanvasSelections = localStorage.getItem(CANVAS_SELECTIONS_KEY);
     const newCocreateCanvasSelections = {
       [instanceId]: selections
     }
 
     if (currentCocreateCanvasSelections) {
-      localStorage.setItem('cocreate-canvasSelections', JSON.stringify({
+      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify({
         ...JSON.parse(currentCocreateCanvasSelections),
         ...newCocreateCanvasSelections
       }));
     } else {
-      localStorage.setItem('cocreate-canvasSelections', JSON.stringify(newCocreateCanvasSelections));
+      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify(newCocreateCanvasSelections));
     }
 
   }, [selections]);
@@ -300,20 +303,23 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     // Draw the rectangle with rounded corners
     ctx.beginPath();
     ctx.moveTo(x + radius, y); // Move to the top-left corner, with rounded edge
-    ctx.arcTo(x + width, y, x + width, y + height, radius); // Top-right corner
-    ctx.arcTo(x + width, y + height, x, y + height, radius); // Bottom-right corner
-    ctx.arcTo(x, y + height, x, y, radius); // Bottom-left corner
-    ctx.arcTo(x, y, x + width, y, radius); // Top-left corner
+    ctx.arcTo(x + width, y, x + width, y + height, radius);   // Top-right corner
+    ctx.arcTo(x + width, y + height, x, y + height, radius);  // Bottom-right corner
+    ctx.arcTo(x, y + height, x, y, radius);                   // Bottom-left corner
+    ctx.arcTo(x, y, x + width, y, radius);                    // Top-left corner
     ctx.closePath();
 
-    ctx.fill(); // Fill the rounded rectangle
+    ctx.fill();   // Fill the rounded rectangle
     ctx.stroke(); // Stroke the rounded rectangle
   };
 
+  /**
+   * Redraws the selections on the canvas
+   * @param ctx - The canvas context
+   * @param resizedSelections - Optional array of selections to draw. If not provided, the current selections will be used.
+   */
   const redrawSelections = (ctx: CanvasRenderingContext2D, resizedSelections?: Selection[]) => {
-    // Draw all selections without restrictions
     let selectionsToDraw = resizedSelections ?? selections;
-    // console.log("Selections to draw: \n" + JSON.stringify(selectionsToDraw));
     selectionsToDraw.forEach(({ start, end }) => {
       const x = Math.min(start.x, end.x);
       const y = Math.min(start.y, end.y);
@@ -355,7 +361,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         !selection.comment
       ) {
         checkForPictureSelection();
-        // console.log("Removing empty feedback:" + activeSelectionIndex + " " + JSON.stringify(selection));
         setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
         setTooltipPosition(null);
         setActiveSelectionIndex(null);
@@ -520,7 +525,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       mouseCoordinates.y -= imageOffset.y;
 
       // console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
-
       setActiveSelectionIndex(pictureSelectionIndex);
       setTooltipPosition(mouseCoordinates);
       setIsSelecting(false);
@@ -675,9 +679,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-
-
-
 
   // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
 
