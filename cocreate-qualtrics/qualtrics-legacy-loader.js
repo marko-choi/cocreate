@@ -5,24 +5,34 @@
  * @returns {Promise} - A promise that resolves when the resource is loaded
  */
 function loadResource(url, resourceType) {
-	return new Promise((resolve, reject) => {
-		let element;
-		if (resourceType === 'script') {
-			element = document.createElement('script');
-			element.src = url;
-			element.async = true;
-			element.onload = resolve;
-			element.onerror = reject;
-		} else if (resourceType === 'link') {
-			element = document.createElement('link');
-			element.href = url;
-			element.rel = 'stylesheet';
-			element.onload = resolve;
-			element.onerror = reject;
-		}
-		document.head.appendChild(element);
-	});
+  return new Promise((resolve, reject) => {
+    const selector =
+      resourceType === 'script'
+        ? `script[src="${url}"]`
+        : `link[href="${url}"]`;
+
+    // If it's already loaded, resolve immediately
+    if (document.querySelector(selector)) {
+      console.log('[Qualtrics Loader] Resource already loaded:', url);
+      resolve();
+      return;
+    }
+
+    const element = document.createElement(resourceType);
+
+    if (resourceType === 'script') {
+      Object.assign(element, { src: url, async: true });
+    } else {
+      Object.assign(element, { href: url, rel: 'stylesheet' });
+    }
+
+    element.onload = resolve;
+    element.onerror = reject;
+    document.head.appendChild(element);
+    console.log('[Qualtrics Loader] Loaded resource:', url);
+  });
 }
+
 
 
 async function loadReactApp(qualtricsSurveyEngine) {
