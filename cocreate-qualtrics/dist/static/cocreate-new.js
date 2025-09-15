@@ -14725,12 +14725,16 @@ const Canvas = (props) => {
     }
     const imgElement = instanceRootContainer.querySelector(".canvas-container img");
     console.log("[Cocreate] Image element: " + imgElement);
-    if (imgElement) {
-      const rect = imgElement.getBoundingClientRect();
-      const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
-      const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
-      const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
-      setImageOffset({ x: offsetX, y: offsetY });
+    try {
+      if (imgElement) {
+        const rect = imgElement.getBoundingClientRect();
+        const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
+        const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
+        const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
+        setImageOffset({ x: offsetX, y: offsetY });
+      }
+    } catch (error) {
+      console.error("[Cocreate] Error updating image offset: " + error);
     }
   };
   const initializeCanvas = () => {

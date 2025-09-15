@@ -37,7 +37,7 @@ async function loadReactApp(qualtricsSurveyEngine) {
 
 	const qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CacrYfD-.css'
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DJdpblcO.css'
 	];
 
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
