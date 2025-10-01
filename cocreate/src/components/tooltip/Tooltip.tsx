@@ -2,6 +2,22 @@ import { Delete, Save, ThumbDown, ThumbUp } from "@mui/icons-material";
 import { Button, Divider, IconButton } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { Selection, SelectionCoordinates } from "../canvas/Canvas";
+import { FeedbackConfig } from "../../types/global";
+
+// Function to get feedback configuration from global window object
+const getFeedbackConfig = (): FeedbackConfig => {
+  const defaultConfig: FeedbackConfig = {
+    functionality: true,
+    aesthetics: false,
+    comments: false
+  };
+
+  if (typeof window !== 'undefined' && (window as any).cocreateFeedbackConfig) {
+    return (window as any).cocreateFeedbackConfig;
+  }
+
+  return defaultConfig;
+};
 
 interface TooltipProps {
   index: number;
@@ -26,6 +42,9 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
   const [aestheticValue, setAestheticValue] = useState(selection.aestheticValue || "");
   const [comment, setComment] = useState(selection.comment || "");
   const [isSaveEnabled, setIsSaveEnabled] = useState(false);
+
+  // Get feedback configuration
+  const feedbackConfig = getFeedbackConfig();
 
   const handleFunctionValue = (value: string) => {
     if (!annotation) { // Allow changes only if not in read-only mode
@@ -56,9 +75,10 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
       const newSelections = [...prev];
       newSelections[index] = {
         ...newSelections[index],
-        functionValue: functionValue ?? "",
-        aestheticValue: aestheticValue ?? "",
-        comment: comment ?? "",
+        // Only save values for enabled sections
+        functionValue: feedbackConfig.functionality ? (functionValue ?? "") : "",
+        aestheticValue: feedbackConfig.aesthetics ? (aestheticValue ?? "") : "",
+        comment: feedbackConfig.comments ? (comment ?? "") : "",
       };
       return newSelections;
     });
@@ -72,8 +92,13 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
   };
 
   useEffect(() => {
-    setIsSaveEnabled(!!functionValue || !!aestheticValue);
-  }, [functionValue, aestheticValue]);
+    // Only enable save if at least one enabled section has a value
+    const hasFunctionalityValue = feedbackConfig.functionality && !!functionValue;
+    const hasAestheticsValue = feedbackConfig.aesthetics && !!aestheticValue;
+    const hasCommentValue = feedbackConfig.comments && !!comment;
+
+    setIsSaveEnabled(hasFunctionalityValue || hasAestheticsValue || hasCommentValue);
+  }, [functionValue, aestheticValue, comment, feedbackConfig]);
 
   useEffect(() => {
     if (functionValue || aestheticValue || comment) {
@@ -107,100 +132,106 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
 
       {/* Content */}
       <div style={{ marginBottom: "8px" }}>
-        {/* Functionality */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>Functionality</div>
-          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-            <IconButton
-              onClick={() => handleFunctionValue("good")}
-              disabled={annotation} // Disable if in read-only mode
-              style={{
-                background: functionValue === "good" ? "#4CAF50" : "#d5d5d5",
-                color: "white",
-                border: "none",
-                borderRadius: "100%",
-                width: "32px",
-                height: "32px",
-                cursor: annotation ? "not-allowed" : "pointer",
-              }}
-            >
-              <ThumbUp fontSize="small" />
-            </IconButton>
-            <IconButton
-              onClick={() => handleFunctionValue("bad")}
-              disabled={annotation} // Disable if in read-only mode
-              style={{
-                background: functionValue === "bad" ? "#F44336" : "#d5d5d5",
-                color: "white",
-                border: "none",
-                borderRadius: "100%",
-                width: "32px",
-                height: "32px",
-                cursor: annotation ? "not-allowed" : "pointer",
-              }}
-            >
-              <ThumbDown fontSize="small" />
-            </IconButton>
+        {/* Functionality - only show if enabled */}
+        {feedbackConfig.functionality && (
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: "8px" }}>
+            <div>Functionality</div>
+            <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+              <IconButton
+                onClick={() => handleFunctionValue("good")}
+                disabled={annotation} // Disable if in read-only mode
+                style={{
+                  background: functionValue === "good" ? "#4CAF50" : "#d5d5d5",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "100%",
+                  width: "32px",
+                  height: "32px",
+                  cursor: annotation ? "not-allowed" : "pointer",
+                }}
+              >
+                <ThumbUp fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={() => handleFunctionValue("bad")}
+                disabled={annotation} // Disable if in read-only mode
+                style={{
+                  background: functionValue === "bad" ? "#F44336" : "#d5d5d5",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "100%",
+                  width: "32px",
+                  height: "32px",
+                  cursor: annotation ? "not-allowed" : "pointer",
+                }}
+              >
+                <ThumbDown fontSize="small" />
+              </IconButton>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Aesthetics */}
-        <div style={{ marginBottom: "8px", display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>Aesthetics</div>
-          <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
-            <IconButton
-              onClick={() => handleAestheticValue("good")}
-              disabled={annotation} // Disable if in read-only mode
-              style={{
-                background: aestheticValue === "good" ? "#4CAF50" : "#d5d5d5",
-                color: "white",
-                border: "none",
-                borderRadius: "100%",
-                width: "32px",
-                height: "32px",
-                cursor: annotation ? "not-allowed" : "pointer",
-              }}
-            >
-              <ThumbUp fontSize="small" />
-            </IconButton>
-            <IconButton
-              onClick={() => handleAestheticValue("bad")}
-              disabled={annotation} // Disable if in read-only mode
-              style={{
-                background: aestheticValue === "bad" ? "#F44336" : "#d5d5d5",
-                color: "white",
-                border: "none",
-                borderRadius: "100%",
-                width: "32px",
-                height: "32px",
-                cursor: annotation ? "not-allowed" : "pointer",
-              }}
-            >
-              <ThumbDown fontSize="small" />
-            </IconButton>
+        {/* Aesthetics - only show if enabled */}
+        {feedbackConfig.aesthetics && (
+          <div style={{ marginBottom: "8px", display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>Aesthetics</div>
+            <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
+              <IconButton
+                onClick={() => handleAestheticValue("good")}
+                disabled={annotation} // Disable if in read-only mode
+                style={{
+                  background: aestheticValue === "good" ? "#4CAF50" : "#d5d5d5",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "100%",
+                  width: "32px",
+                  height: "32px",
+                  cursor: annotation ? "not-allowed" : "pointer",
+                }}
+              >
+                <ThumbUp fontSize="small" />
+              </IconButton>
+              <IconButton
+                onClick={() => handleAestheticValue("bad")}
+                disabled={annotation} // Disable if in read-only mode
+                style={{
+                  background: aestheticValue === "bad" ? "#F44336" : "#d5d5d5",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "100%",
+                  width: "32px",
+                  height: "32px",
+                  cursor: annotation ? "not-allowed" : "pointer",
+                }}
+              >
+                <ThumbDown fontSize="small" />
+              </IconButton>
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Additional Comments */}
-        <div>
-          <div>Additional Comments</div>
-          <textarea
-            value={comment}
-            onChange={(e) => handleComment(e.target.value)}
-            rows={3}
-            disabled={annotation} // Disable if in read-only mode
-            style={{
-              width: "100%",
-              marginTop: "4px",
-              padding: "8px",
-              border: "1px solid #ccc",
-              borderRadius: "4px",
-              resize: "none",
-              fontSize: "11px",
-              cursor: annotation ? "not-allowed" : "text",
-            }}
-          />
-        </div>
+        {/* Additional Comments - only show if enabled */}
+        {feedbackConfig.comments && (
+          <div>
+            <div>Additional Comments</div>
+            <textarea
+              value={comment}
+              onChange={(e) => handleComment(e.target.value)}
+              rows={3}
+              disabled={annotation} // Disable if in read-only mode
+              style={{
+                width: "100%",
+                marginTop: "4px",
+                padding: "8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+                resize: "none",
+                fontSize: "11px",
+                cursor: annotation ? "not-allowed" : "text",
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <Divider style={{ marginBottom: "12px" }} />

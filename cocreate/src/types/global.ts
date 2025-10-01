@@ -3,6 +3,12 @@ export interface Point {
   y: number;
 }
 
+export interface FeedbackConfig {
+  functionality: boolean;
+  aesthetics: boolean;
+  comments: boolean;
+}
+
 export interface Selection {
   start: Point;
   end: Point;

@@ -1,4 +1,40 @@
 /**
+ * Fetch and parse CSV configuration from a URL
+ * @param {string} csvUrl - The URL of the CSV file
+ * @returns {Promise<Object>} - A promise that resolves to the parsed configuration object
+ */
+async function fetchCsvConfig(csvUrl) {
+  try {
+    console.log('[Qualtrics Loader] Fetching CSV config from:', csvUrl);
+    const response = await fetch(csvUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+
+    // Parse CSV content
+    const lines = csvText.trim().split('\n');
+    const config = {};
+
+    lines.forEach(line => {
+      const [key, value] = line.split(',').map(item => item.trim());
+      config[key] = value.toLowerCase() === 'true';
+    });
+
+    console.log('[Qualtrics Loader] Parsed CSV config:', config);
+    return config;
+  } catch (error) {
+    console.error('[Qualtrics Loader] Error fetching CSV config:', error);
+    // Return default configuration if CSV fetch fails
+    return {
+      functionality: true,
+      aesthetics: false,
+      comments: false
+    };
+  }
+}
+
+/**
  * Load a resource from a URL only if it is not already loaded
  * @param {string} url - The URL of the resource to load
  * @param {string} resourceType - The type of resource to load
@@ -33,16 +69,28 @@ function loadResource(url, resourceType) {
   });
 }
 
-async function loadReactApp(qualtricsSurveyEngine) {
+async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	let qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DJdpblcO.css'
 	];
 
+	// Fetch CSV configuration if URL is provided
+	let feedbackConfig = {
+		functionality: true,
+		aesthetics: false,
+		comments: false
+	};
+
+	if (csvConfigUrl) {
+		feedbackConfig = await fetchCsvConfig(csvConfigUrl);
+	}
+
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
 	console.log("[Qualtrics Loader] QuestionData:", questionData)
+	console.log("[Qualtrics Loader] Feedback config:", feedbackConfig)
 
 	if (questionContainer) {
 		questionContainer.style.overflow = 'visible';
@@ -57,6 +105,9 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	}
 
 	try {
+		// Set feedback configuration on global window object for React app to access
+		window.cocreateFeedbackConfig = feedbackConfig;
+		console.log("[Qualtrics Loader] Set global feedback config:", window.cocreateFeedbackConfig);
 
 		console.log("[Qualtrics Loader] loading script")
 		await loadResource(qualtricsResources[0], 'script'); // Load React App
