@@ -30,8 +30,8 @@ async function fetchCsvConfig(csvUrl) {
     // Fallback to defaults if the CSV cannot be fetched/parsed
     return {
       showFunctionValue: true,
-      showAestheticValue: false,
-      showComment: false,
+      showAestheticValue: true,
+      showComment: true,
     };
   }
 }
@@ -81,8 +81,8 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 	// Initialize feedback configuration (can be overridden by CSV)
 	let feedbackConfig = {
 		showFunctionValue: true,
-		showAestheticValue: false,
-		showComment: false
+		showAestheticValue: true,
+		showComment: true
 	};
 
 	if (csvConfigUrl) {

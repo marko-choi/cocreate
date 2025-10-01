@@ -7,9 +7,9 @@ import { FeedbackConfig } from "../../types/global";
 // Function to get feedback configuration from global window object
 const getFeedbackConfig = (): FeedbackConfig => {
   const defaultConfig: FeedbackConfig = {
-    functionality: true,
-    aesthetics: false,
-    comments: false
+    showFunctionValue: true,
+    showAestheticValue: true,
+    showComment: true
   };
 
   if (typeof window !== 'undefined' && (window as any).cocreateFeedbackConfig) {
@@ -76,9 +76,9 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
       newSelections[index] = {
         ...newSelections[index],
         // Only save values for enabled sections
-        functionValue: feedbackConfig.functionality ? (functionValue ?? "") : "",
-        aestheticValue: feedbackConfig.aesthetics ? (aestheticValue ?? "") : "",
-        comment: feedbackConfig.comments ? (comment ?? "") : "",
+        functionValue: feedbackConfig.showFunctionValue ? (functionValue ?? "") : "",
+        aestheticValue: feedbackConfig.showAestheticValue ? (aestheticValue ?? "") : "",
+        comment: feedbackConfig.showComment ? (comment ?? "") : "",
       };
       return newSelections;
     });
@@ -93,9 +93,9 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
 
   useEffect(() => {
     // Only enable save if at least one enabled section has a value
-    const hasFunctionalityValue = feedbackConfig.functionality && !!functionValue;
-    const hasAestheticsValue = feedbackConfig.aesthetics && !!aestheticValue;
-    const hasCommentValue = feedbackConfig.comments && !!comment;
+    const hasFunctionalityValue = feedbackConfig.showFunctionValue && !!functionValue;
+    const hasAestheticsValue = feedbackConfig.showAestheticValue && !!aestheticValue;
+    const hasCommentValue = feedbackConfig.showComment && !!comment;
 
     setIsSaveEnabled(hasFunctionalityValue || hasAestheticsValue || hasCommentValue);
   }, [functionValue, aestheticValue, comment, feedbackConfig]);
@@ -133,7 +133,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
       {/* Content */}
       <div style={{ marginBottom: "8px" }}>
         {/* Functionality - only show if enabled */}
-        {feedbackConfig.functionality && (
+        {feedbackConfig.showFunctionValue && (
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: "8px" }}>
             <div>Functionality</div>
             <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
@@ -172,7 +172,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
         )}
 
         {/* Aesthetics - only show if enabled */}
-        {feedbackConfig.aesthetics && (
+        {feedbackConfig.showAestheticValue && (
           <div style={{ marginBottom: "8px", display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>Aesthetics</div>
             <div style={{ display: "flex", gap: "8px", marginTop: "4px" }}>
@@ -211,7 +211,7 @@ const Tooltip: React.FC<TooltipProps> = (props) => {
         )}
 
         {/* Additional Comments - only show if enabled */}
-        {feedbackConfig.comments && (
+        {feedbackConfig.showComment && (
           <div>
             <div>Additional Comments</div>
             <textarea

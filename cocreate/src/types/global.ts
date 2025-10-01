@@ -4,9 +4,9 @@ export interface Point {
 }
 
 export interface FeedbackConfig {
-  functionality: boolean;
-  aesthetics: boolean;
-  comments: boolean;
+  showFunctionValue: boolean;
+  showAestheticValue: boolean;
+  showComment: boolean;
 }
 
 export interface Selection {

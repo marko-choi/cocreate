@@ -27,9 +27,9 @@ async function fetchCsvConfig(csvUrl) {
     console.error('[Qualtrics Loader] Error fetching CSV config:', error);
     // Return default configuration if CSV fetch fails
     return {
-      functionality: true,
-      aesthetics: false,
-      comments: false
+      showFunctionValue: true,
+      showAestheticValue: true,
+      showComment: true
     };
   }
 }
@@ -78,9 +78,9 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	// Fetch CSV configuration if URL is provided
 	let feedbackConfig = {
-		functionality: true,
-		aesthetics: false,
-		comments: false
+		showFunctionValue: true,
+		showAestheticValue: true,
+		showComment: true
 	};
 
 	if (csvConfigUrl) {
