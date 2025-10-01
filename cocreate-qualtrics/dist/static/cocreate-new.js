@@ -14371,12 +14371,24 @@ const Divider = /* @__PURE__ */ reactExports.forwardRef(function Divider2(inProp
 if (Divider) {
   Divider.muiSkipListHighlight = true;
 }
+const getFeedbackConfig = () => {
+  const defaultConfig = {
+    functionality: true,
+    aesthetics: false,
+    comments: false
+  };
+  if (typeof window !== "undefined" && window.cocreateFeedbackConfig) {
+    return window.cocreateFeedbackConfig;
+  }
+  return defaultConfig;
+};
 const Tooltip = (props) => {
   const { index, x, y, selection, setSelections, setTooltipPosition, setIsEnteringFeedback, setActiveSelectionIndex, onDelete, annotation } = props;
   const [functionValue, setFunctionValue] = reactExports.useState(selection.functionValue || "");
   const [aestheticValue, setAestheticValue] = reactExports.useState(selection.aestheticValue || "");
   const [comment2, setComment] = reactExports.useState(selection.comment || "");
   const [isSaveEnabled, setIsSaveEnabled] = reactExports.useState(false);
+  const feedbackConfig = getFeedbackConfig();
   const handleFunctionValue = (value) => {
     if (!annotation) {
       if (functionValue === value) {
@@ -14403,9 +14415,10 @@ const Tooltip = (props) => {
       const newSelections = [...prev2];
       newSelections[index] = {
         ...newSelections[index],
-        functionValue: functionValue ?? "",
-        aestheticValue: aestheticValue ?? "",
-        comment: comment2 ?? ""
+        // Only save values for enabled sections
+        functionValue: feedbackConfig.functionality ? functionValue ?? "" : "",
+        aestheticValue: feedbackConfig.aesthetics ? aestheticValue ?? "" : "",
+        comment: feedbackConfig.comments ? comment2 ?? "" : ""
       };
       return newSelections;
     });
@@ -14417,8 +14430,11 @@ const Tooltip = (props) => {
     setIsEnteringFeedback(false);
   };
   reactExports.useEffect(() => {
-    setIsSaveEnabled(!!functionValue || !!aestheticValue);
-  }, [functionValue, aestheticValue]);
+    const hasFunctionalityValue = feedbackConfig.functionality && !!functionValue;
+    const hasAestheticsValue = feedbackConfig.aesthetics && !!aestheticValue;
+    const hasCommentValue = feedbackConfig.comments && !!comment2;
+    setIsSaveEnabled(hasFunctionalityValue || hasAestheticsValue || hasCommentValue);
+  }, [functionValue, aestheticValue, comment2, feedbackConfig]);
   reactExports.useEffect(() => {
     if (functionValue || aestheticValue || comment2) {
       saveChanges();
@@ -14446,7 +14462,7 @@ const Tooltip = (props) => {
         ] }),
         /* @__PURE__ */ jsxRuntimeExports.jsx(Divider, { style: { marginBottom: "8px" } }),
         /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "8px" }, children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+          feedbackConfig.functionality && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }, children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: "Functionality" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", gap: "8px", marginTop: "4px" }, children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -14485,7 +14501,7 @@ const Tooltip = (props) => {
               )
             ] })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
+          feedbackConfig.aesthetics && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "8px", display: "flex", justifyContent: "space-between", alignItems: "center" }, children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: "Aesthetics" }),
             /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { display: "flex", gap: "8px", marginTop: "4px" }, children: [
               /* @__PURE__ */ jsxRuntimeExports.jsx(
@@ -14524,7 +14540,7 @@ const Tooltip = (props) => {
               )
             ] })
           ] }),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
+          feedbackConfig.comments && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx("div", { children: "Additional Comments" }),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "textarea",
