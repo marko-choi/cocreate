@@ -1,4 +1,42 @@
 /**
+ * Fetch and parse CSV configuration from a URL
+ * Expected CSV format (key,value per line):
+ *   showFunctionValue,true
+ *   showAestheticValue,false
+ *   showComment,true
+ * @param {string} csvUrl - The URL of the CSV file
+ * @returns {Promise<Object>} - Parsed configuration object
+ */
+async function fetchCsvConfig(csvUrl) {
+  try {
+    console.log('[Qualtrics Legacy Loader] Fetching CSV config from:', csvUrl);
+    const response = await fetch(csvUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+
+    const lines = csvText.trim().split('\n');
+    const config = {};
+    lines.forEach((line) => {
+      const [key, value] = line.split(',').map((item) => item.trim());
+      config[key] = value.toLowerCase() === 'true';
+    });
+
+    console.log('[Qualtrics Legacy Loader] Parsed CSV config:', config);
+    return config;
+  } catch (error) {
+    console.error('[Qualtrics Legacy Loader] Error fetching CSV config:', error);
+    // Fallback to defaults if the CSV cannot be fetched/parsed
+    return {
+      showFunctionValue: true,
+      showAestheticValue: false,
+      showComment: false,
+    };
+  }
+}
+
+/**
  * Load a resource from a URL only if it is not already loaded
  * @param {string} url - The URL of the resource to load
  * @param {string} resourceType - The type of resource to load
@@ -33,17 +71,29 @@ function loadResource(url, resourceType) {
   });
 }
 
-async function loadReactApp(qualtricsSurveyEngine) {
+async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	const qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DJdpblcO.css'
 	];
 
+	// Initialize feedback configuration (can be overridden by CSV)
+	let feedbackConfig = {
+		showFunctionValue: true,
+		showAestheticValue: false,
+		showComment: false
+	};
+
+	if (csvConfigUrl) {
+		feedbackConfig = await fetchCsvConfig(csvConfigUrl);
+	}
+
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
 	console.log("[Qualtrics Loader] QuestionData:", questionData)
 	console.log("[Qualtrics Loader] QuestionContainer:", questionContainer)
+	console.log("[Qualtrics Legacy Loader] Feedback config:", feedbackConfig)
 
 	if (questionContainer) {
 		questionContainer.style.overflow = 'visible';
@@ -112,6 +162,9 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		}
 
 		try {
+			// Expose the config globally for the React app
+			window.cocreateFeedbackConfig = feedbackConfig;
+			console.log('[Qualtrics Legacy Loader] Set global feedback config:', window.cocreateFeedbackConfig);
 			console.log("[Qualtrics Loader] loading script")
 			await loadResource(qualtricsResources[0], 'script'); // Load React App
 			console.log("[Qualtrics Loader] loading css")
