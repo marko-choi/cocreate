@@ -78,6 +78,31 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-DJdpblcO.css'
 	];
 
+	// Inject a small set of compatibility styles for Qualtrics environments.
+	// We keep component styles intact and only normalize containers around the app.
+	function injectCompatStyles() {
+		const STYLE_TAG_ID = 'cocreate-qualtrics-compat';
+		if (document.getElementById(STYLE_TAG_ID)) return;
+		const style = document.createElement('style');
+		style.id = STYLE_TAG_ID;
+		style.type = 'text/css';
+		style.appendChild(document.createTextNode(
+			[
+				// Ensure Qualtrics containers don't clip or pad our root
+				'.Skin #Questions{overflow:visible!important;}',
+				'.QuestionOuter, .QuestionBody, .QuestionText{padding:0!important;margin:0!important;}',
+				// Scoped isolation and predictable sizing for our root
+				'.cocreate-root{width:100%!important;max-width:100%!important;height:65vh;position:relative;display:flex;align-items:center;justify-content:center;overflow:visible;isolation:isolate;}',
+				'.cocreate-root *, .cocreate-root *::before, .cocreate-root *::after{box-sizing:border-box;}',
+				// Prevent unexpected Qualtrics global img styles from affecting our rendering image sizing
+				'.cocreate-root img.rendering-image{max-width:none!important;height:auto;}',
+				// Make sure canvas utilities appear above Qualtrics elements
+				'.cocreate-root .zoom-toolbar, .cocreate-root .minimap, .cocreate-root .canvas-top-right-controls{z-index:1000;}'
+			].join('\n')
+		));
+		document.head.appendChild(style);
+	}
+
 	// Initialize feedback configuration (can be overridden by CSV)
 	let feedbackConfig = {
 		showFunctionValue: true,
@@ -95,10 +120,16 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 	console.log("[Qualtrics Loader] QuestionContainer:", questionContainer)
 	console.log("[Qualtrics Legacy Loader] Feedback config:", feedbackConfig)
 
+	// Inject compatibility CSS once
+	injectCompatStyles();
+
 	if (questionContainer) {
 		questionContainer.style.overflow = 'visible';
 		questionContainer.style.padding = '0px';
-		questionContainer.style.paddingBottom = '0px !important';
+		// Inline styles cannot use !important, so rely on injected CSS for overrides where needed
+		questionContainer.style.paddingBottom = '0px';
+		questionContainer.style.width = '100%';
+		questionContainer.style.position = 'relative';
 	}
 
 	let questionText = document.querySelector('.QuestionText')
@@ -159,6 +190,8 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 			appContainer.style.justifyContent = 'center';
 			appContainer.style.overflow = 'visible';
 			appContainer.style.height = '65vh';
+			appContainer.style.width = '100%';
+			appContainer.style.position = 'relative';
 		}
 
 		try {
