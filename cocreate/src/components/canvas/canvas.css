@@ -65,6 +65,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
+/* Toolbar button class-based coloring (replaces MUI color prop) */
+.zoom-toolbar .toolbar-btn.toolbar-btn--active {
+  color: #1976d2; /* MUI primary.main default */
+}
+.zoom-toolbar .toolbar-btn.toolbar-btn--active:hover {
+  color: #1565c0;
+}
+
 .zoom-toolbar-toggle {
   position: absolute;
   top: 8px;
