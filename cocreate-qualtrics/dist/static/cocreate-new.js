@@ -15307,7 +15307,7 @@ const Canvas = (props) => {
               {
                 size: "small",
                 onClick: () => setIsPanMode((v) => !v),
-                color: isPanMode ? "primary" : "default",
+                className: isPanMode ? "toolbar-btn toolbar-btn--active" : "toolbar-btn",
                 onMouseEnter: (e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   setHoveredToolbarButton("pan");
