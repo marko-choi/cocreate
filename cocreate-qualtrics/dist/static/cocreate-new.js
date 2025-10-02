@@ -12296,6 +12296,18 @@ const Delete = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
 const Edit = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
   d: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34a.996.996 0 0 0-1.41 0l-1.83 1.83 3.75 3.75z"
 }), "Edit");
+const Map$1 = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "m20.5 3-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5M15 19l-6-2.11V5l6 2.11z"
+}), "Map");
+const MapOutlined = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "m20.5 3-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5M10 5.47l4 1.4v11.66l-4-1.4zm-5 .99 3-1.01v11.7l-3 1.16zm14 11.08-3 1.01V6.86l3-1.16z"
+}), "MapOutlined");
+const PanTool = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M23 5.5V20c0 2.2-1.8 4-4 4h-7.3c-1.08 0-2.1-.43-2.85-1.19L1 14.83s1.26-1.23 1.3-1.25c.22-.19.49-.29.79-.29.22 0 .42.06.6.16.04.01 4.31 2.46 4.31 2.46V4c0-.83.67-1.5 1.5-1.5S11 3.17 11 4v7h1V1.5c0-.83.67-1.5 1.5-1.5S15 .67 15 1.5V11h1V2.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5V11h1V5.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5"
+}), "PanTool");
+const RestartAlt = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6 0 2.97-2.17 5.43-5 5.91v2.02c3.95-.49 7-3.85 7-7.93 0-4.42-3.58-8-8-8m-6 8c0-1.65.67-3.15 1.76-4.24L6.34 7.34C4.9 8.79 4 10.79 4 13c0 4.08 3.05 7.44 7 7.93v-2.02c-2.83-.48-5-2.94-5-5.91"
+}), "RestartAlt");
 const Save = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
   d: "M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3m3-10H5V5h10z"
 }), "Save");
@@ -12305,6 +12317,20 @@ const ThumbDown = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
 const ThumbUp = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
   d: "M1 21h4V9H1zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73z"
 }), "ThumbUp");
+const Visibility = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5M12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5m0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"
+}), "Visibility");
+const VisibilityOff = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7M2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2m4.31-.78 3.15 3.15.02-.16c0-1.66-1.34-3-3-3z"
+}), "VisibilityOff");
+const ZoomIn = createSvgIcon([/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
+}, "0"), /* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M12 10h-2v2H9v-2H7V9h2V7h1v2h2z"
+}, "1")], "ZoomIn");
+const ZoomOut = createSvgIcon(/* @__PURE__ */ jsxRuntimeExports.jsx("path", {
+  d: "M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14M7 9h5v1H7z"
+}), "ZoomOut");
 function _objectWithoutPropertiesLoose(r2, e) {
   if (null == r2) return {};
   var t = {};
@@ -12322,6 +12348,7 @@ function _setPrototypeOf(t, e) {
 function _inheritsLoose(t, o) {
   t.prototype = Object.create(o.prototype), t.prototype.constructor = t, _setPrototypeOf(t, o);
 }
+var reactDomExports = requireReactDom();
 const TransitionGroupContext = React.createContext(null);
 function _assertThisInitialized(e) {
   if (void 0 === e) throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -14625,12 +14652,28 @@ const Canvas = (props) => {
   const [activeSelectionIndex, setActiveSelectionIndex] = reactExports.useState(null);
   const [isEnteringFeedback, setIsEnteringFeedback] = reactExports.useState(false);
   const [allowPictureSelection, setAllowPictureSelection] = reactExports.useState(true);
+  const [tooltipAnchoredToSelection, setTooltipAnchoredToSelection] = reactExports.useState(false);
+  const [tooltipIsViewportCoords, setTooltipIsViewportCoords] = reactExports.useState(false);
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = reactExports.useState(MAX_IMAGE_WIDTH);
   const [canvasHeight, setCanvasHeight] = reactExports.useState(534);
   const [imageDimensions, setImageDimensions] = reactExports.useState(null);
   const [imageScaleFactor, setImageScaleFactor] = reactExports.useState(1);
-  const [imageOffset, setImageOffset] = reactExports.useState({ x: 0, y: 0 });
+  const [scale, setScale] = reactExports.useState(1);
+  const [translate, setTranslate] = reactExports.useState({ x: 0, y: 0 });
+  const [isPanMode, setIsPanMode] = reactExports.useState(false);
+  const [isPanning, setIsPanning] = reactExports.useState(false);
+  const panLastRef = reactExports.useRef(null);
+  const [toolbarVisible, setToolbarVisible] = reactExports.useState(true);
+  const [minimapVisible, setMinimapVisible] = reactExports.useState(true);
+  const [viewportSize, setViewportSize] = reactExports.useState(() => ({
+    w: typeof window !== "undefined" ? window.innerWidth : 0,
+    h: typeof window !== "undefined" ? window.innerHeight : 0
+  }));
+  const [hoveredToolbarButton, setHoveredToolbarButton] = reactExports.useState(null);
+  const [toolbarButtonRects, setToolbarButtonRects] = reactExports.useState({});
+  const containerRef = reactExports.useRef(null);
+  const stageRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     localStorage.removeItem(CANVAS_SIZE_KEY);
     localStorage.removeItem(CANVAS_SELECTIONS_KEY);
@@ -14684,6 +14727,8 @@ const Canvas = (props) => {
     setCanvasHeight(height2);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
     setImageScaleFactor(scaleFactor);
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
   };
   const resizeCanvasDimensions = reactExports.useCallback((img) => {
     const screenHeight = window.outerHeight;
@@ -14732,27 +14777,6 @@ const Canvas = (props) => {
       (container) => container.getAttribute("data-question-id") === instanceId
     );
   };
-  const updateImageOffset = () => {
-    var _a;
-    const instanceRootContainer = getInstanceRootContainer();
-    if (!instanceRootContainer) {
-      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
-      return;
-    }
-    const imgElement = instanceRootContainer.querySelector(".canvas-container img");
-    console.log("[Cocreate] Image element: " + imgElement);
-    try {
-      if (imgElement) {
-        const rect = imgElement.getBoundingClientRect();
-        const parentRect = (_a = imgElement.parentElement) == null ? void 0 : _a.getBoundingClientRect();
-        const offsetX = rect.left - ((parentRect == null ? void 0 : parentRect.left) ?? 0);
-        const offsetY = rect.top - ((parentRect == null ? void 0 : parentRect.top) ?? 0);
-        setImageOffset({ x: offsetX, y: offsetY });
-      }
-    } catch (error) {
-      console.error("[Cocreate] Error updating image offset: " + error);
-    }
-  };
   const initializeCanvas = () => {
     var _a, _b;
     console.log("[Cocreate] Initializing canvas dimensions");
@@ -14777,12 +14801,10 @@ const Canvas = (props) => {
         if (loadedImage.complete) {
           console.log("[Cocreate] Image already loaded");
           initCanvasDimensions(loadedImage);
-          updateImageOffset();
         } else {
           loadedImage.addEventListener("load", function() {
             console.log("[Cocreate] Image loaded");
             initCanvasDimensions(this);
-            updateImageOffset();
           });
         }
       }
@@ -14792,7 +14814,6 @@ const Canvas = (props) => {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
         defaultImage.onload = () => {
           initCanvasDimensions(defaultImage);
-          updateImageOffset();
         };
       }
     }
@@ -14820,18 +14841,48 @@ const Canvas = (props) => {
     ctx.stroke();
   };
   const redrawSelections = (ctx, resizedSelections) => {
-    let selectionsToDraw = selections;
-    selectionsToDraw.forEach(({ start, end }) => {
-      const x = Math.min(start.x, end.x);
-      const y = Math.min(start.y, end.y);
-      const width2 = Math.abs(end.x - start.x);
-      const height2 = Math.abs(end.y - start.y);
+    const selectionsToDraw = selections;
+    selectionsToDraw.forEach(({ unscaledStart, unscaledEnd }) => {
+      const startX = unscaledStart.x * imageScaleFactor;
+      const startY = unscaledStart.y * imageScaleFactor;
+      const endX = unscaledEnd.x * imageScaleFactor;
+      const endY = unscaledEnd.y * imageScaleFactor;
+      const x = Math.min(startX, endX);
+      const y = Math.min(startY, endY);
+      const width2 = Math.abs(endX - startX);
+      const height2 = Math.abs(endY - startY);
       drawSelection(ctx, x, y, width2, height2);
     });
+  };
+  const toStagePointFromEvent = (e, element) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale
+    };
+  };
+  const stageToScreenPoint = (p) => {
+    return { x: translate.x + scale * p.x, y: translate.y + scale * p.y };
+  };
+  const selectionBoundsInStage = (sel) => {
+    const startX = sel.unscaledStart.x * imageScaleFactor;
+    const startY = sel.unscaledStart.y * imageScaleFactor;
+    const endX = sel.unscaledEnd.x * imageScaleFactor;
+    const endY = sel.unscaledEnd.y * imageScaleFactor;
+    const x = Math.min(startX, endX);
+    const y = Math.min(startY, endY);
+    const width2 = Math.abs(endX - startX);
+    const height2 = Math.abs(endY - startY);
+    return { x, y, width: width2, height: height2 };
   };
   const handleMouseDown = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    if (isPanMode) {
+      setIsPanning(true);
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
     removeEmptyFeedback();
     if (isEnteringFeedback) {
       setActiveSelectionIndex(null);
@@ -14842,9 +14893,9 @@ const Canvas = (props) => {
     registerSelection(e, canvas);
   };
   const registerSelection = (e, canvas) => {
-    const rect = canvas.getBoundingClientRect();
-    setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const stagePoint = toStagePointFromEvent(e, canvas);
+    setSelectionStart({ x: stagePoint.x, y: stagePoint.y });
+    setSelectionEnd({ x: stagePoint.x, y: stagePoint.y });
     setIsSelecting(true);
   };
   const removeEmptyFeedback = () => {
@@ -14859,12 +14910,20 @@ const Canvas = (props) => {
     }
   };
   const handleMouseMove = (e) => {
-    if (!isSelecting || !selectionStart || !canvasRef.current || isEnteringFeedback) return;
     const canvas = canvasRef.current;
+    if (!canvas) return;
+    if (isPanMode && isPanning && panLastRef.current) {
+      const dx = e.clientX - panLastRef.current.x;
+      const dy = e.clientY - panLastRef.current.y;
+      setTranslate((prev2) => constrainTranslate({ x: prev2.x + dx, y: prev2.y + dy }, scale));
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+    if (!isSelecting || !selectionStart || isEnteringFeedback) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const currentEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const stagePoint = toStagePointFromEvent(e, canvas);
+    const currentEnd = { x: stagePoint.x, y: stagePoint.y };
     setSelectionEnd(currentEnd);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawSelections(ctx);
@@ -14876,13 +14935,18 @@ const Canvas = (props) => {
     checkIfMouseIsInsideCanvas(e);
   };
   const handleMouseLeave = (e) => {
+    if (isPanMode && isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+      return;
+    }
     if (!isSelecting || !canvasRef.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    const stagePoint = toStagePointFromEvent(e, canvas);
+    const mouseX = stagePoint.x;
+    const mouseY = stagePoint.y;
     const clampedX = Math.max(0, Math.min(mouseX, canvas.width));
     const clampedY = Math.max(0, Math.min(mouseY, canvas.height));
     setSelectionEnd({ x: clampedX, y: clampedY });
@@ -14891,10 +14955,6 @@ const Canvas = (props) => {
       const startY = selectionStart.y;
       const width2 = clampedX - startX;
       const height2 = clampedY - startY;
-      console.log(
-        "Start [X, Y]: " + startX + ", " + startY,
-        "\nEnd [X, Y]: " + clampedX + ", " + clampedY
-      );
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       redrawSelections(ctx);
       drawSelection(ctx, startX, startY, width2, height2);
@@ -14916,6 +14976,11 @@ const Canvas = (props) => {
     return false;
   };
   const handleMouseUp = (e) => {
+    if (isPanMode && isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+      return;
+    }
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
     let sameXCoordinate = selectionStart.x === selectionEnd.x;
     let sameYCoordinate = selectionStart.y === selectionEnd.y;
@@ -14923,8 +14988,13 @@ const Canvas = (props) => {
       if (!isEnteringFeedback && allowPictureSelection) {
         const canvasElement = canvasRef.current;
         if (!canvasElement) return;
-        const { width: width2, height: height2 } = canvasElement.getBoundingClientRect();
+        const width2 = canvasElement.width;
+        const height2 = canvasElement.height;
         if (!canCreatePictureSelection(width2, height2)) {
+          openPictureSelectionFeedback(e);
+          setIsSelecting(false);
+          setSelectionStart(null);
+          setSelectionEnd(null);
           return;
         }
         createPictureSelection(width2, height2);
@@ -14938,13 +15008,11 @@ const Canvas = (props) => {
       createNewSelection(selectionStart, selectionEnd);
       setIsEnteringFeedback(true);
     }
-    const x = Math.max(selectionStart.x, selectionEnd.x);
-    const y = Math.max(selectionStart.y, selectionEnd.y);
-    setTooltipPosition({
-      x: x - 100,
-      y: y - 100
-    });
+    const x = Math.min(selectionStart.x, selectionEnd.x);
+    const y = Math.max(selectionStart.y, selectionEnd.y) + 8;
+    setTooltipPosition({ x, y });
     setActiveSelectionIndex(selections.length);
+    setTooltipAnchoredToSelection(true);
     setIsSelecting(false);
     setSelectionStart(null);
     setSelectionEnd(null);
@@ -14954,31 +15022,30 @@ const Canvas = (props) => {
     setIsEnteringFeedback(true);
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
-    const { width: width2, height: height2 } = canvasElement.getBoundingClientRect();
+    const width2 = canvasElement.width;
+    const height2 = canvasElement.height;
     const pictureSelection = selections.find((selection) => {
       return selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2;
     });
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
-      const mouseCoordinates = getMouseCoordinates(e);
-      mouseCoordinates.x -= imageOffset.x;
-      mouseCoordinates.y -= imageOffset.y;
+      const mouseCoordinates2 = { x: e.clientX, y: e.clientY };
       setActiveSelectionIndex(pictureSelectionIndex);
-      setTooltipPosition(mouseCoordinates);
+      setTooltipPosition(mouseCoordinates2);
+      setTooltipIsViewportCoords(true);
+      setTooltipAnchoredToSelection(false);
       setIsSelecting(false);
       setSelectionStart(null);
       setSelectionEnd(null);
+      return;
     }
-  };
-  const getMouseCoordinates = (e) => {
-    const defaultCoordinates = { x: 0, y: 0 };
-    const canvas = canvasRef.current;
-    if (!e || !canvas) {
-      return defaultCoordinates;
-    }
-    const x = e.clientX;
-    const y = e.clientY;
-    return { x, y };
+    createPictureSelection(width2, height2);
+    const newIndex = selections.length;
+    const mouseCoordinates = { x: e.clientX, y: e.clientY };
+    setActiveSelectionIndex(newIndex);
+    setTooltipPosition(mouseCoordinates);
+    setTooltipIsViewportCoords(true);
+    setTooltipAnchoredToSelection(false);
   };
   const canCreatePictureSelection = (width2, height2) => {
     let pictureWideSelection = selections.filter((selection) => {
@@ -15000,7 +15067,11 @@ const Canvas = (props) => {
         y: selectionEnd2.y / imageScaleFactor
       }
     };
-    setSelections((prev2) => [...prev2, newSelection]);
+    setSelections((prev2) => {
+      const next2 = [...prev2, newSelection];
+      setActiveSelectionIndex(next2.length - 1);
+      return next2;
+    });
   };
   const createPictureSelection = (pictureWidth, pictureHeight) => {
     if (!imageDimensions) return;
@@ -15010,15 +15081,21 @@ const Canvas = (props) => {
       unscaledStart: { x: 0, y: 0 },
       unscaledEnd: { x: imageDimensions == null ? void 0 : imageDimensions.width, y: imageDimensions == null ? void 0 : imageDimensions.height }
     };
-    setSelections((prev2) => [...prev2, newSelection]);
+    setSelections((prev2) => {
+      const next2 = [...prev2, newSelection];
+      setActiveSelectionIndex(next2.length - 1);
+      return next2;
+    });
   };
   const handleEdit = (index) => {
     setActiveSelectionIndex(index);
     setIsEnteringFeedback(true);
     const selection = selections[index];
-    const x = Math.min(selection.start.x, selection.end.x);
-    const y = Math.min(selection.start.y, selection.end.y);
-    setTooltipPosition({ x, y });
+    const { x, y, width: width2, height: height2 } = selectionBoundsInStage(selection);
+    console.debug("Tooltip Position: ", { x, y: y + height2 + 8 }, x, y, width2, height2);
+    setTooltipPosition({ x, y: y + height2 + 8 });
+    setTooltipAnchoredToSelection(true);
+    setTooltipIsViewportCoords(false);
   };
   const handleDelete = (index) => {
     checkForPictureSelection(index);
@@ -15043,7 +15120,7 @@ const Canvas = (props) => {
   reactExports.useEffect(() => {
     const handleResize = () => {
       updateImageDimensions();
-      updateImageOffset();
+      setViewportSize({ w: window.innerWidth, h: window.innerHeight });
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -15053,100 +15130,384 @@ const Canvas = (props) => {
       setSelections(
         (prevSelections) => prevSelections.map((selection) => ({
           ...selection,
-          start: {
-            x: selection.unscaledStart.x * imageScaleFactor,
-            y: selection.unscaledStart.y * imageScaleFactor
-          },
-          end: {
-            x: selection.unscaledEnd.x * imageScaleFactor,
-            y: selection.unscaledEnd.y * imageScaleFactor
-          }
+          start: selection.start,
+          end: selection.end
         }))
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-container", style: { height: "100%" }, children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "img",
-      {
-        src: imageSrc,
-        alt: "Rendering",
-        className: "rendering-image",
-        style: {
-          maxHeight: "100%",
-          width: "auto",
-          display: "block"
-        }
+  const constrainTranslate = (newTranslate, newScale) => {
+    if (!containerRef.current) return newTranslate;
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+    const scaledWidth = canvasWidth * newScale;
+    const scaledHeight = canvasHeight * newScale;
+    let x = newTranslate.x;
+    let y = newTranslate.y;
+    if (scaledWidth <= containerWidth) {
+      x = (containerWidth - scaledWidth) / 2;
+    } else {
+      const minX = containerWidth - scaledWidth;
+      const maxX = 0;
+      x = Math.max(minX, Math.min(maxX, x));
+    }
+    if (scaledHeight <= containerHeight) {
+      y = (containerHeight - scaledHeight) / 2;
+    } else {
+      const minY = containerHeight - scaledHeight;
+      const maxY = 0;
+      y = Math.max(minY, Math.min(maxY, y));
+    }
+    return { x, y };
+  };
+  const handleWheelNative = (e) => {
+    if (!stageRef.current || !containerRef.current) return;
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const zoomIntensity = 15e-4;
+    const newScale = Math.min(5, Math.max(0.5, scale * (1 + delta * zoomIntensity)));
+    if (newScale === scale) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    const cursorStageX = (e.clientX - rect.left) / scale;
+    const cursorStageY = (e.clientY - rect.top) / scale;
+    setTranslate((prev2) => {
+      const screenX = prev2.x + scale * cursorStageX;
+      const screenY = prev2.y + scale * cursorStageY;
+      const nextX = screenX - newScale * cursorStageX;
+      const nextY = screenY - newScale * cursorStageY;
+      return constrainTranslate({ x: nextX, y: nextY }, newScale);
+    });
+    setScale(newScale);
+  };
+  const handleMouseUpGlobal = () => {
+    if (isPanMode && isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+    }
+  };
+  reactExports.useEffect(() => {
+    window.addEventListener("mouseup", handleMouseUpGlobal);
+    return () => window.removeEventListener("mouseup", handleMouseUpGlobal);
+  }, [isPanMode, isPanning]);
+  reactExports.useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (ev) => handleWheelNative(ev);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [scale, translate]);
+  reactExports.useEffect(() => {
+    setTranslate((prev2) => constrainTranslate(prev2, scale));
+  }, [canvasWidth, canvasHeight, scale]);
+  reactExports.useEffect(() => {
+    if (!tooltipAnchoredToSelection) return;
+    if (tooltipPosition && activeSelectionIndex !== null) {
+      const sel = selections[activeSelectionIndex];
+      if (!sel) return;
+      const bounds = selectionBoundsInStage(sel);
+      const anchorX = bounds.x;
+      const anchorY = bounds.y + bounds.height + 8;
+      setTooltipPosition({ x: anchorX, y: anchorY });
+    }
+  }, [imageScaleFactor, canvasWidth, canvasHeight, activeSelectionIndex, selections, viewportSize, tooltipAnchoredToSelection]);
+  const resetView = () => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  };
+  const minimap = reactExports.useMemo(() => {
+    var _a, _b;
+    const miniWidth = 160;
+    const miniHeight = canvasHeight > 0 ? miniWidth * canvasHeight / canvasWidth : 0;
+    const viewWidth = (((_a = containerRef.current) == null ? void 0 : _a.clientWidth) ?? canvasWidth) / scale;
+    const viewHeight = (((_b = containerRef.current) == null ? void 0 : _b.clientHeight) ?? canvasHeight) / scale;
+    const viewX = -translate.x / scale;
+    const viewY = -translate.y / scale;
+    const k = miniWidth / canvasWidth;
+    return {
+      width: miniWidth,
+      height: miniHeight,
+      rect: {
+        x: Math.max(0, Math.min(viewX * k, miniWidth)),
+        y: Math.max(0, Math.min(viewY * k, miniHeight)),
+        w: Math.max(0, Math.min(viewWidth * k, miniWidth)),
+        h: Math.max(0, Math.min(viewHeight * k, miniHeight))
       }
-    ),
-    /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "canvas",
+    };
+  }, [canvasWidth, canvasHeight, scale, translate]);
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-shell", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsxs(
+      "div",
       {
-        ref: canvasRef,
-        width: canvasWidth,
-        height: canvasHeight,
-        className: "canvas",
-        style: { cursor: isEnteringFeedback ? "default" : "crosshair" },
-        onMouseDown: handleMouseDown,
-        onMouseMove: handleMouseMove,
-        onMouseUp: handleMouseUp,
-        onMouseLeave: handleMouseLeave
-      }
-    ),
-    selections.map((selection, index) => {
-      console.log("[Cocreate] Image offset: " + JSON.stringify(imageOffset));
-      const x = Math.min(selection.start.x, selection.end.x) + imageOffset.x;
-      const y = Math.min(selection.start.y, selection.end.y) + imageOffset.y;
-      const width2 = Math.abs(selection.end.x - selection.start.x);
-      const height2 = Math.abs(selection.end.y - selection.start.y);
-      return /* @__PURE__ */ jsxRuntimeExports.jsx(
-        "div",
-        {
-          style: {
-            position: "absolute",
-            top: y,
-            left: x,
-            width: width2,
-            height: height2
-          },
-          children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "selection-tooltip-box", children: [
+        ref: containerRef,
+        className: "canvas-container",
+        style: { width: canvasWidth, height: canvasHeight },
+        children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "zoom-toolbar", style: { display: toolbarVisible ? "flex" : "none" }, children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               IconButton,
               {
                 size: "small",
-                className: "edit-button",
-                onClick: () => handleEdit(index),
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Edit, {})
+                onClick: () => {
+                  const newScale = Math.min(5, scale * 1.2);
+                  if (newScale !== scale) {
+                    setTranslate((prev2) => constrainTranslate(prev2, newScale));
+                    setScale(newScale);
+                  }
+                },
+                onMouseEnter: (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredToolbarButton("zoom-in");
+                  setToolbarButtonRects((prev2) => ({ ...prev2, "zoom-in": rect }));
+                },
+                onMouseLeave: () => setHoveredToolbarButton(null),
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(ZoomIn, { fontSize: "small" })
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { padding: "0 6px", fontSize: 12, alignSelf: "center" }, children: [
+              Math.round(scale * 100),
+              "%"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              IconButton,
+              {
+                size: "small",
+                onClick: () => {
+                  const newScale = Math.max(0.5, scale / 1.2);
+                  if (newScale !== scale) {
+                    setTranslate((prev2) => constrainTranslate(prev2, newScale));
+                    setScale(newScale);
+                  }
+                },
+                onMouseEnter: (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredToolbarButton("zoom-out");
+                  setToolbarButtonRects((prev2) => ({ ...prev2, "zoom-out": rect }));
+                },
+                onMouseLeave: () => setHoveredToolbarButton(null),
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(ZoomOut, { fontSize: "small" })
               }
             ),
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               IconButton,
               {
                 size: "small",
-                className: "delete-button",
-                onClick: () => handleDelete(index),
-                children: /* @__PURE__ */ jsxRuntimeExports.jsx(Delete, {})
+                onClick: resetView,
+                onMouseEnter: (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredToolbarButton("reset");
+                  setToolbarButtonRects((prev2) => ({ ...prev2, "reset": rect }));
+                },
+                onMouseLeave: () => setHoveredToolbarButton(null),
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(RestartAlt, { fontSize: "small" })
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              IconButton,
+              {
+                size: "small",
+                onClick: () => setIsPanMode((v) => !v),
+                color: isPanMode ? "primary" : "default",
+                onMouseEnter: (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredToolbarButton("pan");
+                  setToolbarButtonRects((prev2) => ({ ...prev2, "pan": rect }));
+                },
+                onMouseLeave: () => setHoveredToolbarButton(null),
+                children: /* @__PURE__ */ jsxRuntimeExports.jsx(PanTool, { fontSize: "small" })
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              IconButton,
+              {
+                size: "small",
+                onClick: () => setMinimapVisible((v) => !v),
+                onMouseEnter: (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setHoveredToolbarButton("minimap");
+                  setToolbarButtonRects((prev2) => ({ ...prev2, "minimap": rect }));
+                },
+                onMouseLeave: () => setHoveredToolbarButton(null),
+                children: minimapVisible ? /* @__PURE__ */ jsxRuntimeExports.jsx(Map$1, { fontSize: "small" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(MapOutlined, { fontSize: "small" })
+              }
+            )
+          ] }),
+          toolbarVisible && hoveredToolbarButton && toolbarButtonRects[hoveredToolbarButton] && (() => {
+            const buttonRect = toolbarButtonRects[hoveredToolbarButton];
+            const tooltips = {
+              "zoom-in": "Zoom in",
+              "zoom-out": "Zoom out",
+              "reset": "Reset zoom",
+              "pan": isPanMode ? "Exit pan mode" : "Enter pan mode",
+              "minimap": minimapVisible ? "Hide minimap" : "Show minimap"
+            };
+            return reactDomExports.createPortal(
+              /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: {
+                position: "fixed",
+                top: `${buttonRect.bottom + 8}px`,
+                left: `${buttonRect.left + buttonRect.width / 2}px`,
+                transform: "translateX(-50%)",
+                zIndex: 9999,
+                pointerEvents: "none"
+              }, children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: {
+                background: "rgba(0, 0, 0, 0.8)",
+                color: "white",
+                padding: "4px 8px",
+                borderRadius: "4px",
+                fontSize: "12px",
+                whiteSpace: "nowrap"
+              }, children: tooltips[hoveredToolbarButton] }) }),
+              document.body
+            );
+          })(),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "div",
+            {
+              ref: stageRef,
+              className: "canvas-stage",
+              style: {
+                width: canvasWidth,
+                height: canvasHeight,
+                transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`
+              },
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "img",
+                  {
+                    src: imageSrc,
+                    alt: "Rendering",
+                    className: "rendering-image",
+                    style: {
+                      maxHeight: "100%",
+                      width: "auto",
+                      display: "block"
+                    }
+                  }
+                ),
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "canvas",
+                  {
+                    ref: canvasRef,
+                    width: canvasWidth,
+                    height: canvasHeight,
+                    className: "canvas",
+                    style: { cursor: isPanMode ? "grab" : isEnteringFeedback ? "default" : "crosshair" },
+                    onMouseDown: handleMouseDown,
+                    onMouseMove: handleMouseMove,
+                    onMouseUp: handleMouseUp,
+                    onMouseLeave: handleMouseLeave
+                  }
+                )
+              ]
+            }
+          ),
+          selections.map((selection, index) => {
+            const { x, y, width: width2, height: height2 } = selectionBoundsInStage(selection);
+            const screenTopLeft = stageToScreenPoint({ x, y });
+            return /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                style: {
+                  position: "absolute",
+                  top: screenTopLeft.y,
+                  left: screenTopLeft.x,
+                  width: width2 * scale,
+                  height: height2 * scale,
+                  pointerEvents: "none"
+                },
+                children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "selection-tooltip-box", style: { pointerEvents: "auto" }, children: [
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    IconButton,
+                    {
+                      size: "small",
+                      className: "edit-button",
+                      onClick: () => handleEdit(index),
+                      children: /* @__PURE__ */ jsxRuntimeExports.jsx(Edit, {})
+                    }
+                  ),
+                  /* @__PURE__ */ jsxRuntimeExports.jsx(
+                    IconButton,
+                    {
+                      size: "small",
+                      className: "delete-button",
+                      onClick: () => handleDelete(index),
+                      children: /* @__PURE__ */ jsxRuntimeExports.jsx(Delete, {})
+                    }
+                  )
+                ] })
+              },
+              index
+            );
+          }),
+          tooltipPosition && activeSelectionIndex !== null && (() => {
+            var _a;
+            let viewportX;
+            let viewportY;
+            if (tooltipIsViewportCoords) {
+              viewportX = tooltipPosition.x;
+              viewportY = tooltipPosition.y;
+            } else {
+              const screenPos = stageToScreenPoint({ x: tooltipPosition.x, y: tooltipPosition.y });
+              const containerRect = (_a = containerRef.current) == null ? void 0 : _a.getBoundingClientRect();
+              viewportX = ((containerRect == null ? void 0 : containerRect.left) ?? 0) + screenPos.x;
+              viewportY = ((containerRect == null ? void 0 : containerRect.top) ?? 0) + screenPos.y;
+            }
+            const tooltipWidth = 250;
+            const viewportWidth = typeof window !== "undefined" ? window.innerWidth : tooltipWidth;
+            const clampedX = Math.max(0, Math.min(viewportX, viewportWidth - tooltipWidth));
+            const tooltipNode = /* @__PURE__ */ jsxRuntimeExports.jsx(
+              Tooltip,
+              {
+                index: activeSelectionIndex,
+                x: clampedX,
+                y: viewportY,
+                selection: selections[activeSelectionIndex],
+                setSelections,
+                setActiveSelectionIndex,
+                setTooltipPosition,
+                setIsEnteringFeedback,
+                onDelete: () => handleDelete(activeSelectionIndex)
+              }
+            );
+            return reactDomExports.createPortal(tooltipNode, document.body);
+          })(),
+          toolbarVisible && minimapVisible && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "minimap", style: { width: minimap.width, height: minimap.height }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "img",
+              {
+                src: imageSrc,
+                alt: "Minimap",
+                style: { width: "100%", height: "100%", display: "block" }
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "div",
+              {
+                className: "minimap-viewport",
+                style: {
+                  left: minimap.rect.x,
+                  top: minimap.rect.y,
+                  width: minimap.rect.w,
+                  height: minimap.rect.h
+                }
               }
             )
           ] })
-        },
-        index
-      );
-    }),
-    tooltipPosition && activeSelectionIndex !== null && /* @__PURE__ */ jsxRuntimeExports.jsx(
-      Tooltip,
-      {
-        index: activeSelectionIndex,
-        x: tooltipPosition.x + imageOffset.x,
-        y: tooltipPosition.y + imageOffset.y,
-        selection: selections[activeSelectionIndex],
-        setSelections,
-        setActiveSelectionIndex,
-        setTooltipPosition,
-        setIsEnteringFeedback,
-        onDelete: () => handleDelete(activeSelectionIndex)
+        ]
       }
-    )
+    ),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "canvas-top-right-controls", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+      IconButton,
+      {
+        size: "small",
+        onClick: () => {
+          setToolbarVisible((v) => !v);
+          if (toolbarVisible) setMinimapVisible(false);
+        },
+        "data-tooltip": toolbarVisible ? "Hide toolbar" : "Show toolbar",
+        children: toolbarVisible ? /* @__PURE__ */ jsxRuntimeExports.jsx(VisibilityOff, { fontSize: "small" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Visibility, { fontSize: "small" })
+      }
+    ) })
   ] });
 };
 const App = (props) => {

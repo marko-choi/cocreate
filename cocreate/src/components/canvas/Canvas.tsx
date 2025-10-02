@@ -1,6 +1,7 @@
-import { Delete, Edit } from "@mui/icons-material";
+import { Delete, Edit, Map, MapOutlined, PanTool, RestartAlt, ZoomIn, ZoomOut, Visibility, VisibilityOff } from "@mui/icons-material";
 import { IconButton } from "@mui/material";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Tooltip from "../tooltip/Tooltip";
 import "./canvas.css";
 import { Point } from "../../types/global";
@@ -50,6 +51,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
   const [isEnteringFeedback, setIsEnteringFeedback] = useState(false);
   const [allowPictureSelection, setAllowPictureSelection] = useState(true);
+  const [tooltipAnchoredToSelection, setTooltipAnchoredToSelection] = useState<boolean>(false);
+  const [tooltipIsViewportCoords, setTooltipIsViewportCoords] = useState<boolean>(false);
 
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
@@ -58,7 +61,27 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   const [imageScaleFactor, setImageScaleFactor] = useState<number>(1);
 
-  const [imageOffset, setImageOffset] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
+  // Removed imageOffset in favor of transform mapping
+
+  // Zoom & Pan state
+  const [scale, setScale] = useState<number>(1);
+  const [translate, setTranslate] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [isPanMode, setIsPanMode] = useState<boolean>(false);
+  const [isPanning, setIsPanning] = useState<boolean>(false);
+  const panLastRef = useRef<{ x: number; y: number } | null>(null);
+
+  // UI
+  const [toolbarVisible, setToolbarVisible] = useState<boolean>(true);
+  const [minimapVisible, setMinimapVisible] = useState<boolean>(true);
+  const [viewportSize, setViewportSize] = useState<{ w: number; h: number }>(() => ({
+    w: typeof window !== "undefined" ? window.innerWidth : 0,
+    h: typeof window !== "undefined" ? window.innerHeight : 0,
+  }));
+  const [hoveredToolbarButton, setHoveredToolbarButton] = useState<string | null>(null);
+  const [toolbarButtonRects, setToolbarButtonRects] = useState<{ [key: string]: DOMRect }>({});
+
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const stageRef = useRef<HTMLDivElement | null>(null);
 
   // Clear selections from localStorage when component mounts
   useEffect(() => {
@@ -137,6 +160,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setCanvasHeight(height);
     setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
     setImageScaleFactor(scaleFactor);
+    // Reset zoom/pan when initializing a new image
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
   };
 
   const resizeCanvasDimensions = useCallback((img: HTMLImageElement) => {
@@ -204,29 +230,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     )
   }
 
-  const updateImageOffset = () => {
-    const instanceRootContainer = getInstanceRootContainer();
-    if (!instanceRootContainer) {
-      console.log("[Cocreate] No root container found for instanceId: " + instanceId);
-      return;
-    }
-
-    const imgElement = instanceRootContainer.querySelector(".canvas-container img");
-    console.log("[Cocreate] Image element: " + imgElement);
-    try {
-      if (imgElement) {
-        const rect = imgElement.getBoundingClientRect();
-        const parentRect = imgElement.parentElement?.getBoundingClientRect();
-
-        const offsetX = rect.left - (parentRect?.left ?? 0);
-        const offsetY = rect.top - (parentRect?.top ?? 0);
-        setImageOffset({ x: offsetX, y: offsetY });
-      }
-    } catch (error) {
-      console.error("[Cocreate] Error updating image offset: " + error);
-    }
-
-  }
+  // imageOffset logic removed; we compute positions via stage transforms
 
   const initializeCanvas = () => {
     console.log("[Cocreate] Initializing canvas dimensions");
@@ -258,13 +262,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         if (loadedImage.complete) {
             console.log("[Cocreate] Image already loaded");
             initCanvasDimensions(loadedImage);
-            updateImageOffset();
         } else {
             // Add an event listener to handle when the image finishes loading
             loadedImage.addEventListener("load", function() {
                 console.log("[Cocreate] Image loaded");
                 initCanvasDimensions(this);
-                updateImageOffset();
             });
         }
       }
@@ -275,7 +277,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         setImageSrc(defaultImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
         defaultImage.onload = () => {
           initCanvasDimensions(defaultImage)
-          updateImageOffset();
         };
       }
     }
@@ -324,19 +325,66 @@ const Canvas: React.FC<CanvasProps> = (props) => {
    * @param resizedSelections - Optional array of selections to draw. If not provided, the current selections will be used.
    */
   const redrawSelections = (ctx: CanvasRenderingContext2D, resizedSelections?: Selection[]) => {
-    let selectionsToDraw = resizedSelections ?? selections;
-    selectionsToDraw.forEach(({ start, end }) => {
-      const x = Math.min(start.x, end.x);
-      const y = Math.min(start.y, end.y);
-      const width = Math.abs(end.x - start.x);
-      const height = Math.abs(end.y - start.y);
+    const selectionsToDraw = resizedSelections ?? selections;
+    selectionsToDraw.forEach(({ unscaledStart, unscaledEnd }) => {
+      const startX = unscaledStart.x * imageScaleFactor;
+      const startY = unscaledStart.y * imageScaleFactor;
+      const endX = unscaledEnd.x * imageScaleFactor;
+      const endY = unscaledEnd.y * imageScaleFactor;
+      const x = Math.min(startX, endX);
+      const y = Math.min(startY, endY);
+      const width = Math.abs(endX - startX);
+      const height = Math.abs(endY - startY);
       drawSelection(ctx, x, y, width, height);
     });
   };
 
+  // Coordinate transforms between stage (base) <-> screen
+  const toStagePointFromEvent = (e: React.MouseEvent, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    return {
+      x: (e.clientX - rect.left) / scale,
+      y: (e.clientY - rect.top) / scale,
+    };
+  };
+
+  const stageToScreenPoint = (p: { x: number; y: number }) => {
+    return { x: translate.x + scale * p.x, y: translate.y + scale * p.y };
+  };
+
+  const selectionBoundsInStage = (sel: Selection) => {
+    const startX = sel.unscaledStart.x * imageScaleFactor;
+    const startY = sel.unscaledStart.y * imageScaleFactor;
+    const endX = sel.unscaledEnd.x * imageScaleFactor;
+    const endY = sel.unscaledEnd.y * imageScaleFactor;
+    const x = Math.min(startX, endX);
+    const y = Math.min(startY, endY);
+    const width = Math.abs(endX - startX);
+    const height = Math.abs(endY - startY);
+    return { x, y, width, height };
+  };
+
+  // Returns true if a picture-wide selection (full canvas) exists
+  // const hasPictureWideSelection = (): boolean => {
+  //   const canvas = canvasRef.current;
+  //   if (!canvas) return false;
+  //   const width = canvas.width;
+  //   const height = canvas.height;
+  //   return selections.some((s) =>
+  //     s.start.x === 0 && s.start.y === 0 && s.end.x === width && s.end.y === height
+  //   );
+  // };
+
   const handleMouseDown = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    // Pan mode drag start
+    if (isPanMode) {
+      setIsPanning(true);
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
 
     removeEmptyFeedback();
 
@@ -351,9 +399,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   };
 
   const registerSelection = (e: React.MouseEvent, canvas: HTMLCanvasElement) => {
-    const rect = canvas.getBoundingClientRect();
-    setSelectionStart({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-    setSelectionEnd({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+    const stagePoint = toStagePointFromEvent(e, canvas);
+    setSelectionStart({ x: stagePoint.x, y: stagePoint.y });
+    setSelectionEnd({ x: stagePoint.x, y: stagePoint.y });
     setIsSelecting(true);
   }
 
@@ -374,14 +422,24 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isSelecting || !selectionStart || !canvasRef.current || isEnteringFeedback) return;
-
     const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    if (isPanMode && isPanning && panLastRef.current) {
+      const dx = e.clientX - panLastRef.current.x;
+      const dy = e.clientY - panLastRef.current.y;
+      setTranslate((prev) => constrainTranslate({ x: prev.x + dx, y: prev.y + dy }, scale));
+      panLastRef.current = { x: e.clientX, y: e.clientY };
+      return;
+    }
+
+    if (!isSelecting || !selectionStart || isEnteringFeedback) return;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const currentEnd = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const stagePoint = toStagePointFromEvent(e, canvas);
+    const currentEnd = { x: stagePoint.x, y: stagePoint.y };
 
     // Update the selection
     setSelectionEnd(currentEnd);
@@ -399,16 +457,21 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   };
 
   const handleMouseLeave = (e: React.MouseEvent) => {
+    if (isPanMode && isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+      return;
+    }
     if (!isSelecting || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Determine the mouse position relative to the canvas
-    const rect = canvas.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
+    // Determine the mouse position relative to the canvas (stage coordinates)
+    const stagePoint = toStagePointFromEvent(e, canvas);
+    const mouseX = stagePoint.x;
+    const mouseY = stagePoint.y;
 
     // Clamp the mouse position to the canvas boundaries
     const clampedX = Math.max(0, Math.min(mouseX, canvas.width));
@@ -424,11 +487,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       const width = clampedX - startX;
       const height = clampedY - startY;
 
-      console.log(
-        "Start [X, Y]: " + startX + ", " + startY,
-        "\nEnd [X, Y]: " + clampedX + ", " + clampedY
-      );
-      // Clear the canvas and redraw existing selections if necessary
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       redrawSelections(ctx);
 
@@ -437,10 +495,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       handleMouseUp(e);
     }
 
-  // Reset selection state
-  setSelectionStart(null);
-  setSelectionEnd(null);
-};
+    // Reset selection state
+    setSelectionStart(null);
+    setSelectionEnd(null);
+  };
 
   const checkIfMouseIsInsideCanvas = (e: React.MouseEvent) => {
     const canvas = canvasRef.current;
@@ -458,6 +516,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }
 
   const handleMouseUp = (e: React.MouseEvent) => {
+    if (isPanMode && isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+      return;
+    }
     if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
 
     let sameXCoordinate = selectionStart.x === selectionEnd.x;
@@ -473,8 +536,14 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         const canvasElement = canvasRef.current;
         if (!canvasElement) return;
 
-        const { width, height } = canvasElement.getBoundingClientRect();
+        const width = canvasElement.width;
+        const height = canvasElement.height;
         if (!canCreatePictureSelection(width, height)) {
+          // If picture-wide already exists, open its feedback at cursor instead
+          openPictureSelectionFeedback(e);
+          setIsSelecting(false);
+          setSelectionStart(null);
+          setSelectionEnd(null);
           return;
         }
         createPictureSelection(width, height);
@@ -490,14 +559,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       setIsEnteringFeedback(true);
     }
 
-    const x = Math.max(selectionStart.x, selectionEnd.x);
-    const y = Math.max(selectionStart.y, selectionEnd.y);
-
-    setTooltipPosition({
-      x: x - 100,
-      y: y - 100
-    });
+    // Place tooltip initially below selection (bottom-left)
+    const x = Math.min(selectionStart.x, selectionEnd.x);
+    const y = Math.max(selectionStart.y, selectionEnd.y) + 8;
+    setTooltipPosition({ x, y });
     setActiveSelectionIndex(selections.length);
+    setTooltipAnchoredToSelection(true);
 
     setIsSelecting(false);
     setSelectionStart(null);
@@ -510,7 +577,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
 
-    const { width, height } = canvasElement.getBoundingClientRect();
+    const width = canvasElement.width;
+    const height = canvasElement.height;
     const pictureSelection = selections.find(selection => {
       return (
         selection.start.x === 0 &&
@@ -523,32 +591,39 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
-      const mouseCoordinates = getMouseCoordinates(e);
-
-      // Adjust mouse coordinates to account for image offset/padding
-      mouseCoordinates.x -= imageOffset.x;
-      mouseCoordinates.y -= imageOffset.y;
-
-      // console.log("Opening tooltip at: \n" + JSON.stringify(mouseCoordinates));
+      // Place tooltip exactly at viewport mouse coords
+      const mouseCoordinates = { x: e.clientX, y: e.clientY };
       setActiveSelectionIndex(pictureSelectionIndex);
       setTooltipPosition(mouseCoordinates);
+      setTooltipIsViewportCoords(true);
+      setTooltipAnchoredToSelection(false);
       setIsSelecting(false);
       setSelectionStart(null);
       setSelectionEnd(null);
+      return;
     }
+
+    // If it doesn't exist (e.g., was deleted earlier), create and open immediately
+    createPictureSelection(width, height);
+    const newIndex = selections.length; // will be the last after setSelections
+    // Place tooltip exactly at viewport mouse coords
+    const mouseCoordinates = { x: e.clientX, y: e.clientY };
+    setActiveSelectionIndex(newIndex);
+    setTooltipPosition(mouseCoordinates);
+    setTooltipIsViewportCoords(true);
+    setTooltipAnchoredToSelection(false);
   }
 
-  const getMouseCoordinates = (e?: React.MouseEvent) => {
-
-    const defaultCoordinates = { x: 0, y: 0 };
-    const canvas = canvasRef.current;
-    if (!e || !canvas) {
-      return defaultCoordinates
-    }
-    const x = e.clientX;
-    const y = e.clientY;
-    return { x, y };
-  }
+  // const getMouseCoordinates = (e?: React.MouseEvent) => {
+  //   const defaultCoordinates = { x: 0, y: 0 };
+  //   const canvas = canvasRef.current;
+  //   if (!e || !canvas) {
+  //     return defaultCoordinates
+  //   }
+  //   // Return stage coordinates for internal storage
+  //   const stagePoint = toStagePointFromEvent(e, canvas);
+  //   return { x: stagePoint.x, y: stagePoint.y };
+  // }
 
 
   const canCreatePictureSelection = (width: number, height: number) => {
@@ -581,7 +656,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         y: selectionEnd.y / imageScaleFactor,
       },
     };
-    setSelections((prev) => [...prev, newSelection]);
+    setSelections((prev) => {
+      const next = [...prev, newSelection];
+      setActiveSelectionIndex(next.length - 1);
+      return next;
+    });
   }
 
   const createPictureSelection = (pictureWidth: number, pictureHeight: number) => {
@@ -593,7 +672,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       unscaledEnd: { x: imageDimensions?.width, y: imageDimensions?.height },
     };
     // console.log("Creating picture-wide selection: \n" + JSON.stringify(newSelection));
-    setSelections((prev) => [...prev, newSelection]);
+    setSelections((prev) => {
+      const next = [...prev, newSelection];
+      setActiveSelectionIndex(next.length - 1);
+      return next;
+    });
   }
 
 
@@ -601,9 +684,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setActiveSelectionIndex(index);
     setIsEnteringFeedback(true);
     const selection = selections[index];
-    const x = Math.min(selection.start.x, selection.end.x);
-    const y = Math.min(selection.start.y, selection.end.y);
-    setTooltipPosition({ x, y });
+    // Anchor tooltip below selection (bottom-left)
+    const { x, y, width, height } = selectionBoundsInStage(selection);
+    console.debug("Tooltip Position: ", { x, y: y + height + 8 }, x, y, width, height);
+    setTooltipPosition({ x, y: y + height + 8 });
+    setTooltipAnchoredToSelection(true);
+    setTooltipIsViewportCoords(false);
   };
 
   const handleDelete = (index: number) => {
@@ -659,7 +745,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   useEffect(() => {
     const handleResize = () => {
       updateImageDimensions();
-      updateImageOffset();
+      setViewportSize({ w: window.innerWidth, h: window.innerHeight });
     };
 
     window.addEventListener("resize", handleResize);
@@ -672,18 +758,136 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       setSelections(prevSelections =>
         prevSelections.map(selection => ({
           ...selection,
-          start: {
-            x: selection.unscaledStart.x * imageScaleFactor,
-            y: selection.unscaledStart.y * imageScaleFactor
-          },
-          end: {
-            x: selection.unscaledEnd.x * imageScaleFactor,
-            y: selection.unscaledEnd.y * imageScaleFactor
-          }
+          start: selection.start,
+          end: selection.end,
         }))
       );
     }
   }, [imageScaleFactor, imageDimensions]);
+
+  // Boundary constraint helper (keeps content within container and centers when smaller)
+  const constrainTranslate = (newTranslate: { x: number; y: number }, newScale: number) => {
+    if (!containerRef.current) return newTranslate;
+
+    const container = containerRef.current;
+    const containerWidth = container.clientWidth;
+    const containerHeight = container.clientHeight;
+
+    const scaledWidth = canvasWidth * newScale;
+    const scaledHeight = canvasHeight * newScale;
+
+    let x = newTranslate.x;
+    let y = newTranslate.y;
+
+    if (scaledWidth <= containerWidth) {
+      x = (containerWidth - scaledWidth) / 2;
+    } else {
+      const minX = containerWidth - scaledWidth;
+      const maxX = 0;
+      x = Math.max(minX, Math.min(maxX, x));
+    }
+
+    if (scaledHeight <= containerHeight) {
+      y = (containerHeight - scaledHeight) / 2;
+    } else {
+      const minY = containerHeight - scaledHeight;
+      const maxY = 0;
+      y = Math.max(minY, Math.min(maxY, y));
+    }
+
+    return { x, y };
+  };
+
+  // Wheel zoom handler (native event to allow passive:false)
+  const handleWheelNative = (e: WheelEvent) => {
+    if (!stageRef.current || !containerRef.current) return;
+    e.preventDefault();
+    const delta = -e.deltaY; // up to zoom in
+    const zoomIntensity = 0.0015;
+    const newScale = Math.min(5, Math.max(0.5, scale * (1 + delta * zoomIntensity)));
+    if (newScale === scale) return;
+
+    // Compute zoom around cursor point
+    const rect = stageRef.current.getBoundingClientRect();
+    const cursorStageX = (e.clientX - rect.left) / scale;
+    const cursorStageY = (e.clientY - rect.top) / scale;
+
+    setTranslate((prev) => {
+      const screenX = prev.x + scale * cursorStageX;
+      const screenY = prev.y + scale * cursorStageY;
+      const nextX = screenX - newScale * cursorStageX;
+      const nextY = screenY - newScale * cursorStageY;
+      return constrainTranslate({ x: nextX, y: nextY }, newScale);
+    });
+    setScale(newScale);
+  };
+
+  const handleMouseUpGlobal = () => {
+    if (isPanMode && isPanning) {
+      setIsPanning(false);
+      panLastRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    window.addEventListener("mouseup", handleMouseUpGlobal);
+    return () => window.removeEventListener("mouseup", handleMouseUpGlobal);
+  }, [isPanMode, isPanning]);
+
+  // Attach wheel listener with passive:false to allow preventDefault
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (ev: WheelEvent) => handleWheelNative(ev);
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel as EventListener);
+  }, [scale, translate]);
+
+  // Constrain translate when sizes or scale change (and on first layout)
+  useEffect(() => {
+    setTranslate(prev => constrainTranslate(prev, scale));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvasWidth, canvasHeight, scale]);
+
+  // Keep active tooltip anchored to selection when dimensions/scale change
+  useEffect(() => {
+    if (!tooltipAnchoredToSelection) return;
+    if (tooltipPosition && activeSelectionIndex !== null) {
+      const sel = selections[activeSelectionIndex];
+      if (!sel) return;
+      const bounds = selectionBoundsInStage(sel);
+      // Anchor tooltip to bottom-left of selection with small offset below
+      const anchorX = bounds.x;
+      const anchorY = bounds.y + bounds.height + 8;
+      setTooltipPosition({ x: anchorX, y: anchorY });
+    }
+  }, [imageScaleFactor, canvasWidth, canvasHeight, activeSelectionIndex, selections, viewportSize, tooltipAnchoredToSelection]);
+
+  const resetView = () => {
+    setScale(1);
+    setTranslate({ x: 0, y: 0 });
+  };
+
+  // Minimap viewport calculation
+  const minimap = useMemo(() => {
+    const miniWidth = 160;
+    const miniHeight = canvasHeight > 0 ? (miniWidth * canvasHeight) / canvasWidth : 0;
+    const viewWidth = (containerRef.current?.clientWidth ?? canvasWidth) / scale;
+    const viewHeight = (containerRef.current?.clientHeight ?? canvasHeight) / scale;
+    const viewX = -translate.x / scale;
+    const viewY = -translate.y / scale;
+    const k = miniWidth / canvasWidth;
+    return {
+      width: miniWidth,
+      height: miniHeight,
+      rect: {
+        x: Math.max(0, Math.min(viewX * k, miniWidth)),
+        y: Math.max(0, Math.min(viewY * k, miniHeight)),
+        w: Math.max(0, Math.min(viewWidth * k, miniWidth)),
+        h: Math.max(0, Math.min(viewHeight * k, miniHeight)),
+      },
+    };
+  }, [canvasWidth, canvasHeight, scale, translate]);
 
   // const [mouseCoordinates, setMouseCoordinates] = useState<[number, number] | null>(null);
 
@@ -697,7 +901,135 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   // }, []);
 
   return (
-    <div className="canvas-container" style={{ height: "100%" }}>
+    <div className="canvas-shell">
+      <div
+        ref={containerRef}
+        className="canvas-container"
+        style={{ width: canvasWidth, height: canvasHeight }}
+      >
+      {/* Toolbar */}
+      <div className="zoom-toolbar" style={{ display: toolbarVisible ? "flex" : "none" }}>
+        <IconButton
+          size="small"
+          onClick={() => {
+            const newScale = Math.min(5, scale * 1.2);
+            if (newScale !== scale) {
+              setTranslate(prev => constrainTranslate(prev, newScale));
+              setScale(newScale);
+            }
+          }}
+          onMouseEnter={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setHoveredToolbarButton("zoom-in");
+            setToolbarButtonRects(prev => ({ ...prev, "zoom-in": rect }));
+          }}
+          onMouseLeave={() => setHoveredToolbarButton(null)}
+        >
+          <ZoomIn fontSize="small" />
+        </IconButton>
+        <div style={{ padding: "0 6px", fontSize: 12, alignSelf: "center" }}>{Math.round(scale * 100)}%</div>
+        <IconButton
+          size="small"
+          onClick={() => {
+            const newScale = Math.max(0.5, scale / 1.2);
+            if (newScale !== scale) {
+              setTranslate(prev => constrainTranslate(prev, newScale));
+              setScale(newScale);
+            }
+          }}
+          onMouseEnter={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setHoveredToolbarButton("zoom-out");
+            setToolbarButtonRects(prev => ({ ...prev, "zoom-out": rect }));
+          }}
+          onMouseLeave={() => setHoveredToolbarButton(null)}
+        >
+          <ZoomOut fontSize="small" />
+        </IconButton>
+        <IconButton
+          size="small"
+          onClick={resetView}
+          onMouseEnter={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setHoveredToolbarButton("reset");
+            setToolbarButtonRects(prev => ({ ...prev, "reset": rect }));
+          }}
+          onMouseLeave={() => setHoveredToolbarButton(null)}
+        >
+          <RestartAlt fontSize="small" />
+        </IconButton>
+        <IconButton
+          size="small"
+          onClick={() => setIsPanMode((v) => !v)}
+          color={isPanMode ? "primary" : "default"}
+          onMouseEnter={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setHoveredToolbarButton("pan");
+            setToolbarButtonRects(prev => ({ ...prev, "pan": rect }));
+          }}
+          onMouseLeave={() => setHoveredToolbarButton(null)}
+        >
+          <PanTool fontSize="small" />
+        </IconButton>
+        <IconButton
+          size="small"
+          onClick={() => setMinimapVisible(v => !v)}
+          onMouseEnter={(e) => {
+            const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+            setHoveredToolbarButton("minimap");
+            setToolbarButtonRects(prev => ({ ...prev, "minimap": rect }));
+          }}
+          onMouseLeave={() => setHoveredToolbarButton(null)}
+        >
+          {minimapVisible ? <Map fontSize="small" /> : <MapOutlined fontSize="small" />}
+        </IconButton>
+      </div>
+
+      {/* Toolbar tooltips via portal */}
+      {toolbarVisible && hoveredToolbarButton && toolbarButtonRects[hoveredToolbarButton] && (() => {
+        const buttonRect = toolbarButtonRects[hoveredToolbarButton];
+        const tooltips = {
+          "zoom-in": "Zoom in",
+          "zoom-out": "Zoom out",
+          "reset": "Reset zoom",
+          "pan": isPanMode ? "Exit pan mode" : "Enter pan mode",
+          "minimap": minimapVisible ? "Hide minimap" : "Show minimap"
+        };
+
+        return createPortal(
+          <div style={{
+            position: "fixed",
+            top: `${buttonRect.bottom + 8}px`,
+            left: `${buttonRect.left + (buttonRect.width / 2)}px`,
+            transform: "translateX(-50%)",
+            zIndex: 9999,
+            pointerEvents: "none"
+          }}>
+            <div style={{
+              background: "rgba(0, 0, 0, 0.8)",
+              color: "white",
+              padding: "4px 8px",
+              borderRadius: "4px",
+              fontSize: "12px",
+              whiteSpace: "nowrap"
+            }}>
+              {tooltips[hoveredToolbarButton as keyof typeof tooltips]}
+            </div>
+          </div>,
+          document.body
+        );
+      })()}
+
+      {/* Transform stage */}
+      <div
+        ref={stageRef}
+        className="canvas-stage"
+        style={{
+          width: canvasWidth,
+          height: canvasHeight,
+          transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
+        }}
+      >
         <img
           src={imageSrc}
           alt="Rendering"
@@ -713,55 +1045,71 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           width={canvasWidth}
           height={canvasHeight}
           className="canvas"
-          style={{ cursor: isEnteringFeedback ? "default" : "crosshair" }}
+          style={{ cursor: isPanMode ? "grab" : isEnteringFeedback ? "default" : "crosshair" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
         />
-        {/* Render selections div elements (same as original code) */}
-        {selections.map((selection, index) => {
-          console.log("[Cocreate] Image offset: " + JSON.stringify(imageOffset));
-          const x = Math.min(selection.start.x, selection.end.x) + imageOffset.x;
-          const y = Math.min(selection.start.y, selection.end.y) + imageOffset.y;
-          const width = Math.abs(selection.end.x - selection.start.x);
-          const height = Math.abs(selection.end.y - selection.start.y);
+      </div>
 
-          return (
-            <div
-              key={index}
-              style={{
-                position: "absolute",
-                top: y,
-                left: x,
-                width,
-                height,
-              }}
-            >
-              <div className="selection-tooltip-box">
-                <IconButton
-                  size="small"
-                  className="edit-button"
-                  onClick={() => handleEdit(index)}
-                >
-                  <Edit />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  className="delete-button"
-                  onClick={() => handleDelete(index)}
-                >
-                  <Delete />
-                </IconButton>
-              </div>
+      {/* Selection overlay controls (screen-space, not scaled) */}
+      {selections.map((selection, index) => {
+        const { x, y, width, height } = selectionBoundsInStage(selection);
+        const screenTopLeft = stageToScreenPoint({ x, y });
+        return (
+          <div
+            key={index}
+            style={{
+              position: "absolute",
+              top: screenTopLeft.y,
+              left: screenTopLeft.x,
+              width: width * scale,
+              height: height * scale,
+              pointerEvents: "none",
+            }}
+          >
+            <div className="selection-tooltip-box" style={{ pointerEvents: "auto" }}>
+              <IconButton
+                size="small"
+                className="edit-button"
+                onClick={() => handleEdit(index)}
+              >
+                <Edit />
+              </IconButton>
+              <IconButton
+                size="small"
+                className="delete-button"
+                onClick={() => handleDelete(index)}
+              >
+                <Delete />
+              </IconButton>
             </div>
-          );
-        })}
-        {tooltipPosition && activeSelectionIndex !== null && (
+          </div>
+        );
+      })}
+
+      {/* Tooltip - via portal to allow overflow beyond container; clamp to viewport right edge */}
+      {tooltipPosition && activeSelectionIndex !== null && (() => {
+        let viewportX: number;
+        let viewportY: number;
+        if (tooltipIsViewportCoords) {
+          viewportX = tooltipPosition.x;
+          viewportY = tooltipPosition.y;
+        } else {
+          const screenPos = stageToScreenPoint({ x: tooltipPosition.x, y: tooltipPosition.y });
+          const containerRect = containerRef.current?.getBoundingClientRect();
+          viewportX = (containerRect?.left ?? 0) + screenPos.x;
+          viewportY = (containerRect?.top ?? 0) + screenPos.y;
+        }
+        const tooltipWidth = 250; // matches Tooltip width style
+        const viewportWidth = typeof window !== "undefined" ? window.innerWidth : tooltipWidth;
+        const clampedX = Math.max(0, Math.min(viewportX, viewportWidth - tooltipWidth));
+        const tooltipNode = (
           <Tooltip
             index={activeSelectionIndex}
-            x={tooltipPosition.x + imageOffset.x}
-            y={tooltipPosition.y + imageOffset.y}
+            x={clampedX}
+            y={viewportY}
             selection={selections[activeSelectionIndex]}
             setSelections={setSelections}
             setActiveSelectionIndex={setActiveSelectionIndex}
@@ -769,8 +1117,42 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             setIsEnteringFeedback={setIsEnteringFeedback}
             onDelete={() => handleDelete(activeSelectionIndex)}
           />
-        )}
+        );
+        return createPortal(tooltipNode, document.body);
+      })()}
+
+      {/* Mini-map */}
+      {toolbarVisible && minimapVisible && (
+        <div className="minimap" style={{ width: minimap.width, height: minimap.height }}>
+          <img
+            src={imageSrc}
+            alt="Minimap"
+            style={{ width: "100%", height: "100%", display: "block" }}
+          />
+          <div
+            className="minimap-viewport"
+            style={{
+              left: minimap.rect.x,
+              top: minimap.rect.y,
+              width: minimap.rect.w,
+              height: minimap.rect.h,
+            }}
+          />
+        </div>
+      )}
       </div>
+
+      {/* External toggles outside of image container */}
+      <div className="canvas-top-right-controls">
+        <IconButton
+          size="small"
+          onClick={() => { setToolbarVisible(v => !v); if (toolbarVisible) setMinimapVisible(false); }}
+          data-tooltip={toolbarVisible ? "Hide toolbar" : "Show toolbar"}
+        >
+          {toolbarVisible ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+        </IconButton>
+      </div>
+    </div>
   );
 };
 
