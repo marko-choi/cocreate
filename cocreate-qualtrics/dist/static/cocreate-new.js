@@ -15333,6 +15333,36 @@ const Canvas = (props) => {
     localStorage.removeItem(CANVAS_SELECTIONS_KEY);
   }, []);
   reactExports.useEffect(() => {
+    const hideQuestionImages = () => {
+      const instanceRootContainer = getInstanceRootContainer();
+      if (!instanceRootContainer || !instanceRootContainer.parentElement)
+        return;
+      const imageSelectors = [
+        ".question-content img",
+        ".question-display-wrapper img",
+        ".QuestionText img"
+      ];
+      imageSelectors.forEach((selector) => {
+        const images = instanceRootContainer.parentElement.querySelectorAll(selector);
+        images.forEach((img) => {
+          if (img instanceof HTMLImageElement && !img.classList.contains("rendering-image")) {
+            img.style.display = "none";
+            img.style.visibility = "hidden";
+          }
+        });
+      });
+    };
+    hideQuestionImages();
+    const intervalId = setInterval(hideQuestionImages, 100);
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+    }, 3e3);
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [instanceId]);
+  reactExports.useEffect(() => {
     const handleResize = () => {
       const mobile = isMobileDevice();
       setIsMobile(mobile);
@@ -15422,22 +15452,26 @@ const Canvas = (props) => {
       console.log("[Cocreate] No root container found for instanceId: " + instanceId);
       return;
     }
-    var loadedImage = void 0;
-    do {
-      loadedImage = instanceRootContainer.querySelector(".rendering-image");
-    } while (!loadedImage);
-    if (loadedImage instanceof HTMLImageElement) {
-      if (loadedImage.complete) {
-        console.log("[Cocreate] Image already loaded");
-        resizeCanvasDimensions(loadedImage);
-      } else {
-        loadedImage.addEventListener("load", function() {
-          console.log("[Cocreate] Image loaded");
-          console.log(this);
-          resizeCanvasDimensions(this);
-        });
+    const waitForImage = () => {
+      const loadedImage = instanceRootContainer.querySelector(".rendering-image");
+      if (!loadedImage) {
+        requestAnimationFrame(waitForImage);
+        return;
       }
-    }
+      if (loadedImage instanceof HTMLImageElement) {
+        if (loadedImage.complete && loadedImage.naturalHeight !== 0) {
+          console.log("[Cocreate] Image already loaded");
+          resizeCanvasDimensions(loadedImage);
+        } else {
+          loadedImage.addEventListener("load", function() {
+            console.log("[Cocreate] Image loaded");
+            console.log(this);
+            resizeCanvasDimensions(this);
+          });
+        }
+      }
+    };
+    requestAnimationFrame(waitForImage);
   };
   const getInstanceRootContainer = () => {
     const rootContainers = document.querySelectorAll(".cocreate-root");
@@ -15446,36 +15480,42 @@ const Canvas = (props) => {
     );
   };
   const initializeCanvas = () => {
-    var _a, _b;
+    var _a, _b, _c;
     console.log("[Cocreate] Initializing canvas dimensions");
     const instanceRootContainer = getInstanceRootContainer();
     if (!instanceRootContainer) {
       console.log("[Cocreate] No root container found for instanceId: " + instanceId);
       return;
     }
-    const questionBodyImage = ((_a = instanceRootContainer.parentElement) == null ? void 0 : _a.querySelector(`.question-display-wrapper img`)) || ((_b = instanceRootContainer.parentElement) == null ? void 0 : _b.querySelector(`.QuestionText img`));
+    const questionBodyImage = ((_a = instanceRootContainer.parentElement) == null ? void 0 : _a.querySelector(`.question-display-wrapper img`)) || ((_b = instanceRootContainer.parentElement) == null ? void 0 : _b.querySelector(`.QuestionText img`)) || ((_c = instanceRootContainer.parentElement) == null ? void 0 : _c.querySelector(`.question-content img`));
     console.log("[Cocreate] Question Body Image: " + questionBodyImage);
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
       console.log("[Cocreate] Question Body Image Src: " + questionBodyImage.getAttribute("src"));
+      questionBodyImage.style.display = "none";
+      questionBodyImage.style.visibility = "hidden";
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
-      var loadedImage = void 0;
-      while (!loadedImage) {
-        loadedImage = instanceRootContainer.querySelector(".rendering-image");
-        console.log("[Cocreate] Waiting for rendering image to load");
-      }
-      if (loadedImage instanceof HTMLImageElement) {
-        if (loadedImage.complete) {
-          console.log("[Cocreate] Image already loaded");
-          initCanvasDimensions(loadedImage);
-        } else {
-          loadedImage.addEventListener("load", function() {
-            console.log("[Cocreate] Image loaded");
-            initCanvasDimensions(this);
-          });
+      const waitForRenderingImage = () => {
+        const loadedImage = instanceRootContainer.querySelector(".rendering-image");
+        if (!loadedImage) {
+          console.log("[Cocreate] Waiting for rendering image to be added to DOM");
+          requestAnimationFrame(waitForRenderingImage);
+          return;
         }
-      }
+        if (loadedImage instanceof HTMLImageElement) {
+          if (loadedImage.complete && loadedImage.naturalHeight !== 0) {
+            console.log("[Cocreate] Image already loaded");
+            initCanvasDimensions(loadedImage);
+          } else {
+            loadedImage.addEventListener("load", function() {
+              console.log("[Cocreate] Image loaded");
+              initCanvasDimensions(this);
+            });
+          }
+        }
+      };
+      requestAnimationFrame(waitForRenderingImage);
     } else {
       const defaultImage = document.querySelector("img");
       if (defaultImage && defaultImage instanceof HTMLImageElement) {

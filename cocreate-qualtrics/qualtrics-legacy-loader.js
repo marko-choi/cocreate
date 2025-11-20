@@ -136,12 +136,44 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 	}
 
 	if (questionContainer) {
-		// Hide question image
+		// Hide question image - with comprehensive selectors and dual hiding method
 		const questionImage = document.querySelector('.QuestionText img')
 		if (questionImage) {
 			questionImage.style.display = 'none';
+			questionImage.style.visibility = 'hidden';
 			questionImage.style.maxHeight = '85vh';
 			console.log("[Qualtrics Loader] Updated question image")
+		}
+
+		// Hide all question content images
+		const questionContentImages = document.querySelectorAll('.question-content img')
+		questionContentImages.forEach(img => {
+			img.style.display = 'none';
+			img.style.visibility = 'hidden';
+			console.log("[Qualtrics Loader] Updated question content image")
+		});
+
+		// Hide question image - inside text editor
+		const textEditorImages = document.querySelectorAll('.question-display-wrapper img')
+		textEditorImages.forEach(img => {
+			img.style.display = 'none';
+			img.style.visibility = 'hidden';
+			console.log("[Qualtrics Loader] Updated image inside text editor")
+		});
+
+		// Hide additional question text images (for non-first questions)
+		const questionTextImages = document.querySelectorAll('.QuestionText img')
+		questionTextImages.forEach(img => {
+			img.style.display = 'none';
+			img.style.visibility = 'hidden';
+			console.log("[Qualtrics Loader] Updated additional QuestionText image")
+		});
+
+		// Hide question text area
+		const questionTextArea = questionContainer.querySelector('.question-content textarea')
+		if (questionTextArea) {
+			questionTextArea.style.display = 'none';
+			console.log("[Qualtrics Loader] Updated question text area")
 		}
 
 		let appContainer = document.createElement('div');

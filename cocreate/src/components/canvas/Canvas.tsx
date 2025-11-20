@@ -140,6 +140,45 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     localStorage.removeItem(CANVAS_SELECTIONS_KEY);
   }, []);
 
+  // Ensure Qualtrics images remain hidden (for non-first questions)
+  useEffect(() => {
+    const hideQuestionImages = () => {
+      const instanceRootContainer = getInstanceRootContainer();
+      if (!instanceRootContainer || !instanceRootContainer.parentElement) return;
+
+      // Hide all possible Qualtrics image locations
+      const imageSelectors = [
+        '.question-content img',
+        '.question-display-wrapper img',
+        '.QuestionText img'
+      ];
+
+      imageSelectors.forEach(selector => {
+        const images = instanceRootContainer.parentElement!.querySelectorAll(selector);
+        images.forEach(img => {
+          if (img instanceof HTMLImageElement && !img.classList.contains('rendering-image')) {
+            img.style.display = 'none';
+            img.style.visibility = 'hidden';
+          }
+        });
+      });
+    };
+
+    // Run immediately and set up an interval to keep checking
+    hideQuestionImages();
+    const intervalId = setInterval(hideQuestionImages, 100);
+
+    // Clean up after 3 seconds (should be enough time for DOM to stabilize)
+    const timeoutId = setTimeout(() => {
+      clearInterval(intervalId);
+    }, 3000);
+
+    return () => {
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+    };
+  }, [instanceId]);
+
   // Mobile device detection and responsive handling
   useEffect(() => {
     const handleResize = () => {
@@ -276,21 +315,29 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       return;
     }
 
-    var loadedImage = undefined
-    do { loadedImage = instanceRootContainer.querySelector(".rendering-image"); } while (!loadedImage)
-
-    if (loadedImage instanceof HTMLImageElement) {
-      if (loadedImage.complete) {
-        console.log("[Cocreate] Image already loaded");
-        resizeCanvasDimensions(loadedImage);
-      } else {
-        loadedImage.addEventListener("load", function() {
-          console.log("[Cocreate] Image loaded");
-          console.log(this);
-          resizeCanvasDimensions(this);
-      });
+    const waitForImage = () => {
+      const loadedImage = instanceRootContainer.querySelector(".rendering-image");
+      
+      if (!loadedImage) {
+        requestAnimationFrame(waitForImage);
+        return;
       }
-    }
+
+      if (loadedImage instanceof HTMLImageElement) {
+        if (loadedImage.complete && loadedImage.naturalHeight !== 0) {
+          console.log("[Cocreate] Image already loaded");
+          resizeCanvasDimensions(loadedImage);
+        } else {
+          loadedImage.addEventListener("load", function() {
+            console.log("[Cocreate] Image loaded");
+            console.log(this);
+            resizeCanvasDimensions(this);
+          });
+        }
+      }
+    };
+    
+    requestAnimationFrame(waitForImage);
   }
 
   const getInstanceRootContainer = () => {
@@ -311,7 +358,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     }
 
     const questionBodyImage = instanceRootContainer.parentElement?.querySelector(`.question-display-wrapper img`) ||
-                              instanceRootContainer.parentElement?.querySelector(`.QuestionText img`);
+                              instanceRootContainer.parentElement?.querySelector(`.QuestionText img`) ||
+                              instanceRootContainer.parentElement?.querySelector(`.question-content img`);
     console.log("[Cocreate] Question Body Image: " + questionBodyImage);
 
     if (questionBodyImage && questionBodyImage instanceof HTMLImageElement) {
@@ -319,27 +367,40 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
       console.log("[Cocreate] Question Body Image Src: " + questionBodyImage.getAttribute("src"));
+      
+      // CRITICAL FIX: Explicitly hide the original Qualtrics image to prevent duplicates
+      questionBodyImage.style.display = 'none';
+      questionBodyImage.style.visibility = 'hidden';
+      
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
 
-      // find image with classname rendering-image
-      var loadedImage = undefined
-      while (!loadedImage) {
-        loadedImage = instanceRootContainer.querySelector(".rendering-image");
-        console.log("[Cocreate] Waiting for rendering image to load");
-      }
-      // Wait for the image to load before calling initCanvasDimensions
-      if (loadedImage instanceof HTMLImageElement) {
-        if (loadedImage.complete) {
+      // Use a more reliable method to wait for the rendering image to be added to the DOM
+      const waitForRenderingImage = () => {
+        const loadedImage = instanceRootContainer.querySelector(".rendering-image");
+        
+        if (!loadedImage) {
+          console.log("[Cocreate] Waiting for rendering image to be added to DOM");
+          requestAnimationFrame(waitForRenderingImage);
+          return;
+        }
+
+        // Wait for the image to load before calling initCanvasDimensions
+        if (loadedImage instanceof HTMLImageElement) {
+          if (loadedImage.complete && loadedImage.naturalHeight !== 0) {
             console.log("[Cocreate] Image already loaded");
             initCanvasDimensions(loadedImage);
-        } else {
+          } else {
             // Add an event listener to handle when the image finishes loading
             loadedImage.addEventListener("load", function() {
-                console.log("[Cocreate] Image loaded");
-                initCanvasDimensions(this);
+              console.log("[Cocreate] Image loaded");
+              initCanvasDimensions(this);
             });
+          }
         }
-      }
+      };
+      
+      // Start polling for the rendering image
+      requestAnimationFrame(waitForRenderingImage);
 
     } else {
       const defaultImage = document.querySelector("img");
