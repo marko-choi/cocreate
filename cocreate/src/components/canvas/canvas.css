@@ -178,3 +178,146 @@
 .edit-button:hover, .delete-button:hover {
   background: #eee !important;
 }
+
+/* ========================================
+   MOBILE-SPECIFIC STYLES
+   ======================================== */
+
+/* Mobile viewport adjustments */
+@media (max-width: 768px) {
+  .canvas-container {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .canvas {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+  }
+
+  .rendering-image {
+    max-height: 100vh;
+  }
+
+  /* Hide desktop-only UI elements on mobile */
+  .zoom-toolbar {
+    display: none !important;
+  }
+
+  .minimap {
+    display: none !important;
+  }
+
+  .canvas-top-right-controls {
+    display: none !important;
+  }
+
+  .selection-tooltip-box {
+    display: none !important;
+  }
+
+  /* Circular selection styles for mobile */
+  .mobile-selection-circle {
+    border: 3px solid #1976d2;
+    border-radius: 50%;
+    background: rgba(25, 118, 210, 0.1);
+    pointer-events: none;
+  }
+
+  .mobile-selection-circle.completed {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+  }
+
+  .mobile-selection-circle.active {
+    border-color: #1976d2;
+    background: rgba(25, 118, 210, 0.15);
+  }
+}
+
+/* Tablet adjustments (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .canvas-container {
+    width: 100%;
+    height: 90vh;
+  }
+
+  /* Show simplified toolbar on tablets */
+  .zoom-toolbar {
+    scale: 0.9;
+  }
+
+  /* Slightly larger touch targets */
+  .selection-tooltip-box .MuiIconButton-root {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* Small phones (< 375px) */
+@media (max-width: 375px) {
+  .canvas-container {
+    height: 100vh;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (orientation: landscape) and (max-height: 500px) {
+  .canvas-container {
+    height: 100vh;
+  }
+
+  .rendering-image {
+    max-height: 100vh;
+  }
+}
+
+/* Safe area support for iOS devices with notches */
+@supports (padding: env(safe-area-inset-top)) {
+  @media (max-width: 768px) {
+    .canvas-container {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+}
+
+/* Prevent body scroll when modal is open (mobile) */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  @media (max-width: 768px) {
+    .mobile-selection-circle {
+      border-width: 4px;
+    }
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-selection-circle {
+    transition: none;
+  }
+}
+
+/* Touch target size enforcement for accessibility */
+@media (max-width: 768px) {
+  /* Ensure all interactive elements meet minimum touch target size */
+  button,
+  .MuiIconButton-root {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
