@@ -9,43 +9,6 @@ import { InstanceId } from "../../App";
 import { isMobileDevice } from "../../utils/mobileDetection";
 import MobileFeedbackModal from "../MobileFeedbackModal/MobileFeedbackModal";
 
-// ============================================
-// VERSION VERIFICATION - MOBILE FIX
-// ============================================
-console.log('');
-console.log('═══════════════════════════════════════════');
-console.log('🚀 CoCreate Mobile Fix');
-console.log('📦 Version: 2.0.1-MOBILE-FIX');
-console.log('📅 Build: ' + new Date().toISOString());
-console.log('═══════════════════════════════════════════');
-console.log('');
-
-// Global version markers
-(window as any).__COCREATE_VERSION__ = '2.0.1-MOBILE-FIX';
-(window as any).__COCREATE_MOBILE_FIX_APPLIED__ = true;
-
-// Verification function
-(window as any).checkCoCreateVersion = function() {
-  console.log('CoCreate Version Check:');
-  console.log('  Version:', (window as any).__COCREATE_VERSION__);
-  console.log('  Mobile Fix Applied:', (window as any).__COCREATE_MOBILE_FIX_APPLIED__);
-  console.log('  Window Width:', window.innerWidth);
-  console.log('  Is Mobile:', window.innerWidth <= 768);
-  console.log('  Touch Support:', 'ontouchstart' in window);
-  return {
-    version: (window as any).__COCREATE_VERSION__,
-    mobileFixApplied: (window as any).__COCREATE_MOBILE_FIX_APPLIED__,
-    isMobileWidth: window.innerWidth <= 768,
-    hasTouchSupport: 'ontouchstart' in window
-  };
-};
-
-console.log('💡 Run checkCoCreateVersion() in console to verify setup');
-console.log('');
-// ============================================
-// END VERSION VERIFICATION
-// ============================================
-
 // Function to get feedback configuration from global window object (set by Qualtrics loader)
 const getFeedbackConfig = (): FeedbackConfig => {
   const defaultConfig: FeedbackConfig = {

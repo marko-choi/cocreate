@@ -15274,6 +15274,31 @@ const MobileFeedbackModal = ({
     ] })
   ] }) });
 };
+console.log("");
+console.log("═══════════════════════════════════════════");
+console.log("🚀 CoCreate Mobile Fix");
+console.log("📦 Version: 2.0.1-MOBILE-FIX");
+console.log("📅 Build: " + (/* @__PURE__ */ new Date()).toISOString());
+console.log("═══════════════════════════════════════════");
+console.log("");
+window.__COCREATE_VERSION__ = "2.0.1-MOBILE-FIX";
+window.__COCREATE_MOBILE_FIX_APPLIED__ = true;
+window.checkCoCreateVersion = function() {
+  console.log("CoCreate Version Check:");
+  console.log("  Version:", window.__COCREATE_VERSION__);
+  console.log("  Mobile Fix Applied:", window.__COCREATE_MOBILE_FIX_APPLIED__);
+  console.log("  Window Width:", window.innerWidth);
+  console.log("  Is Mobile:", window.innerWidth <= 768);
+  console.log("  Touch Support:", "ontouchstart" in window);
+  return {
+    version: window.__COCREATE_VERSION__,
+    mobileFixApplied: window.__COCREATE_MOBILE_FIX_APPLIED__,
+    isMobileWidth: window.innerWidth <= 768,
+    hasTouchSupport: "ontouchstart" in window
+  };
+};
+console.log("💡 Run checkCoCreateVersion() in console to verify setup");
+console.log("");
 const getFeedbackConfig = () => {
   const defaultConfig = {
     showFunctionValue: true,
@@ -15674,15 +15699,23 @@ const Canvas = (props) => {
     }
   };
   const handleTouchStart = (e2) => {
-    if (!isMobile || isEnteringFeedback || isPanning)
+    console.log("[CoCreate Mobile] Touch start", { isMobile, isEnteringFeedback, showMobileModal });
+    if (!isMobile || isEnteringFeedback) {
+      console.log("[CoCreate Mobile] Early return from handleTouchStart");
       return;
+    }
+    e2.preventDefault();
+    e2.stopPropagation();
     const canvas2 = canvasRef.current;
-    if (!canvas2)
+    if (!canvas2) {
+      console.log("[CoCreate Mobile] No canvas ref");
       return;
+    }
     const touch = e2.touches[0];
     const rect = canvas2.getBoundingClientRect();
     const x2 = (touch.clientX - rect.left - translate.x) / scale;
     const y2 = (touch.clientY - rect.top - translate.y) / scale;
+    console.log("[CoCreate Mobile] Touch coordinates:", { x: x2, y: y2, translate, scale });
     const tappedIndex = selections.findIndex((sel) => {
       if (isCircularSelection(sel)) {
         const centerX = sel.center.x * imageScaleFactor;
@@ -15694,13 +15727,17 @@ const Canvas = (props) => {
       }
       return false;
     });
+    console.log("[CoCreate Mobile] Tapped index:", tappedIndex);
     if (tappedIndex >= 0) {
+      console.log("[CoCreate Mobile] Opening existing selection");
       handleMobileSelectionTap(tappedIndex);
     } else {
+      console.log("[CoCreate Mobile] Creating new circular selection");
       createCircularSelection({ x: x2, y: y2 });
     }
   };
   const createCircularSelection = (point) => {
+    console.log("[CoCreate Mobile] createCircularSelection called", point);
     const radius = 30;
     const newSelection = {
       center: {
@@ -15711,12 +15748,22 @@ const Canvas = (props) => {
       functionValue: void 0,
       comment: void 0
     };
+    console.log("[CoCreate Mobile] New selection created:", newSelection);
     const newIndex = selections.length;
-    setSelections([...selections, newSelection]);
+    setSelections((prev2) => {
+      const updated = [...prev2, newSelection];
+      console.log("[CoCreate Mobile] Selections updated, count:", updated.length);
+      return updated;
+    });
     setActiveSelectionIndex(newIndex);
-    setShowMobileModal(true);
-    setIsEnteringFeedback(true);
-    document.body.classList.add("modal-open");
+    console.log("[CoCreate Mobile] Active selection index set to:", newIndex);
+    setTimeout(() => {
+      console.log("[CoCreate Mobile] Setting showMobileModal to true");
+      setShowMobileModal(true);
+      setIsEnteringFeedback(true);
+      document.body.classList.add("modal-open");
+      console.log("[CoCreate Mobile] Modal state updated. showMobileModal should be true");
+    }, 0);
   };
   const handleMobileSelectionTap = (index) => {
     if (!isMobile)
@@ -16270,7 +16317,11 @@ const Canvas = (props) => {
                     onMouseMove: !isMobile ? handleMouseMove : void 0,
                     onMouseUp: !isMobile ? handleMouseUp : void 0,
                     onMouseLeave: !isMobile ? handleMouseLeave : void 0,
-                    onTouchStart: isMobile ? handleTouchStart : void 0
+                    onTouchStart: isMobile ? handleTouchStart : void 0,
+                    onTouchEnd: isMobile ? (e2) => {
+                      console.log("[CoCreate Mobile] Touch end");
+                      e2.preventDefault();
+                    } : void 0
                   }
                 )
               ]
@@ -16316,21 +16367,30 @@ const Canvas = (props) => {
           }),
           isMobile ? (
             /* MOBILE: Full-screen modal */
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              MobileFeedbackModal,
-              {
-                visible: showMobileModal,
-                selection: activeSelectionIndex !== null ? selections[activeSelectionIndex] : {},
-                onSave: handleMobileSave,
-                onDelete: handleMobileDelete,
-                onClose: () => {
-                  setShowMobileModal(false);
-                  setIsEnteringFeedback(false);
-                  document.body.classList.remove("modal-open");
-                },
-                feedbackConfig: getFeedbackConfig()
-              }
-            )
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+              console.log("[CoCreate Mobile] Render check:", {
+                showMobileModal,
+                activeSelectionIndex,
+                selectionsLength: selections.length,
+                hasSelection: activeSelectionIndex !== null && selections[activeSelectionIndex] !== void 0
+              }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                MobileFeedbackModal,
+                {
+                  visible: showMobileModal,
+                  selection: activeSelectionIndex !== null && selections[activeSelectionIndex] ? selections[activeSelectionIndex] : { center: { x: 0, y: 0 }, radius: 0 },
+                  onSave: handleMobileSave,
+                  onDelete: handleMobileDelete,
+                  onClose: () => {
+                    console.log("[CoCreate Mobile] Modal onClose called");
+                    setShowMobileModal(false);
+                    setIsEnteringFeedback(false);
+                    document.body.classList.remove("modal-open");
+                  },
+                  feedbackConfig: getFeedbackConfig()
+                }
+              )
+            ] })
           ) : (
             /* DESKTOP: Floating tooltip */
             tooltipPosition && activeSelectionIndex !== null && (() => {
