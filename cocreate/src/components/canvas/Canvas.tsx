@@ -621,15 +621,30 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   // Mobile-specific touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (!isMobile || isEnteringFeedback || isPanning) return;
+    console.log('[CoCreate Mobile] Touch start', { isMobile, isEnteringFeedback, showMobileModal });
+    
+    // Remove isPanning check - it's a desktop-only feature
+    if (!isMobile || isEnteringFeedback) {
+      console.log('[CoCreate Mobile] Early return from handleTouchStart');
+      return;
+    }
+    
+    // Prevent default to avoid conflicts with Qualtrics or other handlers
+    e.preventDefault();
+    e.stopPropagation();
     
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      console.log('[CoCreate Mobile] No canvas ref');
+      return;
+    }
     
     const touch = e.touches[0];
     const rect = canvas.getBoundingClientRect();
     const x = (touch.clientX - rect.left - translate.x) / scale;
     const y = (touch.clientY - rect.top - translate.y) / scale;
+    
+    console.log('[CoCreate Mobile] Touch coordinates:', { x, y, translate, scale });
     
     // Check if tap is on existing selection
     const tappedIndex = selections.findIndex((sel) => {
@@ -644,16 +659,22 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       return false;
     });
     
+    console.log('[CoCreate Mobile] Tapped index:', tappedIndex);
+    
     if (tappedIndex >= 0) {
       // Edit existing selection
+      console.log('[CoCreate Mobile] Opening existing selection');
       handleMobileSelectionTap(tappedIndex);
     } else {
       // Create new selection
+      console.log('[CoCreate Mobile] Creating new circular selection');
       createCircularSelection({ x, y });
     }
   };
 
   const createCircularSelection = (point: Point) => {
+    console.log('[CoCreate Mobile] createCircularSelection called', point);
+    
     const radius = 30; // 30px radius for mobile circles
     
     const newSelection: CircularSelection = {
@@ -666,14 +687,31 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       comment: undefined,
     };
     
-    const newIndex = selections.length;
-    setSelections([...selections, newSelection]);
-    setActiveSelectionIndex(newIndex);
-    setShowMobileModal(true);
-    setIsEnteringFeedback(true);
+    console.log('[CoCreate Mobile] New selection created:', newSelection);
     
-    // Prevent body scroll
-    document.body.classList.add('modal-open');
+    const newIndex = selections.length;
+    
+    // Use callback form to ensure we're working with latest state
+    setSelections(prev => {
+      const updated = [...prev, newSelection];
+      console.log('[CoCreate Mobile] Selections updated, count:', updated.length);
+      return updated;
+    });
+    
+    setActiveSelectionIndex(newIndex);
+    console.log('[CoCreate Mobile] Active selection index set to:', newIndex);
+    
+    // Use setTimeout to ensure state has updated before showing modal
+    // This helps with React state batching issues
+    setTimeout(() => {
+      console.log('[CoCreate Mobile] Setting showMobileModal to true');
+      setShowMobileModal(true);
+      setIsEnteringFeedback(true);
+      
+      // Prevent body scroll
+      document.body.classList.add('modal-open');
+      console.log('[CoCreate Mobile] Modal state updated. showMobileModal should be true');
+    }, 0);
   };
 
   const handleMobileSelectionTap = (index: number) => {
@@ -1361,6 +1399,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           onMouseUp={!isMobile ? handleMouseUp : undefined}
           onMouseLeave={!isMobile ? handleMouseLeave : undefined}
           onTouchStart={isMobile ? handleTouchStart : undefined}
+          onTouchEnd={isMobile ? (e) => {
+            console.log('[CoCreate Mobile] Touch end');
+            e.preventDefault();
+          } : undefined}
         />
       </div>
 
@@ -1403,18 +1445,29 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       {/* Conditional Feedback UI: Mobile Modal or Desktop Tooltip */}
       {isMobile ? (
         /* MOBILE: Full-screen modal */
-        <MobileFeedbackModal
-          visible={showMobileModal}
-          selection={activeSelectionIndex !== null ? selections[activeSelectionIndex] : {}}
-          onSave={handleMobileSave}
-          onDelete={handleMobileDelete}
-          onClose={() => {
-            setShowMobileModal(false);
-            setIsEnteringFeedback(false);
-            document.body.classList.remove('modal-open');
-          }}
-          feedbackConfig={getFeedbackConfig()}
-        />
+        <>
+          {console.log('[CoCreate Mobile] Render check:', { 
+            showMobileModal, 
+            activeSelectionIndex,
+            selectionsLength: selections.length,
+            hasSelection: activeSelectionIndex !== null && selections[activeSelectionIndex] !== undefined
+          })}
+          <MobileFeedbackModal
+            visible={showMobileModal}
+            selection={activeSelectionIndex !== null && selections[activeSelectionIndex] 
+              ? selections[activeSelectionIndex] 
+              : { center: { x: 0, y: 0 }, radius: 0 }}
+            onSave={handleMobileSave}
+            onDelete={handleMobileDelete}
+            onClose={() => {
+              console.log('[CoCreate Mobile] Modal onClose called');
+              setShowMobileModal(false);
+              setIsEnteringFeedback(false);
+              document.body.classList.remove('modal-open');
+            }}
+            feedbackConfig={getFeedbackConfig()}
+          />
+        </>
       ) : (
         /* DESKTOP: Floating tooltip */
         tooltipPosition && activeSelectionIndex !== null && (() => {
