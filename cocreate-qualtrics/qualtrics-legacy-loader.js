@@ -205,6 +205,86 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 		}
 
 		console.log('[Qualtrics Loader] React app loaded!');
+
+		console.log('[Qualtrics Loader] React app loaded!');
+
+// ============================================
+// ADD EVENT LISTENERS FOR REAL-TIME DATA SYNC
+// ============================================
+function setupDataSync(qualtricsSurveyEngine) {
+	const questionData = qualtricsSurveyEngine.getQuestionInfo();
+	const questionContainer = qualtricsSurveyEngine.getQuestionContainer();
+	const questionId = questionData.QuestionID;
+	
+	console.log(`[Qualtrics Loader][${questionId}] Setting up data sync`);
+	
+	// Get image URL
+	let textEditorImageContainer = ".QuestionText img";
+	let imageLink = "";
+	let image = document.querySelector(textEditorImageContainer);
+	if (image) {
+		imageLink = image.src;
+	}
+	
+	// Function to update the textarea with new data
+	function updateTextArea(newData) {
+		const questionTextAreas = questionContainer.querySelectorAll('.question-content textarea');
+		if (questionTextAreas && questionTextAreas.length > 0) {
+			let stringifiedData = JSON.stringify(newData);
+			console.log(`[Qualtrics Loader][${questionId}] Updating textarea with data`);
+			
+			questionTextAreas.forEach(textarea => {
+				textarea.value = stringifiedData;
+				
+				// Trigger events so Qualtrics recognizes the change
+				const inputEvent = new Event('input', { bubbles: true });
+				const changeEvent = new Event('change', { bubbles: true });
+				textarea.dispatchEvent(inputEvent);
+				textarea.dispatchEvent(changeEvent);
+			});
+		}
+	}
+	
+	// Listen for localStorage updates from Canvas
+	window.addEventListener('localStorageUpdated', function(e) {
+		if (e.detail && (e.detail.key === 'cocreate-canvasSelections' || e.detail.key === 'cocreate-canvasSize')) {
+			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
+			
+			// Get current data from localStorage
+			const selectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections') || '{}');
+			const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize') || '{}');
+			
+			// Prepare response data
+			const responseData = {
+				image: imageLink,
+				selectionsData: selectionsData,
+				metadata: metadata
+			};
+			
+			// Update textarea
+			updateTextArea(responseData);
+		}
+	});
+	
+	// Also do initial update
+	const initialSelectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections') || '{}');
+	const initialMetadata = JSON.parse(localStorage.getItem('cocreate-canvasSize') || '{}');
+	const initialData = {
+		image: imageLink,
+		selectionsData: initialSelectionsData,
+		metadata: initialMetadata
+	};
+	updateTextArea(initialData);
+	
+	console.log(`[Qualtrics Loader][${questionId}] Data sync setup complete`);
+}
+
+// Call the setup function
+setupDataSync(qualtricsSurveyEngine);
+// ============================================
+// END EVENT LISTENERS
+// ============================================
+
 	} else {
 		console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
 	}
