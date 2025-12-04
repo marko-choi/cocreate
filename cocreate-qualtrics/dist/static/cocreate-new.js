@@ -15401,6 +15401,7 @@ const Canvas = (props) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
   reactExports.useEffect(() => {
+    console.log("[CoCreate] Saving to localStorage - selections count:", selections.length);
     const currentCocreateCanvasSize = localStorage.getItem(CANVAS_SIZE_KEY);
     const newCocreateCanvasSize = {
       [instanceId]: {
@@ -15409,26 +15410,36 @@ const Canvas = (props) => {
         imageScaleFactor
       }
     };
-    if (currentCocreateCanvasSize) {
-      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify({
-        ...JSON.parse(currentCocreateCanvasSize),
-        ...newCocreateCanvasSize
-      }));
-    } else {
-      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify(newCocreateCanvasSize));
-    }
+    const newCocreateCanvasSizeString = currentCocreateCanvasSize ? JSON.stringify({
+      ...JSON.parse(currentCocreateCanvasSize),
+      ...newCocreateCanvasSize
+    }) : JSON.stringify(newCocreateCanvasSize);
+    localStorage.setItem(CANVAS_SIZE_KEY, newCocreateCanvasSizeString);
+    const sizeEvent = new CustomEvent("localStorageUpdated", {
+      detail: {
+        key: CANVAS_SIZE_KEY,
+        value: JSON.parse(newCocreateCanvasSizeString)
+      }
+    });
+    window.dispatchEvent(sizeEvent);
+    console.log("[CoCreate] ✅ Dispatched localStorageUpdated for canvas size");
     const currentCocreateCanvasSelections = localStorage.getItem(CANVAS_SELECTIONS_KEY);
     const newCocreateCanvasSelections = {
       [instanceId]: selections
     };
-    if (currentCocreateCanvasSelections) {
-      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify({
-        ...JSON.parse(currentCocreateCanvasSelections),
-        ...newCocreateCanvasSelections
-      }));
-    } else {
-      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify(newCocreateCanvasSelections));
-    }
+    const newCocreateCanvasSelectionsString = currentCocreateCanvasSelections ? JSON.stringify({
+      ...JSON.parse(currentCocreateCanvasSelections),
+      ...newCocreateCanvasSelections
+    }) : JSON.stringify(newCocreateCanvasSelections);
+    localStorage.setItem(CANVAS_SELECTIONS_KEY, newCocreateCanvasSelectionsString);
+    const selectionsEvent = new CustomEvent("localStorageUpdated", {
+      detail: {
+        key: CANVAS_SELECTIONS_KEY,
+        value: JSON.parse(newCocreateCanvasSelectionsString)
+      }
+    });
+    window.dispatchEvent(selectionsEvent);
+    console.log("[CoCreate] ✅ Dispatched localStorageUpdated for selections");
   }, [selections]);
   const initCanvasDimensions = (img) => {
     console.log("[Cocreate] Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
@@ -16365,6 +16376,94 @@ const Canvas = (props) => {
               index
             );
           }),
+          isMobile && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: {
+            position: "fixed",
+            top: 10,
+            left: 10,
+            background: "rgba(0, 0, 0, 0.9)",
+            color: "white",
+            padding: "12px",
+            zIndex: 999999,
+            fontSize: "11px",
+            fontFamily: "monospace",
+            borderRadius: "4px",
+            maxWidth: "200px",
+            border: "2px solid #4CAF50"
+          }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontWeight: "bold", marginBottom: "8px", color: "#4CAF50" }, children: "🔍 DEBUG INFO" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "isMobile:" }),
+              " ",
+              String(isMobile)
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "showModal:" }),
+              " ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: {
+                color: showMobileModal ? "#4CAF50" : "#f44336",
+                fontWeight: "bold"
+              }, children: String(showMobileModal) })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "activeIndex:" }),
+              " ",
+              String(activeSelectionIndex)
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "selections:" }),
+              " ",
+              selections.length
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "entering:" }),
+              " ",
+              String(isEnteringFeedback)
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "8px", paddingTop: "8px", borderTop: "1px solid #666" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "Width:" }),
+              " ",
+              window.innerWidth,
+              "px"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: () => {
+                  console.log("🔴 FORCE MODAL BUTTON CLICKED");
+                  console.log("  Before - showMobileModal:", showMobileModal);
+                  console.log("  Before - activeSelectionIndex:", activeSelectionIndex);
+                  setShowMobileModal(true);
+                  setActiveSelectionIndex(0);
+                  setIsEnteringFeedback(true);
+                  document.body.classList.add("modal-open");
+                  setTimeout(() => {
+                    console.log("  After (50ms) - showMobileModal should be true");
+                    console.log("  Modal in DOM:", !!document.querySelector(".mobile-modal-backdrop"));
+                  }, 50);
+                },
+                style: {
+                  marginTop: "8px",
+                  padding: "8px",
+                  background: "#f44336",
+                  color: "white",
+                  border: "none",
+                  width: "100%",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                },
+                children: "🚨 FORCE MODAL"
+              }
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: {
+              marginTop: "8px",
+              fontSize: "9px",
+              color: "#999",
+              paddingTop: "8px",
+              borderTop: "1px solid #666"
+            }, children: "Tap image to test normal flow" })
+          ] }),
           isMobile ? (
             /* MOBILE: Full-screen modal */
             /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
