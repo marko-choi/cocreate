@@ -237,6 +237,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
+    console.log('[CoCreate] Saving to localStorage - selections count:', selections.length);
 
     // Save canvas size to localStorage
     const currentCocreateCanvasSize = localStorage.getItem(CANVAS_SIZE_KEY);
@@ -248,14 +249,24 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       }
     }
 
-    if (currentCocreateCanvasSize) {
-      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify({
-        ...JSON.parse(currentCocreateCanvasSize),
-        ...newCocreateCanvasSize
-      }));
-    } else {
-      localStorage.setItem(CANVAS_SIZE_KEY, JSON.stringify(newCocreateCanvasSize));
-    }
+    const newCocreateCanvasSizeString = currentCocreateCanvasSize
+      ? JSON.stringify({
+          ...JSON.parse(currentCocreateCanvasSize),
+          ...newCocreateCanvasSize
+        })
+      : JSON.stringify(newCocreateCanvasSize);
+
+    localStorage.setItem(CANVAS_SIZE_KEY, newCocreateCanvasSizeString);
+
+    // CRITICAL: Dispatch custom event to notify Qualtrics loader
+    const sizeEvent = new CustomEvent('localStorageUpdated', {
+      detail: {
+        key: CANVAS_SIZE_KEY,
+        value: JSON.parse(newCocreateCanvasSizeString)
+      }
+    });
+    window.dispatchEvent(sizeEvent);
+    console.log('[CoCreate] ✅ Dispatched localStorageUpdated for canvas size');
 
     // Save selections to localStorage
     const currentCocreateCanvasSelections = localStorage.getItem(CANVAS_SELECTIONS_KEY);
@@ -263,16 +274,26 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       [instanceId]: selections
     }
 
-    if (currentCocreateCanvasSelections) {
-      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify({
-        ...JSON.parse(currentCocreateCanvasSelections),
-        ...newCocreateCanvasSelections
-      }));
-    } else {
-      localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify(newCocreateCanvasSelections));
-    }
+    const newCocreateCanvasSelectionsString = currentCocreateCanvasSelections
+      ? JSON.stringify({
+          ...JSON.parse(currentCocreateCanvasSelections),
+          ...newCocreateCanvasSelections
+        })
+      : JSON.stringify(newCocreateCanvasSelections);
 
-  }, [selections]);
+    localStorage.setItem(CANVAS_SELECTIONS_KEY, newCocreateCanvasSelectionsString);
+
+    // CRITICAL: Dispatch custom event to notify Qualtrics loader
+    const selectionsEvent = new CustomEvent('localStorageUpdated', {
+      detail: {
+        key: CANVAS_SELECTIONS_KEY,
+        value: JSON.parse(newCocreateCanvasSelectionsString)
+      }
+    });
+    window.dispatchEvent(selectionsEvent);
+    console.log('[CoCreate] ✅ Dispatched localStorageUpdated for selections');
+
+  }, [selections, instanceId, canvasWidth, canvasHeight, imageScaleFactor]);
 
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
@@ -1478,6 +1499,94 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           </div>
         );
       })}
+
+      {/* ========================================== */}
+      {/* TEMPORARY DEBUG UI - Remove after fixing */}
+      {/* ========================================== */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          top: 10,
+          left: 10,
+          background: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: '12px',
+          zIndex: 999999,
+          fontSize: '11px',
+          fontFamily: 'monospace',
+          borderRadius: '4px',
+          maxWidth: '200px',
+          border: '2px solid #4CAF50'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#4CAF50' }}>
+            🔍 DEBUG INFO
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>isMobile:</strong> {String(isMobile)}
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>showModal:</strong> <span style={{ 
+              color: showMobileModal ? '#4CAF50' : '#f44336',
+              fontWeight: 'bold'
+            }}>{String(showMobileModal)}</span>
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>activeIndex:</strong> {String(activeSelectionIndex)}
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>selections:</strong> {selections.length}
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>entering:</strong> {String(isEnteringFeedback)}
+          </div>
+          <div style={{ marginBottom: '8px', paddingTop: '8px', borderTop: '1px solid #666' }}>
+            <strong>Width:</strong> {window.innerWidth}px
+          </div>
+          <button 
+            onClick={() => {
+              console.log('🔴 FORCE MODAL BUTTON CLICKED');
+              console.log('  Before - showMobileModal:', showMobileModal);
+              console.log('  Before - activeSelectionIndex:', activeSelectionIndex);
+              
+              setShowMobileModal(true);
+              setActiveSelectionIndex(0);
+              setIsEnteringFeedback(true);
+              document.body.classList.add('modal-open');
+              
+              setTimeout(() => {
+                console.log('  After (50ms) - showMobileModal should be true');
+                console.log('  Modal in DOM:', !!document.querySelector('.mobile-modal-backdrop'));
+              }, 50);
+            }}
+            style={{
+              marginTop: '8px',
+              padding: '8px',
+              background: '#f44336',
+              color: 'white',
+              border: 'none',
+              width: '100%',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            🚨 FORCE MODAL
+          </button>
+          <div style={{ 
+            marginTop: '8px', 
+            fontSize: '9px', 
+            color: '#999',
+            paddingTop: '8px',
+            borderTop: '1px solid #666'
+          }}>
+            Tap image to test normal flow
+          </div>
+        </div>
+      )}
+      {/* ========================================== */}
+      {/* END DEBUG UI */}
+      {/* ========================================== */}
 
       {/* Conditional Feedback UI: Mobile Modal or Desktop Tooltip */}
       {isMobile ? (
