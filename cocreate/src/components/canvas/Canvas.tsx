@@ -293,7 +293,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     window.dispatchEvent(selectionsEvent);
     console.log('[CoCreate] ✅ Dispatched localStorageUpdated for selections');
 
-  }, [selections, instanceId, canvasWidth, canvasHeight, imageScaleFactor]);
+  }, [selections]);
 
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
