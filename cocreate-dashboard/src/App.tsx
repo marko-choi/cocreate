@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import './App.css'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable'
 import { Annotation, AnnotationsDto, Selection, SelectionDto } from './types/global'
-import { generateCoCreateData } from './utils/data-generator'
 import { cn } from './lib/utils'
 import Ping from './components/ping/Ping'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card'
@@ -45,6 +44,21 @@ function App() {
   const [annotations, setAnnotations] = useState<Annotation[]>([])
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
+
+  // Debug: Log when activeAnnotation changes
+  useEffect(() => {
+    if (activeAnnotation !== -1) {
+      const activeAnnotations = aggregatedAnnotations[activeAnnotation]
+      console.log('Active annotation changed:', {
+        activeAnnotation,
+        annotationsCount: activeAnnotations?.length || 0,
+        firstAnnotation: activeAnnotations?.[0],
+        imagePath: activeAnnotations?.[0]?.imagePath,
+        width: activeAnnotations?.[0]?.width,
+        height: activeAnnotations?.[0]?.height,
+      })
+    }
+  }, [activeAnnotation, aggregatedAnnotations])
   const [activeComment, setActiveComment] = useState<string | null>(null)
   const [activeSelection, setActiveSelection] = useState<Selection | null>(null)
 
@@ -184,87 +198,132 @@ function App() {
         let annotations: Annotation[] = []
 
         for (let i = 0; i < annotationsDto.length; i++) {
-          let selectionData = JSON.parse(annotationsDto[i].selectionsData)
-          let imageName = "Mosque"
-          let questionId = annotationsDto[i].questionId.replace("QID", "")
-          let imagePath = annotationsDto[i].image
+          const row = annotationsDto[i]
 
-          annotations.push({
-            imageName: imageName,
-            questionId: parseInt(questionId),
-            selections: selectionData.map((selection: SelectionDto) => {
-              return {
-                uid: Math.random().toString(36).substring(7),
-                start: selection.start,
-                end: selection.end,
-                functionValue: selection.functionValue as 'good' | 'bad' | null,
-                aestheticValue: selection.aestheticValue as 'good' | 'bad' | null,
-                comment: selection.comment,
-                show: true
-              }
-            }),
-            image: "",
-            imagePath: imagePath,
-            scaleFactor: 1,
-        })
+          // Skip empty rows
+          if (!row || !row.questionId || !row.selectionsData || !row.image) {
+            continue
+          }
+
+          try {
+            // Parse selectionsData - it's a JSON object with questionId as key
+            let selectionsDataObj: Record<string, SelectionDto[]> = {}
+            if (row.selectionsData && row.selectionsData.trim()) {
+              selectionsDataObj = JSON.parse(row.selectionsData)
+            }
+
+            // Parse metadata - it's a JSON object with questionId as key
+            let metadataObj: Record<string, { width?: number; height?: number; imageScaleFactor?: number }> = {}
+            if (row.metadata && row.metadata.trim()) {
+              metadataObj = JSON.parse(row.metadata)
+            }
+
+            // Extract questionId and normalize it
+            let questionId = row.questionId.replace("QID", "")
+            let questionIdKey = row.questionId // Keep original format for lookup
+
+            // Get selections for this questionId
+            let selectionData: SelectionDto[] = selectionsDataObj[questionIdKey] || []
+
+            // Get metadata for this questionId
+            let metadata = metadataObj[questionIdKey] || {}
+            let scaleFactor = metadata.imageScaleFactor || 1
+            let imageWidth = metadata.width || 723  // Default from CSV example
+            let imageHeight = metadata.height || 534  // Default from CSV example
+
+            // Extract image URL
+            let imagePath = row.image || ""
+
+            // Generate image name from questionId or use a default
+            let imageName = `Question ${questionId}`
+
+            annotations.push({
+              imageName: imageName,
+              questionId: parseInt(questionId) || 0,
+              selections: selectionData.map((selection: SelectionDto) => {
+                // Use scaled coordinates (start/end) which match the canvas display size
+                // unscaledStart/unscaledEnd are for the full-size image and won't match the canvas
+                const start = selection.start || { x: 0, y: 0 }
+                const end = selection.end || { x: 0, y: 0 }
+
+                return {
+                  uid: Math.random().toString(36).substring(7),
+                  start: start,
+                  end: end,
+                  functionValue: (selection.functionValue === 'good' || selection.functionValue === 'bad')
+                    ? selection.functionValue
+                    : null,
+                  aestheticValue: (selection.aestheticValue === 'good' || selection.aestheticValue === 'bad')
+                    ? selection.aestheticValue
+                    : null,
+                  comment: selection.comment || "",
+                  show: true
+                }
+              }),
+              image: "",
+              imagePath: imagePath,
+              scaleFactor: scaleFactor,
+              width: imageWidth,
+              height: imageHeight,
+            })
+          } catch (error) {
+            console.error(`Error parsing row ${i}:`, error, row)
+            // Continue to next row if there's an error
+          }
         }
-        console.log(annotations)
-        setAnnotations(annotations)
-      }})
 
-       // Create 10 buckets, and assign each annotation to a bucket based on questionId
-      const buckets: Annotation[][] = Array.from({ length: 1 }, () => [])
-      annotations.forEach(annotation => {
-        annotation.selections.forEach(selection => {
-          selection.show = checkForIniitalShowEligibility(selection)
-          selection.uid = Math.random().toString(36).substring(7)
-      })
-      annotation.show = true
-      buckets[annotation.questionId - 1].push(annotation)
+        console.log('Parsed annotations:', annotations)
+        setAnnotations(annotations)
+
+        // Create buckets for annotations - group by questionId
+        // First, find all unique questionIds
+        const uniqueQuestionIds = [...new Set(annotations.map(a => a.questionId))].sort((a, b) => a - b)
+        const maxQuestionId = uniqueQuestionIds.length > 0 ? Math.max(...uniqueQuestionIds) : 0
+
+        // Create buckets array with enough space
+        const buckets: Annotation[][] = Array.from({ length: Math.max(maxQuestionId, 1) }, () => [])
+
+        annotations.forEach(annotation => {
+          annotation.selections.forEach(selection => {
+            selection.show = checkForIniitalShowEligibility(selection)
+            selection.uid = Math.random().toString(36).substring(7)
+          })
+          annotation.show = true
+          const bucketIndex = annotation.questionId > 0 ? annotation.questionId - 1 : 0
+          if (bucketIndex >= 0 && bucketIndex < buckets.length) {
+            buckets[bucketIndex].push(annotation)
+            console.log(`Added annotation to bucket ${bucketIndex} (questionId: ${annotation.questionId}):`, {
+              imagePath: annotation.imagePath,
+              width: annotation.width,
+              height: annotation.height,
+              selectionsCount: annotation.selections.length
+            })
+          } else {
+            console.warn(`Invalid bucket index ${bucketIndex} for questionId ${annotation.questionId}`)
+          }
+        })
+
+        console.log('Aggregated annotations:', buckets)
+        console.log('Bucket summary:', buckets.map((bucket, idx) => ({ index: idx, count: bucket.length, questionId: bucket[0]?.questionId })))
+
+        // Auto-select the first annotation if available
+        if (buckets.length > 0 && buckets[0].length > 0) {
+          setActiveAnnotation(0)
+        }
+
+        setAggregatedAnnotations(buckets)
+      },
+      error: function(error: any) {
+        console.error('Error parsing CSV:', error)
+      }
     })
-    // console.log(buckets)
-    setAggregatedAnnotations(buckets)
-    }
+  }
 
   const currentAnnotationComments =
     activeAnnotation === -1
       ? aggregatedAnnotations.flat().flatMap(annotation => annotation.selections)
       : aggregatedAnnotations[activeAnnotation]
         ?.flatMap(annotation => annotation.selections) ?? []
-
-  const generateRandomData = () => {
-    const numQuestions = 10
-    const maxAnnotation = 30
-    const minSelectionPerAnnotation = 5
-    const maxSelectionPerAnnotation = 10
-    const imageSize: [number, number] = [410, 270]
-    const pictureRange = 4
-
-    const generatedData = generateCoCreateData(
-      numQuestions,
-      maxAnnotation,
-      minSelectionPerAnnotation,
-      maxSelectionPerAnnotation,
-      imageSize,
-      pictureRange
-    );
-    setAnnotations(generatedData)
-
-    // Create 10 buckets, and assign each annotation to a bucket based on questionId
-    const buckets: Annotation[][] = Array.from({ length: numQuestions }, () => [])
-    generatedData.forEach(annotation => {
-      annotation.selections.forEach(selection => {
-        selection.show = checkForIniitalShowEligibility(selection)
-        selection.uid = Math.random().toString(36).substring(7)
-      })
-      annotation.show = true
-      buckets[annotation.questionId].push(annotation)
-    })
-    // console.log(buckets)
-    setAggregatedAnnotations(buckets)
-  }
-
-  useEffect(() => generateRandomData(), [])
 
   const handleSelection = (index: number) => () => {
     const selectionIndex = activeAnnotation === index ? -1 : index
@@ -320,15 +379,16 @@ function App() {
   }
 
   // Calculate pagination values
+  // Comment filtering rules:
+  // 1) No annotation selected  -> show all comments
+  // 2) Annotation selected, no selection drawn -> show all comments for that annotation
+  // 3) Annotation selected, selection drawn -> show comments within that selection
   const filteredComments = currentAnnotationComments
-    .filter((selection) => selection.comment !== '' && (selection.aestheticValue !== null || selection.functionValue !== null))
-    .filter((selection) => selection.show)
+    // Respect per-selection visibility (search toggles)
+    .filter((selection) => selection.show !== false)
     .filter((selection) => {
-      // If there's an active selection, only show comments for selections contained within it
-      if (activeSelection) {
-        return isSelectionContained(activeSelection, selection);
-      }
-      return true;
+      if (!activeSelection) return true
+      return isSelectionContained(activeSelection, selection)
     });
 
   // Calculate feedback counts
@@ -444,20 +504,25 @@ function App() {
                   }
 
                   {aggregatedAnnotations
-                    .filter(annotation => annotation[0]?.show)
-                    .map((annotation, questionIndex) =>  {
-                    return (
+                    .map((annotation, originalIndex) => {
+                      // Only show if annotation has items and is marked to show
+                      if (!annotation || annotation.length === 0 || !annotation[0]?.show) {
+                        return null;
+                      }
+                      return { annotation, originalIndex };
+                    })
+                    .filter((item): item is { annotation: Annotation[]; originalIndex: number } => item !== null)
+                    .map(({ annotation, originalIndex }) => (
                       <SelectionThumbnail
-                        key={questionIndex}
+                        key={originalIndex}
                         annotations={annotation}
-                        width={410}
-                        height={270}
-                        onClick={handleSelection(questionIndex)}
-                        isActive={activeAnnotation === questionIndex}
+                        width={annotation[0]?.width || 410}
+                        height={annotation[0]?.height || 270}
+                        onClick={handleSelection(originalIndex)}
+                        isActive={activeAnnotation === originalIndex}
                         showHeatmap={showThumbnailHeatmap}
                       />
-                    );
-                  })}
+                    ))}
                 </div>
               </div>
 
@@ -513,10 +578,14 @@ function App() {
                     <div className="flex justify-center items-center w-[100%] lg:w-[80%]">
                       {/* <div className="flex flex-col items-center"> */}
                         <Canvas
-                          annotations={aggregatedAnnotations[activeAnnotation]}
+                          annotations={aggregatedAnnotations[activeAnnotation] || []}
                           activeComment={activeComment}
-                          canvasWidth={410}
-                          canvasHeight={270}
+                          canvasWidth={
+                            aggregatedAnnotations[activeAnnotation]?.[0]?.width || 723
+                          }
+                          canvasHeight={
+                            aggregatedAnnotations[activeAnnotation]?.[0]?.height || 534
+                          }
                           viewMode={selectedViewMode}
                           onSelectionCreated={handleSelectionCreated}
                           onSelectionCleared={handleSelectionCleared}
@@ -722,7 +791,7 @@ function App() {
                 <CardHeader className='flex flex-row rounded-t-xl m-2 justify-between items-baseline mb-2 pb-3 border-b-2 bg-white'>
                   <CardTitle>Feedback Comments</CardTitle>
                   <CardDescription className="text-gray-400">
-                    Total Comments: {currentAnnotationComments.length}
+                    Total Comments: {filteredComments.length}
                   </CardDescription>
                 </CardHeader>
 

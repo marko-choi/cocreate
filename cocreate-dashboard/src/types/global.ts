@@ -16,6 +16,8 @@ export interface Selection {
 export interface SelectionDto {
   start: Point;
   end: Point;
+  unscaledStart?: Point;
+  unscaledEnd?: Point;
   functionValue: 'good' | 'bad' | '';
   aestheticValue: 'good' | 'bad' | '';
   comment: string;
@@ -35,21 +37,24 @@ export interface Annotation {
   image: string; // this is in base64
   imagePath: string;
   scaleFactor: number;
+  width?: number;
+  height?: number;
   show?: boolean;
 }
 
 export interface AnnotationsDto {
-  
+
   // Qualtrics Metadata
-  StartDate: string;
-  EndDate: string;
-  Status: string;
-  Progress: string;
-  RecordedDate: string;
-  ResponseId: string;
-  
+  StartDate?: string;
+  EndDate?: string;
+  Status?: string;
+  Progress?: string;
+  RecordedDate?: string;
+  ResponseId?: string;
+
   // Cocreate Data
   questionId: string;
   selectionsData: string;
   image: string;
+  metadata: string;
 }

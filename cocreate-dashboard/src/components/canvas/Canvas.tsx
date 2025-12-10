@@ -511,19 +511,57 @@ const Canvas = (props: CanvasProps) => {
         display: "inline-block",
       }}
     >
-      <img
-        src={annotations[0].imagePath}
-        alt="Rendering"
-        className="rendering-image overflow-scroll aspect-auto"
-        style={{
+      {annotations.length > 0 && annotations[0]?.imagePath ? (
+        <img
+          src={annotations[0].imagePath}
+          alt="Rendering"
+          className="rendering-image overflow-scroll aspect-auto"
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1,
+          }}
+          onError={(e) => {
+            console.error('Failed to load image:', {
+              imagePath: annotations[0].imagePath,
+              annotations: annotations,
+              error: e
+            })
+          }}
+          onLoad={() => {
+            console.log('Image loaded successfully:', {
+              imagePath: annotations[0].imagePath,
+              width: annotations[0].width,
+              height: annotations[0].height,
+              canvasWidth,
+              canvasHeight
+            })
+          }}
+          crossOrigin="anonymous"
+        />
+      ) : (
+        <div style={{
+          position: 'absolute',
           top: '50%',
           left: '50%',
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
           transform: 'translate(-50%, -50%)',
-        }}
-      />
+          color: '#666',
+          textAlign: 'center',
+          zIndex: 1,
+        }}>
+          {annotations.length === 0 ? 'No annotations loaded' : 'No image path available'}
+          {annotations.length > 0 && (
+            <div style={{ fontSize: '12px', marginTop: '8px' }}>
+              Debug: annotations[0] = {JSON.stringify(annotations[0], null, 2)}
+            </div>
+          )}
+        </div>
+      )}
 
       <canvas
         ref={canvasRef}
