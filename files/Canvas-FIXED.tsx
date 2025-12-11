@@ -171,19 +171,11 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
 
-  // Load any saved selections for this instance on mount
+  // Clear selections from localStorage when component mounts
   useEffect(() => {
-    try {
-      const savedSelectionsRaw = localStorage.getItem(CANVAS_SELECTIONS_KEY);
-      if (!savedSelectionsRaw) return;
-      const parsed = JSON.parse(savedSelectionsRaw);
-      if (parsed && parsed[instanceId]) {
-        setSelections(parsed[instanceId]);
-      }
-    } catch (error) {
-      console.error("[Cocreate] Failed to load saved selections", error);
-    }
-  }, [instanceId]);
+    localStorage.removeItem(CANVAS_SIZE_KEY);
+    localStorage.removeItem(CANVAS_SELECTIONS_KEY);
+  }, []);
 
   // Ensure Qualtrics images remain hidden (for non-first questions)
   useEffect(() => {
@@ -235,10 +227,10 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         setMinimapVisible(false);
       }
     };
-
+    
     // Initial check
     handleResize();
-
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -246,6 +238,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   // Save selections to localStorage whenever they change
   useEffect(() => {
     console.log('[CoCreate] Saving to localStorage - selections count:', selections.length);
+
     // Save canvas size to localStorage
     const currentCocreateCanvasSize = localStorage.getItem(CANVAS_SIZE_KEY);
     const newCocreateCanvasSize = {
@@ -300,7 +293,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     window.dispatchEvent(selectionsEvent);
     console.log('[CoCreate] ✅ Dispatched localStorageUpdated for selections');
 
-  }, [selections, canvasWidth, canvasHeight, imageScaleFactor, instanceId]);
+  }, [selections, instanceId, canvasWidth, canvasHeight, imageScaleFactor]);
 
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
@@ -382,7 +375,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     const waitForImage = () => {
       const loadedImage = instanceRootContainer.querySelector(".rendering-image");
-
+      
       if (!loadedImage) {
         requestAnimationFrame(waitForImage);
         return;
@@ -401,7 +394,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         }
       }
     };
-
+    
     requestAnimationFrame(waitForImage);
   }
 
@@ -432,17 +425,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       console.log("[Cocreate] Scraping image from question body");
       console.log("[Cocreate] Question Body Image: " + questionBodyImage);
       console.log("[Cocreate] Question Body Image Src: " + questionBodyImage.getAttribute("src"));
-
+      
       // CRITICAL FIX: Explicitly hide the original Qualtrics image to prevent duplicates
       questionBodyImage.style.display = 'none';
       questionBodyImage.style.visibility = 'hidden';
-
+      
       setImageSrc(questionBodyImage.getAttribute("src") ?? DEFAULT_IMAGE_SRC);
 
       // Use a more reliable method to wait for the rendering image to be added to the DOM
       const waitForRenderingImage = () => {
         const loadedImage = instanceRootContainer.querySelector(".rendering-image");
-
+        
         if (!loadedImage) {
           console.log("[Cocreate] Waiting for rendering image to be added to DOM");
           requestAnimationFrame(waitForRenderingImage);
@@ -463,7 +456,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           }
         }
       };
-
+      
       // Start polling for the rendering image
       requestAnimationFrame(waitForRenderingImage);
 
@@ -687,30 +680,30 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   // Mobile-specific touch handlers
   const handleTouchStart = (e: React.TouchEvent) => {
     console.log('[CoCreate Mobile] Touch start', { isMobile, isEnteringFeedback, showMobileModal });
-
+    
     // Remove isPanning check - it's a desktop-only feature
     if (!isMobile || isEnteringFeedback) {
       console.log('[CoCreate Mobile] Early return from handleTouchStart');
       return;
     }
-
+    
     // Prevent default to avoid conflicts with Qualtrics or other handlers
     e.preventDefault();
     e.stopPropagation();
-
+    
     const canvas = canvasRef.current;
     if (!canvas) {
       console.log('[CoCreate Mobile] No canvas ref');
       return;
     }
-
+    
     const touch = e.touches[0];
     const rect = canvas.getBoundingClientRect();
     const x = (touch.clientX - rect.left - translate.x) / scale;
     const y = (touch.clientY - rect.top - translate.y) / scale;
-
+    
     console.log('[CoCreate Mobile] Touch coordinates:', { x, y, translate, scale });
-
+    
     // Check if tap is on existing selection
     const tappedIndex = selections.findIndex((sel) => {
       if (isCircularSelection(sel)) {
@@ -723,9 +716,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       }
       return false;
     });
-
+    
     console.log('[CoCreate Mobile] Tapped index:', tappedIndex);
-
+    
     if (tappedIndex >= 0) {
       // Edit existing selection
       console.log('[CoCreate Mobile] Opening existing selection');
@@ -739,9 +732,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const createCircularSelection = (point: Point) => {
     console.log('[CoCreate Mobile] createCircularSelection called', point);
-
+    
     const radius = 30; // 30px radius for mobile circles
-
+    
     const newSelection: CircularSelection = {
       center: {
         x: point.x / imageScaleFactor,
@@ -751,28 +744,28 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       functionValue: undefined,
       comment: undefined,
     };
-
+    
     console.log('[CoCreate Mobile] New selection created:', newSelection);
-
+    
     const newIndex = selections.length;
-
+    
     // Use callback form to ensure we're working with latest state
     setSelections(prev => {
       const updated = [...prev, newSelection];
       console.log('[CoCreate Mobile] Selections updated, count:', updated.length);
       return updated;
     });
-
+    
     setActiveSelectionIndex(newIndex);
     console.log('[CoCreate Mobile] Active selection index set to:', newIndex);
-
+    
     // Use setTimeout to ensure state has updated before showing modal
     // This helps with React state batching issues
     setTimeout(() => {
       console.log('[CoCreate Mobile] Setting showMobileModal to true');
       setShowMobileModal(true);
       setIsEnteringFeedback(true);
-
+      
       // Prevent body scroll
       document.body.classList.add('modal-open');
       console.log('[CoCreate Mobile] Modal state updated. showMobileModal should be true');
@@ -781,7 +774,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const handleMobileSelectionTap = (index: number) => {
     if (!isMobile) return;
-
+    
     setActiveSelectionIndex(index);
     setShowMobileModal(true);
     setIsEnteringFeedback(true);
@@ -790,7 +783,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const handleMobileSave = (feedback: { functionValue: string; comment: string }) => {
     if (activeSelectionIndex === null) return;
-
+    
     setSelections((prev) => {
       const newSelections = [...prev];
       newSelections[activeSelectionIndex] = {
@@ -800,7 +793,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       };
       return newSelections;
     });
-
+    
     setShowMobileModal(false);
     setActiveSelectionIndex(null);
     setIsEnteringFeedback(false);
@@ -809,7 +802,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   const handleMobileDelete = () => {
     if (activeSelectionIndex === null) return;
-
+    
     setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
     setShowMobileModal(false);
     setActiveSelectionIndex(null);
@@ -1455,7 +1448,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           width={canvasWidth}
           height={canvasHeight}
           className="canvas"
-          style={{
+          style={{ 
             cursor: isMobile ? 'default' : (isPanMode ? 'grab' : isEnteringFeedback ? 'default' : 'crosshair'),
             touchAction: isMobile ? 'none' : 'auto'
           }}
@@ -1532,7 +1525,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
             <strong>isMobile:</strong> {String(isMobile)}
           </div>
           <div style={{ marginBottom: '4px' }}>
-            <strong>showModal:</strong> <span style={{
+            <strong>showModal:</strong> <span style={{ 
               color: showMobileModal ? '#4CAF50' : '#f44336',
               fontWeight: 'bold'
             }}>{String(showMobileModal)}</span>
@@ -1549,17 +1542,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           <div style={{ marginBottom: '8px', paddingTop: '8px', borderTop: '1px solid #666' }}>
             <strong>Width:</strong> {window.innerWidth}px
           </div>
-          <button
+          <button 
             onClick={() => {
               console.log('🔴 FORCE MODAL BUTTON CLICKED');
               console.log('  Before - showMobileModal:', showMobileModal);
               console.log('  Before - activeSelectionIndex:', activeSelectionIndex);
-
+              
               setShowMobileModal(true);
               setActiveSelectionIndex(0);
               setIsEnteringFeedback(true);
               document.body.classList.add('modal-open');
-
+              
               setTimeout(() => {
                 console.log('  After (50ms) - showMobileModal should be true');
                 console.log('  Modal in DOM:', !!document.querySelector('.mobile-modal-backdrop'));
@@ -1580,9 +1573,9 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           >
             🚨 FORCE MODAL
           </button>
-          <div style={{
-            marginTop: '8px',
-            fontSize: '9px',
+          <div style={{ 
+            marginTop: '8px', 
+            fontSize: '9px', 
             color: '#999',
             paddingTop: '8px',
             borderTop: '1px solid #666'
@@ -1599,16 +1592,16 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       {isMobile ? (
         /* MOBILE: Full-screen modal */
         <>
-          {console.log('[CoCreate Mobile] Render check:', {
-            showMobileModal,
+          {console.log('[CoCreate Mobile] Render check:', { 
+            showMobileModal, 
             activeSelectionIndex,
             selectionsLength: selections.length,
             hasSelection: activeSelectionIndex !== null && selections[activeSelectionIndex] !== undefined
           })}
           <MobileFeedbackModal
             visible={showMobileModal}
-            selection={activeSelectionIndex !== null && selections[activeSelectionIndex]
-              ? selections[activeSelectionIndex]
+            selection={activeSelectionIndex !== null && selections[activeSelectionIndex] 
+              ? selections[activeSelectionIndex] 
               : { center: { x: 0, y: 0 }, radius: 0 }}
             onSave={handleMobileSave}
             onDelete={handleMobileDelete}

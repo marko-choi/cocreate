@@ -1,4 +1,40 @@
 /**
+ * Fetch and parse CSV configuration from a URL
+ * @param {string} csvUrl - The URL of the CSV file
+ * @returns {Promise<Object>} - A promise that resolves to the parsed configuration object
+ */
+async function fetchCsvConfig(csvUrl) {
+  try {
+    console.log('[Qualtrics Loader] Fetching CSV config from:', csvUrl);
+    const response = await fetch(csvUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const csvText = await response.text();
+
+    // Parse CSV content
+    const lines = csvText.trim().split('\n');
+    const config = {};
+
+    lines.forEach(line => {
+      const [key, value] = line.split(',').map(item => item.trim());
+      config[key] = value.toLowerCase() === 'true';
+    });
+
+    console.log('[Qualtrics Loader] Parsed CSV config:', config);
+    return config;
+  } catch (error) {
+    console.error('[Qualtrics Loader] Error fetching CSV config:', error);
+    // Return default configuration if CSV fetch fails
+    return {
+      showFunctionValue: true,
+      showAestheticValue: true,
+      showComment: true
+    };
+  }
+}
+
+/**
  * Load a resource from a URL only if it is not already loaded
  * @param {string} url - The URL of the resource to load
  * @param {string} resourceType - The type of resource to load
@@ -33,17 +69,29 @@ function loadResource(url, resourceType) {
   });
 }
 
-async function loadReactApp(qualtricsSurveyEngine) {
+async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	const qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-D6HOnyYW.css'
 	];
 
+	// Fetch CSV configuration if URL is provided
+	let feedbackConfig = {
+		showFunctionValue: true,
+		showAestheticValue: true,
+		showComment: true
+	};
+
+	if (csvConfigUrl) {
+		feedbackConfig = await fetchCsvConfig(csvConfigUrl);
+	}
+
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
 	console.log("[Qualtrics Loader] QuestionData:", questionData)
 	console.log("[Qualtrics Loader] QuestionContainer:", questionContainer)
+	console.log("[Qualtrics Loader] Feedback config:", feedbackConfig)
 
 	if (questionContainer) {
 		questionContainer.style.overflow = 'visible';
@@ -88,12 +136,44 @@ async function loadReactApp(qualtricsSurveyEngine) {
 	}
 
 	if (questionContainer) {
-		// Hide question image
+		// Hide question image - with comprehensive selectors and dual hiding method
 		const questionImage = document.querySelector('.QuestionText img')
 		if (questionImage) {
 			questionImage.style.display = 'none';
+			questionImage.style.visibility = 'hidden';
 			questionImage.style.maxHeight = '85vh';
 			console.log("[Qualtrics Loader] Updated question image")
+		}
+
+		// Hide all question content images
+		const questionContentImages = document.querySelectorAll('.question-content img')
+		questionContentImages.forEach(img => {
+			img.style.display = 'none';
+			img.style.visibility = 'hidden';
+			console.log("[Qualtrics Loader] Updated question content image")
+		});
+
+		// Hide question image - inside text editor
+		const textEditorImages = document.querySelectorAll('.question-display-wrapper img')
+		textEditorImages.forEach(img => {
+			img.style.display = 'none';
+			img.style.visibility = 'hidden';
+			console.log("[Qualtrics Loader] Updated image inside text editor")
+		});
+
+		// Hide additional question text images (for non-first questions)
+		const questionTextImages = document.querySelectorAll('.QuestionText img')
+		questionTextImages.forEach(img => {
+			img.style.display = 'none';
+			img.style.visibility = 'hidden';
+			console.log("[Qualtrics Loader] Updated additional QuestionText image")
+		});
+
+		// Hide question text area
+		const questionTextArea = questionContainer.querySelector('.question-content textarea')
+		if (questionTextArea) {
+			questionTextArea.style.display = 'none';
+			console.log("[Qualtrics Loader] Updated question text area")
 		}
 
 		let appContainer = document.createElement('div');
@@ -112,6 +192,10 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		}
 
 		try {
+			// Set feedback configuration on global window object for React app to access
+			window.cocreateFeedbackConfig = feedbackConfig;
+			console.log("[Qualtrics Loader] Set global feedback config:", window.cocreateFeedbackConfig);
+
 			console.log("[Qualtrics Loader] loading script")
 			await loadResource(qualtricsResources[0], 'script'); // Load React App
 			console.log("[Qualtrics Loader] loading css")
@@ -121,6 +205,86 @@ async function loadReactApp(qualtricsSurveyEngine) {
 		}
 
 		console.log('[Qualtrics Loader] React app loaded!');
+
+		console.log('[Qualtrics Loader] React app loaded!');
+
+// ============================================
+// ADD EVENT LISTENERS FOR REAL-TIME DATA SYNC
+// ============================================
+function setupDataSync(qualtricsSurveyEngine) {
+	const questionData = qualtricsSurveyEngine.getQuestionInfo();
+	const questionContainer = qualtricsSurveyEngine.getQuestionContainer();
+	const questionId = questionData.QuestionID;
+	
+	console.log(`[Qualtrics Loader][${questionId}] Setting up data sync`);
+	
+	// Get image URL
+	let textEditorImageContainer = ".QuestionText img";
+	let imageLink = "";
+	let image = document.querySelector(textEditorImageContainer);
+	if (image) {
+		imageLink = image.src;
+	}
+	
+	// Function to update the textarea with new data
+	function updateTextArea(newData) {
+		const questionTextAreas = questionContainer.querySelectorAll('.question-content textarea');
+		if (questionTextAreas && questionTextAreas.length > 0) {
+			let stringifiedData = JSON.stringify(newData);
+			console.log(`[Qualtrics Loader][${questionId}] Updating textarea with data`);
+			
+			questionTextAreas.forEach(textarea => {
+				textarea.value = stringifiedData;
+				
+				// Trigger events so Qualtrics recognizes the change
+				const inputEvent = new Event('input', { bubbles: true });
+				const changeEvent = new Event('change', { bubbles: true });
+				textarea.dispatchEvent(inputEvent);
+				textarea.dispatchEvent(changeEvent);
+			});
+		}
+	}
+	
+	// Listen for localStorage updates from Canvas
+	window.addEventListener('localStorageUpdated', function(e) {
+		if (e.detail && (e.detail.key === 'cocreate-canvasSelections' || e.detail.key === 'cocreate-canvasSize')) {
+			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
+			
+			// Get current data from localStorage
+			const selectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections') || '{}');
+			const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize') || '{}');
+			
+			// Prepare response data
+			const responseData = {
+				image: imageLink,
+				selectionsData: selectionsData,
+				metadata: metadata
+			};
+			
+			// Update textarea
+			updateTextArea(responseData);
+		}
+	});
+	
+	// Also do initial update
+	const initialSelectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections') || '{}');
+	const initialMetadata = JSON.parse(localStorage.getItem('cocreate-canvasSize') || '{}');
+	const initialData = {
+		image: imageLink,
+		selectionsData: initialSelectionsData,
+		metadata: initialMetadata
+	};
+	updateTextArea(initialData);
+	
+	console.log(`[Qualtrics Loader][${questionId}] Data sync setup complete`);
+}
+
+// Call the setup function
+setupDataSync(qualtricsSurveyEngine);
+// ============================================
+// END EVENT LISTENERS
+// ============================================
+
 	} else {
 		console.error("[Qualtrics Loader] Unable to find the QuestionBody container.")
 	}

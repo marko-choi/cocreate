@@ -171,6 +171,7 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 			console.log("[Qualtrics Loader] questionImage", questionImage)
 			if (questionImage) {
 				questionImage.style.display = 'none';
+				questionImage.style.visibility = 'hidden';
 				// questionImage.style.maxHeight = '85vh';
 				console.log("[Qualtrics Loader] Updated question image")
 			}
@@ -179,8 +180,17 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 			const textEditorImage = questionContainer.querySelector('.question-display-wrapper img')
 			if (textEditorImage) {
 				textEditorImage.style.display = 'none';
+				textEditorImage.style.visibility = 'hidden';
 				console.log("[Qualtrics Loader] Updated image inside text editor")
 			}
+
+			// Hide additional question text images (for non-first questions)
+			const questionTextImages = questionContainer.querySelectorAll('.QuestionText img')
+			questionTextImages.forEach(img => {
+				img.style.display = 'none';
+				img.style.visibility = 'hidden';
+				console.log("[Qualtrics Loader] Updated additional QuestionText image")
+			});
 
 			// Hide question text area
 			const questionTextArea = questionContainer.querySelector('.question-content textarea')
