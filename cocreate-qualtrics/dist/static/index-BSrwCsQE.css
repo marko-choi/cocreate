@@ -1,0 +1,669 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Roboto:ital,wght@0,100..900;1,100..900&display=swap');
+
+* {
+  box-sizing: border-box;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+}
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 20px;
+  /* background: #111; */
+}
+h1 {
+  text-align: center;
+  margin-bottom: 20px;
+}.canvas-shell {
+  position: relative;
+  display: inline-block;
+}
+
+.canvas-container {
+  position: relative ;
+  /* width: 800px;
+  height: 534px; */
+  width: 100%;
+  /* height: 82.5vh; */
+  margin: 10px;
+  display: block;
+  /* border: 2px solid red; */
+  overflow: hidden; /* clip image/canvas overflow */
+}
+
+.rendering-image {
+  position: absolute;
+  /* top: 0;
+  left: 0; */
+  width: 100%;
+  max-height: 80vh;
+  /* object-fit: cover; */
+  z-index: 0;
+}
+
+.canvas {
+  position: absolute;
+  /* top: 0;
+  left: 0; */
+  z-index: 1;
+  cursor: crosshair;
+  /* border: 2px solid blue; */
+}
+
+/* New: transform stage that is scaled/translated */
+.canvas-stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  z-index: 0;
+}
+
+/* New: Zoom & Pan toolbar */
+.zoom-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 4px;
+  z-index: 1002;
+}
+
+.zoom-toolbar .MuiIconButton-root {
+  transition: box-shadow 0.2s ease;
+}
+
+.zoom-toolbar .MuiIconButton-root:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Toolbar button class-based coloring (replaces MUI color prop) */
+.zoom-toolbar .toolbar-btn.toolbar-btn--active {
+  color: #1976d2; /* MUI primary.main default */
+}
+.zoom-toolbar .toolbar-btn.toolbar-btn--active:hover {
+  color: #1565c0;
+}
+
+.zoom-toolbar-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1001;
+}
+
+/* New: Minimap */
+.minimap {
+  position: absolute;
+  top: 56px; /* below toolbar */
+  right: 8px;
+  border: 1px solid #ccc;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 4px;
+  overflow: hidden;
+  z-index: 1000;
+  pointer-events: none; /* non-interactive for now */
+}
+
+.minimap-viewport {
+  position: absolute;
+  border: 2px solid #1976d2;
+  background: rgba(25, 118, 210, 0.15);
+  box-sizing: border-box;
+}
+
+/* External toggle controls positioned at right side of original image area */
+.canvas-top-right-controls {
+  position: absolute;
+  top: 3.5%;
+  right: -24px;
+  /* transform: translateY(-50%); */
+  display: flex;
+  gap: 6px;
+  z-index: 1100;
+}
+
+.canvas-top-right-controls .MuiIconButton-root {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 4px !important;
+  width: 32px;
+  height: 32px;
+}
+
+.canvas-top-right-controls .MuiIconButton-root:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.canvas-top-right-controls .MuiIconButton-root::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 9999;
+}
+
+.canvas-top-right-controls .MuiIconButton-root:hover::after {
+  opacity: 1;
+}
+
+
+.selection-tooltip-box {
+  position: absolute;
+  top: -15px;
+  right: -5px;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+  z-index: 10000; /* ensure above canvas container */
+}
+
+.edit-button, .delete-button {
+  padding: 14px !important;
+  cursor: pointer;
+  background: white !important;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+}
+
+.edit-button {
+  color: green !important;
+}
+
+.delete-button {
+  color: red !important;
+}
+
+.edit-button:hover, .delete-button:hover {
+  background: #eee !important;
+}
+
+/* ========================================
+   MOBILE-SPECIFIC STYLES
+   ======================================== */
+
+/* Mobile viewport adjustments */
+@media (max-width: 768px) {
+  .canvas-container {
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+  }
+
+  .canvas {
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    cursor: default;
+  }
+
+  .rendering-image {
+    max-height: 100vh;
+  }
+
+  /* Hide desktop-only UI elements on mobile */
+  .zoom-toolbar {
+    display: none !important;
+  }
+
+  .minimap {
+    display: none !important;
+  }
+
+  .canvas-top-right-controls {
+    display: none !important;
+  }
+
+  .selection-tooltip-box {
+    display: none !important;
+  }
+
+  /* Circular selection styles for mobile */
+  .mobile-selection-circle {
+    border: 3px solid #1976d2;
+    border-radius: 50%;
+    background: rgba(25, 118, 210, 0.1);
+    pointer-events: none;
+  }
+
+  .mobile-selection-circle.completed {
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.2);
+  }
+
+  .mobile-selection-circle.active {
+    border-color: #1976d2;
+    background: rgba(25, 118, 210, 0.15);
+  }
+}
+
+/* Tablet adjustments (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .canvas-container {
+    width: 100%;
+    height: 90vh;
+  }
+
+  /* Show simplified toolbar on tablets */
+  .zoom-toolbar {
+    scale: 0.9;
+  }
+
+  /* Slightly larger touch targets */
+  .selection-tooltip-box .MuiIconButton-root {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* Small phones (< 375px) */
+@media (max-width: 375px) {
+  .canvas-container {
+    height: 100vh;
+  }
+}
+
+/* Landscape mode on mobile */
+@media (orientation: landscape) and (max-height: 500px) {
+  .canvas-container {
+    height: 100vh;
+  }
+
+  .rendering-image {
+    max-height: 100vh;
+  }
+}
+
+/* Safe area support for iOS devices with notches */
+@supports (padding: env(safe-area-inset-top)) {
+  @media (max-width: 768px) {
+    .canvas-container {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+      padding-left: env(safe-area-inset-left);
+      padding-right: env(safe-area-inset-right);
+    }
+  }
+}
+
+/* Prevent body scroll when modal is open (mobile) */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  @media (max-width: 768px) {
+    .mobile-selection-circle {
+      border-width: 4px;
+    }
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-selection-circle {
+    transition: none;
+  }
+}
+
+/* Touch target size enforcement for accessibility */
+@media (max-width: 768px) {
+  /* Ensure all interactive elements meet minimum touch target size */
+  button,
+  .MuiIconButton-root {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}
+/**
+ * Mobile Feedback Modal Styles
+ * Provides a full-screen, touch-friendly feedback interface
+ */
+
+/* Backdrop overlay */
+.mobile-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  display: flex;
+  align-items: flex-end;
+  animation: mobile-modal-backdrop-fade-in 0.2s ease-out;
+}
+
+@keyframes mobile-modal-backdrop-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Main modal container */
+.mobile-modal {
+  background: white;
+  width: 100%;
+  max-height: 85vh;
+  border-radius: 20px 20px 0 0;
+  display: flex;
+  flex-direction: column;
+  animation: mobile-modal-slide-up 0.3s ease-out;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+}
+
+@keyframes mobile-modal-slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Handle bar for drag affordance */
+.mobile-modal-handle {
+  width: 40px;
+  height: 4px;
+  background: #ccc;
+  border-radius: 2px;
+  margin: 12px auto 8px;
+  flex-shrink: 0;
+}
+
+/* Header */
+.mobile-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e0e0e0;
+  flex-shrink: 0;
+}
+
+.mobile-modal-header h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0;
+  color: #333;
+}
+
+.mobile-modal-close {
+  background: none;
+  border: none;
+  font-size: 32px;
+  line-height: 1;
+  color: #666;
+  cursor: pointer;
+  padding: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.mobile-modal-close:active {
+  background-color: #f0f0f0;
+}
+
+/* Content area */
+.mobile-modal-content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 20px;
+}
+
+/* Section within content */
+.mobile-modal-section {
+  margin-bottom: 24px;
+}
+
+.mobile-modal-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Label */
+.mobile-modal-label {
+  display: block;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+}
+
+/* Button group for options */
+.mobile-modal-button-group {
+  display: flex;
+  gap: 12px;
+}
+
+/* Option button */
+.mobile-modal-option {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 12px;
+  background: #f5f5f5;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 80px;
+}
+
+.mobile-modal-option:active {
+  transform: scale(0.95);
+}
+
+.mobile-modal-option.active {
+  background: #e3f2fd;
+  border-color: #1976d2;
+  color: #1976d2;
+}
+
+.mobile-modal-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.mobile-modal-option-label {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Textarea */
+.mobile-modal-textarea {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  font-size: 16px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  resize: vertical;
+  transition: border-color 0.2s;
+}
+
+.mobile-modal-textarea:focus {
+  outline: none;
+  border-color: #1976d2;
+}
+
+.mobile-modal-textarea::placeholder {
+  color: #999;
+}
+
+/* Footer actions */
+.mobile-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 20px;
+  border-top: 1px solid #e0e0e0;
+  background: white;
+  flex-shrink: 0;
+  /* Add safe area padding for iOS devices with home indicator */
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+
+/* Action buttons */
+.mobile-modal-button {
+  flex: 1;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: 48px;
+}
+
+.mobile-modal-button:active {
+  transform: scale(0.98);
+}
+
+.mobile-modal-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.mobile-modal-button:disabled:active {
+  transform: none;
+}
+
+/* Delete button */
+.mobile-modal-button-delete {
+  background: white;
+  color: #f44336;
+  border: 2px solid #f44336;
+}
+
+.mobile-modal-button-delete:active {
+  background: #fef5f5;
+}
+
+/* Save button */
+.mobile-modal-button-save {
+  background: #1976d2;
+  color: white;
+}
+
+.mobile-modal-button-save:active {
+  background: #1565c0;
+}
+
+/* Prevent body scroll when modal is open */
+body.modal-open {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .mobile-modal {
+    max-width: 600px;
+    margin: 0 auto;
+    border-radius: 20px;
+    max-height: 70vh;
+  }
+
+  .mobile-modal-backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+}
+
+/* Small phone adjustments */
+@media (max-width: 375px) {
+  .mobile-modal-button-group {
+    flex-direction: column;
+  }
+
+  .mobile-modal-option {
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: 60px;
+  }
+
+  .mobile-modal-emoji {
+    font-size: 24px;
+  }
+}
+
+/* Landscape mode adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-modal {
+    max-height: 95vh;
+  }
+
+  .mobile-modal-content {
+    padding: 16px 20px;
+  }
+
+  .mobile-modal-section {
+    margin-bottom: 16px;
+  }
+
+  .mobile-modal-textarea {
+    min-height: 60px;
+  }
+}
+
+/* Accessibility: High contrast mode */
+@media (prefers-contrast: high) {
+  .mobile-modal-option {
+    border-width: 3px;
+  }
+
+  .mobile-modal-textarea {
+    border-width: 3px;
+  }
+}
+
+/* Accessibility: Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .mobile-modal,
+  .mobile-modal-backdrop,
+  .mobile-modal-option,
+  .mobile-modal-button {
+    animation: none;
+    transition: none;
+  }
+}

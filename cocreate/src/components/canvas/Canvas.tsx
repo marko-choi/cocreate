@@ -119,6 +119,8 @@ const MAX_IMAGE_WIDTH = 800;
 
 const CANVAS_SELECTIONS_KEY = "cocreate-canvasSelections";
 const CANVAS_SIZE_KEY = "cocreate-canvasSize";
+const QUESTION_IDS_KEY = "cocreate-questionIds";
+const IMAGE_MAP_KEY = "cocreate-imageMap";
 
 export interface CanvasProps {
   instanceId: InstanceId;
@@ -289,6 +291,28 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       : JSON.stringify(newCocreateCanvasSelections);
 
     localStorage.setItem(CANVAS_SELECTIONS_KEY, newCocreateCanvasSelectionsString);
+
+    // Track all question ids encountered so Qualtrics can aggregate
+    try {
+      const currentQuestionIdsRaw = localStorage.getItem(QUESTION_IDS_KEY);
+      const currentQuestionIds = currentQuestionIdsRaw ? JSON.parse(currentQuestionIdsRaw) : [];
+      const updatedQuestionIds = Array.from(new Set([...currentQuestionIds, instanceId]));
+      localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(updatedQuestionIds));
+    } catch (error) {
+      console.warn("[CoCreate] Failed to update questionIds", error);
+    }
+
+    // Track image src per question id for downstream extraction
+    try {
+      if (imageSrc) {
+        const currentImageMapRaw = localStorage.getItem(IMAGE_MAP_KEY);
+        const currentImageMap = currentImageMapRaw ? JSON.parse(currentImageMapRaw) : {};
+        const updatedImageMap = { ...currentImageMap, [instanceId]: imageSrc };
+        localStorage.setItem(IMAGE_MAP_KEY, JSON.stringify(updatedImageMap));
+      }
+    } catch (error) {
+      console.warn("[CoCreate] Failed to update image map", error);
+    }
 
     // CRITICAL: Dispatch custom event to notify Qualtrics loader
     const selectionsEvent = new CustomEvent('localStorageUpdated', {
