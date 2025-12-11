@@ -292,12 +292,32 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 		}
 	}
 
+	// Keep Qualtrics Embedded Data in sync so multiple questions aggregate correctly
+	function syncEmbeddedData(newData) {
+		try {
+			const stringifiedQuestionIds = JSON.stringify(newData?.questionIds ?? []);
+			const stringifiedImageMap = JSON.stringify(newData?.image ?? {});
+			const stringifiedSelections = JSON.stringify(newData?.selectionsData ?? {});
+			const stringifiedMetadata = JSON.stringify(newData?.metadata ?? {});
+
+			qualtricsSurveyEngine.setEmbeddedData('questionIds', stringifiedQuestionIds);
+			qualtricsSurveyEngine.setEmbeddedData('image', stringifiedImageMap);
+			qualtricsSurveyEngine.setEmbeddedData('selectionsData', stringifiedSelections);
+			qualtricsSurveyEngine.setEmbeddedData('metadata', stringifiedMetadata);
+
+			console.log(`[Qualtrics Loader][${questionId}] Synced embedded data`);
+		} catch (error) {
+			console.warn(`[Qualtrics Loader][${questionId}] Failed to sync embedded data`, error);
+		}
+	}
+
 	// Add localStorage event listener to update responseData and questionTextArea
 	window.addEventListener('storage', function(e) {
 		if (e.key === CANVAS_SELECTIONS_KEY || e.key === CANVAS_SIZE_KEY) {
 			console.log(`[Qualtrics Loader][${questionId}] localStorage changed:`, e.key);
 			responseData = buildResponseData();
 			updateTextArea(responseData);
+			syncEmbeddedData(responseData);
 		}
 	});
 
@@ -319,6 +339,7 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 
 			responseData = buildResponseData(overrides);
 			updateTextArea(responseData);
+			syncEmbeddedData(responseData);
 		}
 	});
 
@@ -339,6 +360,7 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 
 	// Initial update of the textarea
 	updateTextArea(responseData);
+	syncEmbeddedData(responseData);
 }
 
 function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) { }
