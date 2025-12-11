@@ -14924,10 +14924,19 @@ const Canvas = (props) => {
     }) : JSON.stringify(newCocreateCanvasSelections);
     localStorage.setItem(CANVAS_SELECTIONS_KEY, newCocreateCanvasSelectionsString);
     try {
+      const mergedSelections = JSON.parse(newCocreateCanvasSelectionsString) || {};
+      const mergedSizes = JSON.parse(newCocreateCanvasSizeString) || {};
       const currentQuestionIdsRaw = localStorage.getItem(QUESTION_IDS_KEY);
       const currentQuestionIds = currentQuestionIdsRaw ? JSON.parse(currentQuestionIdsRaw) : [];
-      const updatedQuestionIds = Array.from(/* @__PURE__ */ new Set([...currentQuestionIds, instanceId]));
-      localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(updatedQuestionIds));
+      const updatedQuestionIds = Array.from(new Set([
+        ...currentQuestionIds,
+        ...Object.keys(mergedSelections),
+        ...Object.keys(mergedSizes),
+        instanceId
+      ].filter(Boolean)));
+      const finalQuestionIds = updatedQuestionIds.length > 0 ? updatedQuestionIds : currentQuestionIds;
+      localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(finalQuestionIds));
+      console.log("[CoCreate] Updated questionIds:", finalQuestionIds);
     } catch (error) {
       console.warn("[CoCreate] Failed to update questionIds", error);
     }

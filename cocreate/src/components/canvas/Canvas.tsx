@@ -294,10 +294,21 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     // Track all question ids encountered so Qualtrics can aggregate
     try {
+      const mergedSelections = JSON.parse(newCocreateCanvasSelectionsString) || {};
+      const mergedSizes = JSON.parse(newCocreateCanvasSizeString) || {};
       const currentQuestionIdsRaw = localStorage.getItem(QUESTION_IDS_KEY);
       const currentQuestionIds = currentQuestionIdsRaw ? JSON.parse(currentQuestionIdsRaw) : [];
-      const updatedQuestionIds = Array.from(new Set([...currentQuestionIds, instanceId]));
-      localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(updatedQuestionIds));
+      const updatedQuestionIds = Array.from(new Set([
+        ...currentQuestionIds,
+        ...Object.keys(mergedSelections),
+        ...Object.keys(mergedSizes),
+        instanceId
+      ].filter(Boolean)));
+
+      // Only persist if we actually have ids; otherwise preserve existing
+      const finalQuestionIds = updatedQuestionIds.length > 0 ? updatedQuestionIds : currentQuestionIds;
+      localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(finalQuestionIds));
+      console.log("[CoCreate] Updated questionIds:", finalQuestionIds);
     } catch (error) {
       console.warn("[CoCreate] Failed to update questionIds", error);
     }
