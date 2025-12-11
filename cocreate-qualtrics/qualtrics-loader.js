@@ -246,6 +246,7 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 	const buildResponseData = (overrides = {}) => {
 		const selectionsData = overrides.selectionsData ?? safeParse(localStorage.getItem(CANVAS_SELECTIONS_KEY), {});
 		const metadata = overrides.metadata ?? safeParse(localStorage.getItem(CANVAS_SIZE_KEY), {});
+		const imageMapFromStorage = overrides.imageMap ?? safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
 		const existingQuestionIds = safeParse(localStorage.getItem(QUESTION_IDS_KEY), []);
 		const aggregatedQuestionIds = Array.from(new Set([
 			...existingQuestionIds,
@@ -253,8 +254,12 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 			...Object.keys(metadata),
 			questionId
 		]));
-		const existingImageMap = safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
-		const imageMap = { ...existingImageMap, [questionId]: imageLink };
+
+		// Only add the question image if we actually found one, so we don't overwrite
+		// a valid image entry with an undefined/empty value from another question.
+		const imageMap = imageLink
+			? { ...imageMapFromStorage, [questionId]: imageLink }
+			: { ...imageMapFromStorage };
 
 		localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(aggregatedQuestionIds));
 		localStorage.setItem(IMAGE_MAP_KEY, JSON.stringify(imageMap));
@@ -313,9 +318,19 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 
 	// Add localStorage event listener to update responseData and questionTextArea
 	window.addEventListener('storage', function(e) {
-		if (e.key === CANVAS_SELECTIONS_KEY || e.key === CANVAS_SIZE_KEY) {
+		if (e.key === CANVAS_SELECTIONS_KEY || e.key === CANVAS_SIZE_KEY || e.key === IMAGE_MAP_KEY || e.key === QUESTION_IDS_KEY) {
 			console.log(`[Qualtrics Loader][${questionId}] localStorage changed:`, e.key);
-			responseData = buildResponseData();
+			const overrides = {};
+
+			if (e.key === CANVAS_SELECTIONS_KEY) {
+				overrides.selectionsData = safeParse(e.newValue, {});
+			} else if (e.key === CANVAS_SIZE_KEY) {
+				overrides.metadata = safeParse(e.newValue, {});
+			} else if (e.key === IMAGE_MAP_KEY) {
+				overrides.imageMap = safeParse(e.newValue, {});
+			}
+
+			responseData = buildResponseData(overrides);
 			updateTextArea(responseData);
 			syncEmbeddedData(responseData);
 		}
@@ -323,7 +338,7 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 
 	// Also listen for custom events that might be dispatched from the same window
 	window.addEventListener('localStorageUpdated', function(e) {
-		if (e.detail && (e.detail.key === CANVAS_SELECTIONS_KEY || e.detail.key === CANVAS_SIZE_KEY)) {
+		if (e.detail && (e.detail.key === CANVAS_SELECTIONS_KEY || e.detail.key === CANVAS_SIZE_KEY || e.detail.key === IMAGE_MAP_KEY || e.detail.key === QUESTION_IDS_KEY)) {
 			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
 
 			const overrides = {};
@@ -333,6 +348,10 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 					: (e.detail.value || {});
 			} else if (e.detail.key === CANVAS_SIZE_KEY) {
 				overrides.metadata = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, {})
+					: (e.detail.value || {});
+			} else if (e.detail.key === IMAGE_MAP_KEY) {
+				overrides.imageMap = typeof e.detail.value === 'string'
 					? safeParse(e.detail.value, {})
 					: (e.detail.value || {});
 			}
