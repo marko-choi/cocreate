@@ -69,6 +69,56 @@ function loadResource(url, resourceType) {
   });
 }
 
+const CANVAS_SELECTIONS_KEY = 'cocreate-canvasSelections';
+const CANVAS_SIZE_KEY = 'cocreate-canvasSize';
+const QUESTION_IDS_KEY = 'cocreate-questionIds';
+const IMAGE_MAP_KEY = 'cocreate-imageMap';
+const SURVEY_SESSION_KEY = 'cocreate-surveySessionId';
+
+const safeParse = (value, fallback) => {
+  try {
+    if (!value) return fallback;
+    return JSON.parse(value);
+  } catch (error) {
+    console.warn('[Qualtrics Loader] Failed to parse value, using fallback', error);
+    return fallback;
+  }
+};
+
+const getSurveySessionId = (qualtricsSurveyEngine) => {
+  try {
+    if (qualtricsSurveyEngine?.getSurveyID) return qualtricsSurveyEngine.getSurveyID();
+    const questionInfo = qualtricsSurveyEngine?.getQuestionInfo?.();
+    if (questionInfo?.SurveyID) return questionInfo.SurveyID;
+    if (typeof window !== 'undefined') {
+      return `${window.location.pathname}${window.location.search}`;
+    }
+  } catch (error) {
+    console.warn('[Qualtrics Loader] Unable to derive survey session id', error);
+  }
+  return 'unknown-session';
+};
+
+const ensureSurveySession = (qualtricsSurveyEngine) => {
+  const currentSessionId = getSurveySessionId(qualtricsSurveyEngine);
+  const storedSessionId = localStorage.getItem(SURVEY_SESSION_KEY);
+
+  // If we can't distinguish sessions, avoid clearing to prevent data loss
+  if (!currentSessionId) return currentSessionId;
+
+  if (!storedSessionId || storedSessionId !== currentSessionId) {
+    // New survey detected — clear previous run’s data
+    localStorage.removeItem(CANVAS_SELECTIONS_KEY);
+    localStorage.removeItem(CANVAS_SIZE_KEY);
+    localStorage.removeItem(QUESTION_IDS_KEY);
+    localStorage.removeItem(IMAGE_MAP_KEY);
+    localStorage.setItem(SURVEY_SESSION_KEY, currentSessionId);
+    console.log('[Qualtrics Loader] Reset localStorage for new survey session:', currentSessionId);
+  }
+
+  return currentSessionId;
+};
+
 async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	let qualtricsResources = [
@@ -166,6 +216,9 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 }
 
 function createQuestionListeners(qualtricsSurveyEngine) {
+	// Ensure per-survey isolation while still appending within a survey
+	ensureSurveySession(qualtricsSurveyEngine);
+
 	let questionData = qualtricsSurveyEngine.getQuestionInfo()
 	let questionContainer = qualtricsSurveyEngine.getQuestionContainer()
 	let questionId = questionData.QuestionID
@@ -180,13 +233,31 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 		imageLink = image.src
 	}
 
-	const selectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections'))
-	const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'))
-	let responseData = {
-		image: imageLink,
-		selectionsData: selectionsData,
-		metadata: metadata
-	}
+	const buildResponseData = (overrides = {}) => {
+		const selectionsData = overrides.selectionsData ?? safeParse(localStorage.getItem(CANVAS_SELECTIONS_KEY), {});
+		const metadata = overrides.metadata ?? safeParse(localStorage.getItem(CANVAS_SIZE_KEY), {});
+		const existingQuestionIds = safeParse(localStorage.getItem(QUESTION_IDS_KEY), []);
+		const aggregatedQuestionIds = Array.from(new Set([
+			...existingQuestionIds,
+			...Object.keys(selectionsData),
+			...Object.keys(metadata),
+			questionId
+		]));
+		const existingImageMap = safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
+		const imageMap = { ...existingImageMap, [questionId]: imageLink };
+
+		localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(aggregatedQuestionIds));
+		localStorage.setItem(IMAGE_MAP_KEY, JSON.stringify(imageMap));
+
+		return {
+			image: imageMap,
+			questionIds: aggregatedQuestionIds,
+			selectionsData,
+			metadata
+		};
+	};
+
+	let responseData = buildResponseData();
 
 	// Function to update the textarea with new data
 	function updateTextArea(newData) {
@@ -213,34 +284,30 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 
 	// Add localStorage event listener to update responseData and questionTextArea
 	window.addEventListener('storage', function(e) {
-		if (e.key === 'cocreate-canvasSelections' || e.key === 'cocreate-canvasSize') {
+		if (e.key === CANVAS_SELECTIONS_KEY || e.key === CANVAS_SIZE_KEY) {
 			console.log(`[Qualtrics Loader][${questionId}] localStorage changed:`, e.key);
-
-			// Update responseData with new values
-			if (e.key === 'cocreate-canvasSelections') {
-				responseData.selectionsData = JSON.parse(e.newValue);
-			} else if (e.key === 'cocreate-canvasSize') {
-				responseData.metadata = JSON.parse(e.newValue);
-			}
-
-			// Update questionTextArea with new responseData
+			responseData = buildResponseData();
 			updateTextArea(responseData);
 		}
 	});
 
 	// Also listen for custom events that might be dispatched from the same window
 	window.addEventListener('localStorageUpdated', function(e) {
-		if (e.detail && (e.detail.key === 'cocreate-canvasSelections' || e.detail.key === 'cocreate-canvasSize')) {
+		if (e.detail && (e.detail.key === CANVAS_SELECTIONS_KEY || e.detail.key === CANVAS_SIZE_KEY)) {
 			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
 
-			// Update responseData with new values
-			if (e.detail.key === 'cocreate-canvasSelections') {
-				responseData.selectionsData = e.detail.value;
-			} else if (e.detail.key === 'cocreate-canvasSize') {
-				responseData.metadata = e.detail.value;
+			const overrides = {};
+			if (e.detail.key === CANVAS_SELECTIONS_KEY) {
+				overrides.selectionsData = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, {})
+					: (e.detail.value || {});
+			} else if (e.detail.key === CANVAS_SIZE_KEY) {
+				overrides.metadata = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, {})
+					: (e.detail.value || {});
 			}
 
-			// Update questionTextArea with new responseData
+			responseData = buildResponseData(overrides);
 			updateTextArea(responseData);
 		}
 	});

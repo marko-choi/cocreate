@@ -83,15 +83,22 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
 
-  // Clear selections from localStorage when component mounts
+  // Load any saved selections for this instance on mount
   useEffect(() => {
-    localStorage.removeItem(CANVAS_SIZE_KEY);
-    localStorage.removeItem(CANVAS_SELECTIONS_KEY);
-  }, []);
+    try {
+      const savedSelectionsRaw = localStorage.getItem(CANVAS_SELECTIONS_KEY);
+      if (!savedSelectionsRaw) return;
+      const parsed = JSON.parse(savedSelectionsRaw);
+      if (parsed && parsed[instanceId]) {
+        setSelections(parsed[instanceId]);
+      }
+    } catch (error) {
+      console.error("[Cocreate] Failed to load saved selections", error);
+    }
+  }, [instanceId]);
 
   // Save selections to localStorage whenever they change
   useEffect(() => {
-
     // Save canvas size to localStorage
     const currentCocreateCanvasSize = localStorage.getItem(CANVAS_SIZE_KEY);
     const newCocreateCanvasSize = {
@@ -126,7 +133,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       localStorage.setItem(CANVAS_SELECTIONS_KEY, JSON.stringify(newCocreateCanvasSelections));
     }
 
-  }, [selections]);
+  }, [selections, canvasWidth, canvasHeight, imageScaleFactor, instanceId]);
 
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
