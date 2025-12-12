@@ -69,12 +69,14 @@ function loadResource(url, resourceType) {
   });
 }
 
-const CANVAS_SELECTIONS_KEY = 'cocreate-canvasSelections';
-const CANVAS_SIZE_KEY = 'cocreate-canvasSize';
-const QUESTION_IDS_KEY = 'cocreate-questionIds';
-const IMAGE_MAP_KEY = 'cocreate-imageMap';
+// Use var to avoid duplicate-declaration errors if this loader is injected twice
+var QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY = typeof QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY !== 'undefined' ? QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY : 'cocreate-canvasSelections';
+var QUALTRICS_LEGACY_CANVAS_SIZE_KEY = typeof QUALTRICS_LEGACY_CANVAS_SIZE_KEY !== 'undefined' ? QUALTRICS_LEGACY_CANVAS_SIZE_KEY : 'cocreate-canvasSize';
+var QUALTRICS_LEGACY_QUESTION_IDS_KEY = typeof QUALTRICS_LEGACY_QUESTION_IDS_KEY !== 'undefined' ? QUALTRICS_LEGACY_QUESTION_IDS_KEY : 'cocreate-questionIds';
+var QUALTRICS_LEGACY_IMAGE_MAP_KEY = typeof QUALTRICS_LEGACY_IMAGE_MAP_KEY !== 'undefined' ? QUALTRICS_LEGACY_IMAGE_MAP_KEY : 'cocreate-imageMap';
 
-const safeParse = (value, fallback) => {
+// Also guard safeParse against redefinition
+var safeParse = (typeof safeParse !== 'undefined' && safeParse) || ((value, fallback) => {
 	try {
 		if (!value) return fallback;
 		return JSON.parse(value);
@@ -82,7 +84,7 @@ const safeParse = (value, fallback) => {
 		console.warn('[Qualtrics Legacy Loader] Failed to parse value, using fallback', error);
 		return fallback;
 	}
-};
+});
 
 async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
@@ -242,22 +244,22 @@ function setupDataSync(qualtricsSurveyEngine) {
 	}
 
 	const buildResponseData = (overrides = {}) => {
-		const selectionsData = overrides.selectionsData ?? safeParse(localStorage.getItem(CANVAS_SELECTIONS_KEY), {});
-		const metadata = overrides.metadata ?? safeParse(localStorage.getItem(CANVAS_SIZE_KEY), {});
-		const existingQuestionIds = overrides.questionIds ?? safeParse(localStorage.getItem(QUESTION_IDS_KEY), []);
+		const selectionsData = overrides.selectionsData ?? safeParse(localStorage.getItem(QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY), {});
+		const metadata = overrides.metadata ?? safeParse(localStorage.getItem(QUALTRICS_LEGACY_CANVAS_SIZE_KEY), {});
+		const existingQuestionIds = overrides.questionIds ?? safeParse(localStorage.getItem(QUALTRICS_LEGACY_QUESTION_IDS_KEY), []);
 		const aggregatedQuestionIds = Array.from(new Set([
 			...existingQuestionIds,
 			...Object.keys(selectionsData),
 			...Object.keys(metadata),
 			questionId
 		].filter(Boolean)));
-		const imageMapFromStorage = overrides.imageMap ?? safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
+		const imageMapFromStorage = overrides.imageMap ?? safeParse(localStorage.getItem(QUALTRICS_LEGACY_IMAGE_MAP_KEY), {});
 		const imageMap = imageLink
 			? { ...imageMapFromStorage, [questionId]: imageLink }
 			: { ...imageMapFromStorage };
 
-		localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(aggregatedQuestionIds));
-		localStorage.setItem(IMAGE_MAP_KEY, JSON.stringify(imageMap));
+		localStorage.setItem(QUALTRICS_LEGACY_QUESTION_IDS_KEY, JSON.stringify(aggregatedQuestionIds));
+		localStorage.setItem(QUALTRICS_LEGACY_IMAGE_MAP_KEY, JSON.stringify(imageMap));
 
 		return {
 			image: imageMap,
@@ -306,23 +308,23 @@ function setupDataSync(qualtricsSurveyEngine) {
 
 	// Listen for localStorage updates from Canvas
 	window.addEventListener('localStorageUpdated', function(e) {
-		if (e.detail && (e.detail.key === CANVAS_SELECTIONS_KEY || e.detail.key === CANVAS_SIZE_KEY || e.detail.key === IMAGE_MAP_KEY || e.detail.key === QUESTION_IDS_KEY)) {
+		if (e.detail && (e.detail.key === QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY || e.detail.key === QUALTRICS_LEGACY_CANVAS_SIZE_KEY || e.detail.key === QUALTRICS_LEGACY_IMAGE_MAP_KEY || e.detail.key === QUALTRICS_LEGACY_QUESTION_IDS_KEY)) {
 			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
 
 			const overrides = {};
-			if (e.detail.key === CANVAS_SELECTIONS_KEY) {
+			if (e.detail.key === QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY) {
 				overrides.selectionsData = typeof e.detail.value === 'string'
 					? safeParse(e.detail.value, {})
 					: (e.detail.value || {});
-			} else if (e.detail.key === CANVAS_SIZE_KEY) {
+			} else if (e.detail.key === QUALTRICS_LEGACY_CANVAS_SIZE_KEY) {
 				overrides.metadata = typeof e.detail.value === 'string'
 					? safeParse(e.detail.value, {})
 					: (e.detail.value || {});
-			} else if (e.detail.key === IMAGE_MAP_KEY) {
+			} else if (e.detail.key === QUALTRICS_LEGACY_IMAGE_MAP_KEY) {
 				overrides.imageMap = typeof e.detail.value === 'string'
 					? safeParse(e.detail.value, {})
 					: (e.detail.value || {});
-			} else if (e.detail.key === QUESTION_IDS_KEY) {
+			} else if (e.detail.key === QUALTRICS_LEGACY_QUESTION_IDS_KEY) {
 				overrides.questionIds = typeof e.detail.value === 'string'
 					? safeParse(e.detail.value, [])
 					: (e.detail.value || []);
@@ -359,10 +361,10 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 	console.log('[Qualtrics Loader] Type:', type)
 
 	if (type == "next") {
-		const selections = safeParse(localStorage.getItem(CANVAS_SELECTIONS_KEY), {});
-		const metadata = safeParse(localStorage.getItem(CANVAS_SIZE_KEY), {});
-		const storedQuestionIds = safeParse(localStorage.getItem(QUESTION_IDS_KEY), []);
-		const storedImageMap = safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
+		const selections = safeParse(localStorage.getItem(QUALTRICS_LEGACY_CANVAS_SELECTIONS_KEY), {});
+		const metadata = safeParse(localStorage.getItem(QUALTRICS_LEGACY_CANVAS_SIZE_KEY), {});
+		const storedQuestionIds = safeParse(localStorage.getItem(QUALTRICS_LEGACY_QUESTION_IDS_KEY), []);
+		const storedImageMap = safeParse(localStorage.getItem(QUALTRICS_LEGACY_IMAGE_MAP_KEY), {});
 		const questionInfo = pageInfo.getQuestionInfo()
 		const questionId = questionInfo.QuestionID
 
