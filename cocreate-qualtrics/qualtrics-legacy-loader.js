@@ -69,6 +69,21 @@ function loadResource(url, resourceType) {
   });
 }
 
+const CANVAS_SELECTIONS_KEY = 'cocreate-canvasSelections';
+const CANVAS_SIZE_KEY = 'cocreate-canvasSize';
+const QUESTION_IDS_KEY = 'cocreate-questionIds';
+const IMAGE_MAP_KEY = 'cocreate-imageMap';
+
+const safeParse = (value, fallback) => {
+	try {
+		if (!value) return fallback;
+		return JSON.parse(value);
+	} catch (error) {
+		console.warn('[Qualtrics Legacy Loader] Failed to parse value, using fallback', error);
+		return fallback;
+	}
+};
+
 async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	const qualtricsResources = [
@@ -215,9 +230,9 @@ function setupDataSync(qualtricsSurveyEngine) {
 	const questionData = qualtricsSurveyEngine.getQuestionInfo();
 	const questionContainer = qualtricsSurveyEngine.getQuestionContainer();
 	const questionId = questionData.QuestionID;
-	
+
 	console.log(`[Qualtrics Loader][${questionId}] Setting up data sync`);
-	
+
 	// Get image URL
 	let textEditorImageContainer = ".QuestionText img";
 	let imageLink = "";
@@ -225,17 +240,43 @@ function setupDataSync(qualtricsSurveyEngine) {
 	if (image) {
 		imageLink = image.src;
 	}
-	
+
+	const buildResponseData = (overrides = {}) => {
+		const selectionsData = overrides.selectionsData ?? safeParse(localStorage.getItem(CANVAS_SELECTIONS_KEY), {});
+		const metadata = overrides.metadata ?? safeParse(localStorage.getItem(CANVAS_SIZE_KEY), {});
+		const existingQuestionIds = overrides.questionIds ?? safeParse(localStorage.getItem(QUESTION_IDS_KEY), []);
+		const aggregatedQuestionIds = Array.from(new Set([
+			...existingQuestionIds,
+			...Object.keys(selectionsData),
+			...Object.keys(metadata),
+			questionId
+		].filter(Boolean)));
+		const imageMapFromStorage = overrides.imageMap ?? safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
+		const imageMap = imageLink
+			? { ...imageMapFromStorage, [questionId]: imageLink }
+			: { ...imageMapFromStorage };
+
+		localStorage.setItem(QUESTION_IDS_KEY, JSON.stringify(aggregatedQuestionIds));
+		localStorage.setItem(IMAGE_MAP_KEY, JSON.stringify(imageMap));
+
+		return {
+			image: imageMap,
+			questionIds: aggregatedQuestionIds,
+			selectionsData,
+			metadata
+		};
+	};
+
 	// Function to update the textarea with new data
 	function updateTextArea(newData) {
 		const questionTextAreas = questionContainer.querySelectorAll('.question-content textarea');
 		if (questionTextAreas && questionTextAreas.length > 0) {
 			let stringifiedData = JSON.stringify(newData);
 			console.log(`[Qualtrics Loader][${questionId}] Updating textarea with data`);
-			
+
 			questionTextAreas.forEach(textarea => {
 				textarea.value = stringifiedData;
-				
+
 				// Trigger events so Qualtrics recognizes the change
 				const inputEvent = new Event('input', { bubbles: true });
 				const changeEvent = new Event('change', { bubbles: true });
@@ -244,38 +285,59 @@ function setupDataSync(qualtricsSurveyEngine) {
 			});
 		}
 	}
-	
+
+	function syncEmbeddedData(newData) {
+		try {
+			const stringifiedQuestionIds = JSON.stringify(newData?.questionIds ?? []);
+			const stringifiedImageMap = JSON.stringify(newData?.image ?? {});
+			const stringifiedSelections = JSON.stringify(newData?.selectionsData ?? {});
+			const stringifiedMetadata = JSON.stringify(newData?.metadata ?? {});
+
+			qualtricsSurveyEngine.setEmbeddedData('questionIds', stringifiedQuestionIds);
+			qualtricsSurveyEngine.setEmbeddedData('image', stringifiedImageMap);
+			qualtricsSurveyEngine.setEmbeddedData('selectionsData', stringifiedSelections);
+			qualtricsSurveyEngine.setEmbeddedData('metadata', stringifiedMetadata);
+
+			console.log(`[Qualtrics Loader][${questionId}] Synced embedded data`);
+		} catch (error) {
+			console.warn(`[Qualtrics Loader][${questionId}] Failed to sync embedded data`, error);
+		}
+	}
+
 	// Listen for localStorage updates from Canvas
 	window.addEventListener('localStorageUpdated', function(e) {
-		if (e.detail && (e.detail.key === 'cocreate-canvasSelections' || e.detail.key === 'cocreate-canvasSize')) {
+		if (e.detail && (e.detail.key === CANVAS_SELECTIONS_KEY || e.detail.key === CANVAS_SIZE_KEY || e.detail.key === IMAGE_MAP_KEY || e.detail.key === QUESTION_IDS_KEY)) {
 			console.log(`[Qualtrics Loader][${questionId}] Custom event detected:`, e.detail.key);
-			
-			// Get current data from localStorage
-			const selectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections') || '{}');
-			const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize') || '{}');
-			
-			// Prepare response data
-			const responseData = {
-				image: imageLink,
-				selectionsData: selectionsData,
-				metadata: metadata
-			};
-			
-			// Update textarea
+
+			const overrides = {};
+			if (e.detail.key === CANVAS_SELECTIONS_KEY) {
+				overrides.selectionsData = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, {})
+					: (e.detail.value || {});
+			} else if (e.detail.key === CANVAS_SIZE_KEY) {
+				overrides.metadata = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, {})
+					: (e.detail.value || {});
+			} else if (e.detail.key === IMAGE_MAP_KEY) {
+				overrides.imageMap = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, {})
+					: (e.detail.value || {});
+			} else if (e.detail.key === QUESTION_IDS_KEY) {
+				overrides.questionIds = typeof e.detail.value === 'string'
+					? safeParse(e.detail.value, [])
+					: (e.detail.value || []);
+			}
+
+			const responseData = buildResponseData(overrides);
 			updateTextArea(responseData);
+			syncEmbeddedData(responseData);
 		}
 	});
-	
+
 	// Also do initial update
-	const initialSelectionsData = JSON.parse(localStorage.getItem('cocreate-canvasSelections') || '{}');
-	const initialMetadata = JSON.parse(localStorage.getItem('cocreate-canvasSize') || '{}');
-	const initialData = {
-		image: imageLink,
-		selectionsData: initialSelectionsData,
-		metadata: initialMetadata
-	};
-	updateTextArea(initialData);
-	
+	const responseData = buildResponseData();
+	updateTextArea(responseData);
+	syncEmbeddedData(responseData);
 	console.log(`[Qualtrics Loader][${questionId}] Data sync setup complete`);
 }
 
@@ -297,8 +359,10 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 	console.log('[Qualtrics Loader] Type:', type)
 
 	if (type == "next") {
-		const selections = JSON.parse(localStorage.getItem('cocreate-canvasSelections'));
-		const metadata = JSON.parse(localStorage.getItem('cocreate-canvasSize'));
+		const selections = safeParse(localStorage.getItem(CANVAS_SELECTIONS_KEY), {});
+		const metadata = safeParse(localStorage.getItem(CANVAS_SIZE_KEY), {});
+		const storedQuestionIds = safeParse(localStorage.getItem(QUESTION_IDS_KEY), []);
+		const storedImageMap = safeParse(localStorage.getItem(IMAGE_MAP_KEY), {});
 		const questionInfo = pageInfo.getQuestionInfo()
 		const questionId = questionInfo.QuestionID
 
@@ -317,9 +381,21 @@ function handleDataSubmission(qualtricsSurveyEngine, pageInfo, type) {
 			console.error('[Qualtrics Loader] No selections data found in localStorage.');
 		}
 
+		// Aggregate questionIds and image map before embedding
+		const aggregatedQuestionIds = Array.from(new Set([
+			...storedQuestionIds,
+			...Object.keys(selections || {}),
+			...Object.keys(metadata || {}),
+			questionId
+		].filter(Boolean)));
+
+		const imageMap = imageLink
+			? { ...storedImageMap, [questionId]: imageLink }
+			: { ...storedImageMap };
+
 		// Store question ID and selections
-		qualtricsSurveyEngine.setEmbeddedData("image", imageLink)
-		qualtricsSurveyEngine.setEmbeddedData("questionId", questionId)
+		qualtricsSurveyEngine.setEmbeddedData("image", JSON.stringify(imageMap))
+		qualtricsSurveyEngine.setEmbeddedData("questionIds", JSON.stringify(aggregatedQuestionIds))
 		qualtricsSurveyEngine.setEmbeddedData("selectionsData", JSON.stringify(selections))
 		qualtricsSurveyEngine.setEmbeddedData("metadata", JSON.stringify(metadata))
 	}
