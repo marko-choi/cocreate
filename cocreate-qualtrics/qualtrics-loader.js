@@ -305,6 +305,11 @@ function createQuestionListeners(qualtricsSurveyEngine) {
 			const stringifiedSelections = JSON.stringify(newData?.selectionsData ?? {});
 			const stringifiedMetadata = JSON.stringify(newData?.metadata ?? {});
 
+			console.log(`[Qualtrics Loader][${questionId}] stringifiedQuestionIds: ${stringifiedQuestionIds}`)
+			console.log(`[Qualtrics Loader][${questionId}] stringifiedImageMap: ${stringifiedImageMap}`)
+			console.log(`[Qualtrics Loader][${questionId}] stringifiedSelections: ${stringifiedSelections}`)
+			console.log(`[Qualtrics Loader][${questionId}] stringifiedMetadata: ${stringifiedMetadata}`)
+
 			qualtricsSurveyEngine.setEmbeddedData('questionIds', stringifiedQuestionIds);
 			qualtricsSurveyEngine.setEmbeddedData('image', stringifiedImageMap);
 			qualtricsSurveyEngine.setEmbeddedData('selectionsData', stringifiedSelections);
