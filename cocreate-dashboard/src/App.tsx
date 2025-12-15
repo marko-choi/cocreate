@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from './components/ui/resizable'
-import { Annotation, AnnotationsDto, Selection, SelectionDto } from './types/global'
+import { Annotation, AnnotationsDto, ExecutiveSummaryJson, Selection, SelectionDto } from './types/global'
 import { cn } from './lib/utils'
 import Ping from './components/ping/Ping'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './components/ui/card'
@@ -14,6 +14,7 @@ import Papa from 'papaparse'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './components/ui/select'
 import SelectionThumbnail from './components/selection-thumbnail/SelectionThumbnail'
 import { getContainedSelections, isSelectionContained } from './utils/selection-utils'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './components/ui/dialog'
 
 interface MultiSelectType {
   value: string;
@@ -35,6 +36,26 @@ interface FeedbackFilter {
   active: boolean;
 }
 
+interface DemographicFilter {
+  key: string;
+  label: string;
+  options: MultiSelectType[];
+  selectedValues: string[];
+}
+
+const CORE_COLUMNS = [
+  "questionId",
+  "selectionsData",
+  "image",
+  "metadata",
+  "StartDate",
+  "EndDate",
+  "Status",
+  "Progress",
+  "RecordedDate",
+  "ResponseId"
+]
+
 function App() {
   // const generateNumber = () => Math.floor(Math.random() * 1000)
   const [showSidebar, setShowSidebar] = useState<boolean>(true)
@@ -42,6 +63,7 @@ function App() {
   const [showThumbnailHeatmap, setShowThumbnailHeatmap] = useState<boolean>(true)
 
   const [annotations, setAnnotations] = useState<Annotation[]>([])
+  const [baseAggregatedAnnotations, setBaseAggregatedAnnotations] = useState<Annotation[][]>([])
   const [aggregatedAnnotations, setAggregatedAnnotations] = useState<Annotation[][]>([])
   const [activeAnnotation, setActiveAnnotation] = useState<number>(-1)
 
@@ -62,19 +84,69 @@ function App() {
   const [activeComment, setActiveComment] = useState<string | null>(null)
   const [activeSelection, setActiveSelection] = useState<Selection | null>(null)
 
-  const [rolesList, setRolesList] = useState<MultiSelectType[]>([
-    { value: "architect", label: "Architect" },
-    { value: "designer", label: "Designer" },
-    { value: "developer", label: "Developer" },
-  ])
-  const [tenureList, setTenureList] = useState<MultiSelectType[]>([
-    { value: "junior", label: "Junior" },
-    { value: "mid-level", label: "Mid-Level" },
-    { value: "senior", label: "Senior" },
-  ])
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([])
-  const [selectedTenures, setSelectedTenures] = useState<string[]>([])
   const [selectedViewMode, setSelectedViewMode] = useState<"selection" | "heatmap" | "flatHeatmap">("flatHeatmap") // "flatHeatmap" | "heatmap" | "selection"
+
+  // Executive Summary import (per view / annotation index)
+  const [executiveSummariesByAnnotation, setExecutiveSummariesByAnnotation] = useState<Record<number, ExecutiveSummaryJson | undefined>>({})
+  const [execSummaryImportOpen, setExecSummaryImportOpen] = useState<boolean>(false)
+  const [execSummaryImportText, setExecSummaryImportText] = useState<string>('')
+  const [execSummaryImportError, setExecSummaryImportError] = useState<string | null>(null)
+  const execSummaryTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  const getCurrentExecutiveSummary = (): ExecutiveSummaryJson | undefined => {
+    if (activeAnnotation === -1) return undefined
+    return executiveSummariesByAnnotation[activeAnnotation]
+  }
+
+  const parseExecutiveSummaryJson = (value: unknown): ExecutiveSummaryJson => {
+    if (typeof value !== 'object' || value === null) throw new Error('Invalid JSON: expected an object')
+    const v = value as Record<string, unknown>
+
+    const summary = v.summary
+    const analysis = v.analysis
+    const strengths = v.strengths
+    const improvements = v.improvements
+
+    if (typeof summary !== 'string') throw new Error('Invalid JSON: "summary" must be a string')
+    if (!Array.isArray(analysis) || !analysis.every((x) => typeof x === 'string')) {
+      throw new Error('Invalid JSON: "analysis" must be an array of strings')
+    }
+    if (typeof strengths !== 'string') throw new Error('Invalid JSON: "strengths" must be a string')
+    if (typeof improvements !== 'string') throw new Error('Invalid JSON: "improvements" must be a string')
+
+    return { summary, analysis, strengths, improvements }
+  }
+
+  const importExecutiveSummaryFromText = () => {
+    setExecSummaryImportError(null)
+    if (activeAnnotation === -1) {
+      setExecSummaryImportError('No active view selected yet.')
+      return
+    }
+
+    try {
+      const parsed = JSON.parse(execSummaryImportText)
+      const validated = parseExecutiveSummaryJson(parsed)
+      setExecutiveSummariesByAnnotation((prev) => ({ ...prev, [activeAnnotation]: validated }))
+      setExecSummaryImportOpen(false)
+      setExecSummaryImportText('')
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Invalid JSON'
+      setExecSummaryImportError(message)
+      // keep dialog open so user can fix
+      setTimeout(() => execSummaryTextareaRef.current?.focus(), 0)
+    }
+  }
+
+  const clearExecutiveSummaryForCurrent = () => {
+    setExecSummaryImportError(null)
+    if (activeAnnotation === -1) return
+    setExecutiveSummariesByAnnotation((prev) => {
+      const next = { ...prev }
+      delete next[activeAnnotation]
+      return next
+    })
+  }
 
   const [feedbackFilters, setFeedbackFilters] = useState<FeedbackFilterGroup[]>([
     {
@@ -100,10 +172,67 @@ function App() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(5);
 
+  // Demographic selection flow
+  const [demographicModalOpen, setDemographicModalOpen] = useState<boolean>(false)
+  const [demographicModalStep, setDemographicModalStep] = useState<'select' | 'rename'>('select')
+  const [availableDemographicColumns, setAvailableDemographicColumns] = useState<string[]>([])
+  const [pendingDemographicColumns, setPendingDemographicColumns] = useState<string[]>([])
+  const [pendingDemographicLabels, setPendingDemographicLabels] = useState<Record<string, string>>({})
+  const [demographicSearchTerm, setDemographicSearchTerm] = useState<string>('')
+  const [demographicFilters, setDemographicFilters] = useState<DemographicFilter[]>([])
+  const [demographicSelections, setDemographicSelections] = useState<Record<string, string[]>>({})
+
   // Reset to first page when items per page changes
   useEffect(() => {
     setCurrentPage(1);
   }, [itemsPerPage]);
+
+  const findFirstVisibleAnnotationIndex = (data: Annotation[][]) => {
+    return data.findIndex(bucket => bucket[0]?.show !== false && bucket.length > 0)
+  }
+
+  const getVisibleAnnotationIndex = (data: Annotation[][], preferredIndex: number) => {
+    if (preferredIndex !== -1 && data[preferredIndex]?.[0]?.show !== false) return preferredIndex
+    const firstVisible = findFirstVisibleAnnotationIndex(data)
+    return firstVisible === -1 ? -1 : firstVisible
+  }
+
+  const applyDemographicFilters = (
+    sourceAnnotations: Annotation[][],
+    filters: Record<string, string[]>
+  ) => {
+    const hasActiveFilters = Object.values(filters).some(values => values && values.length > 0)
+
+    return sourceAnnotations.map((bucket) => {
+      let bucketHasMatch = false
+      const updatedBucket = bucket.map((annotation) => {
+        const matches = !hasActiveFilters || Object.entries(filters).every(([key, values]) => {
+          if (!values || values.length === 0) return true
+          const demographicValue = annotation.demographics?.[key]
+          return demographicValue ? values.includes(String(demographicValue)) : false
+        })
+
+        if (matches && annotation.show !== false) bucketHasMatch = true
+
+        const updatedSelections = annotation.selections.map((selection) => {
+          const baseShow = selection.show !== false
+          return { ...selection, show: baseShow && matches }
+        })
+
+        return { ...annotation, selections: updatedSelections, show: (annotation.show !== false) && matches }
+      })
+
+      if (!bucketHasMatch && updatedBucket.length > 0) {
+        return updatedBucket.map((annotation, index) => index === 0 ? { ...annotation, show: false } : annotation)
+      }
+
+      if (bucketHasMatch && updatedBucket.length > 0) {
+        return updatedBucket.map((annotation, index) => index === 0 ? { ...annotation, show: true } : annotation)
+      }
+
+      return updatedBucket
+    })
+  }
 
   // function formatBase64Image(image: string) {
   //   return image.startsWith("data:image") ? image : `data:image/png;base64,${image}`;
@@ -158,8 +287,9 @@ function App() {
       return { ...filterGroup, filters: updatedFilters }
     })
 
+    const sourceAggregatedAnnotations = baseAggregatedAnnotations.length > 0 ? baseAggregatedAnnotations : aggregatedAnnotations
     // Update show status
-    const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
+    const updatedAggregatedAnnotations = sourceAggregatedAnnotations.map((question) => {
       const updatedQuestions = question.map((annotation) => {
         if (annotation.questionId !== questionId) return annotation
         const updatedSelections = annotation.selections.map((selection) =>
@@ -170,13 +300,12 @@ function App() {
     })
 
     setFeedbackFilters(updatedFilters)
-    setAggregatedAnnotations(updatedAggregatedAnnotations)
+    setBaseAggregatedAnnotations(updatedAggregatedAnnotations)
+    const withDemographicFilters = applyDemographicFilters(updatedAggregatedAnnotations, demographicSelections)
+    setAggregatedAnnotations(withDemographicFilters)
+    setActiveAnnotation(getVisibleAnnotationIndex(withDemographicFilters, activeAnnotation))
   }
 
-
-  function convertFromBase64(base64: string) {
-    return `data:image/png;base64,${base64}`
-  }
 
   function importAnnotations() {
     const input = document.createElement('input');
@@ -196,6 +325,15 @@ function App() {
         console.log(results)
         let annotationsDto: AnnotationsDto[] = results.data
         let annotations: Annotation[] = []
+        const allColumns: string[] = (results.meta?.fields?.filter((field: string) => !!field)) || []
+        const demographicColumns = allColumns.filter((column) => !CORE_COLUMNS.includes(column))
+        setAvailableDemographicColumns(demographicColumns)
+        setPendingDemographicColumns([])
+        setPendingDemographicLabels(Object.fromEntries(demographicColumns.map((column) => [column, column])))
+        setDemographicModalStep('select')
+        setDemographicModalOpen(demographicColumns.length > 0)
+        setDemographicFilters([])
+        setDemographicSelections({})
 
         for (let i = 0; i < annotationsDto.length; i++) {
           const row = annotationsDto[i]
@@ -206,6 +344,15 @@ function App() {
           }
 
           try {
+            const demographics: Record<string, string> = {}
+            allColumns.forEach((key) => {
+              if (CORE_COLUMNS.includes(key)) return
+              const value = row[key]
+              if (value !== undefined && value !== null && `${value}`.trim() !== '') {
+                demographics[key] = `${value}`
+              }
+            })
+
             // Parse selectionsData - it's a JSON object with questionId as key
             let selectionsDataObj: Record<string, SelectionDto[]> = {}
             if (row.selectionsData && row.selectionsData.trim()) {
@@ -265,6 +412,7 @@ function App() {
               scaleFactor: scaleFactor,
               width: imageWidth,
               height: imageHeight,
+              demographics: demographics,
             })
           } catch (error) {
             console.error(`Error parsing row ${i}:`, error, row)
@@ -306,12 +454,10 @@ function App() {
         console.log('Aggregated annotations:', buckets)
         console.log('Bucket summary:', buckets.map((bucket, idx) => ({ index: idx, count: bucket.length, questionId: bucket[0]?.questionId })))
 
-        // Auto-select the first annotation if available
-        if (buckets.length > 0 && buckets[0].length > 0) {
-          setActiveAnnotation(0)
-        }
-
-        setAggregatedAnnotations(buckets)
+        setBaseAggregatedAnnotations(buckets)
+        const filteredBuckets = applyDemographicFilters(buckets, demographicSelections)
+        setActiveAnnotation(getVisibleAnnotationIndex(filteredBuckets, activeAnnotation))
+        setAggregatedAnnotations(filteredBuckets)
       },
       error: function(error: any) {
         console.error('Error parsing CSV:', error)
@@ -351,13 +497,17 @@ function App() {
    */
   const handleSearchAnnotations = (searchText: string) => {
     const cleanedSearchText = searchText.trim().toLowerCase()
-    const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
+    const sourceAggregatedAnnotations = baseAggregatedAnnotations.length > 0 ? baseAggregatedAnnotations : aggregatedAnnotations
+    const updatedAggregatedAnnotations = sourceAggregatedAnnotations.map((question) => {
       const updatedQuestions = question.map((annotation) => {
         return { ...annotation, show: annotation.imageName.toLowerCase().includes(cleanedSearchText) }
       })
       return updatedQuestions
     })
-    setAggregatedAnnotations(updatedAggregatedAnnotations)
+    setBaseAggregatedAnnotations(updatedAggregatedAnnotations)
+    const withDemographicFilters = applyDemographicFilters(updatedAggregatedAnnotations, demographicSelections)
+    setAggregatedAnnotations(withDemographicFilters)
+    setActiveAnnotation(getVisibleAnnotationIndex(withDemographicFilters, activeAnnotation))
   }
 
 
@@ -367,7 +517,8 @@ function App() {
    */
   const handleSearchComments = (searchText: string) => {
     const cleanedSearchText = searchText.trim().toLowerCase()
-    const updatedAggregatedAnnotations = aggregatedAnnotations.map((question) => {
+    const sourceAggregatedAnnotations = baseAggregatedAnnotations.length > 0 ? baseAggregatedAnnotations : aggregatedAnnotations
+    const updatedAggregatedAnnotations = sourceAggregatedAnnotations.map((question) => {
       const updatedQuestions = question.map((annotation) => {
         const updatedSelections = annotation.selections.map((selection) =>
           ({ ...selection, show: selection.comment.toLowerCase().includes(cleanedSearchText) }))
@@ -375,7 +526,82 @@ function App() {
       })
       return updatedQuestions
     })
-    setAggregatedAnnotations(updatedAggregatedAnnotations)
+    setBaseAggregatedAnnotations(updatedAggregatedAnnotations)
+    const withDemographicFilters = applyDemographicFilters(updatedAggregatedAnnotations, demographicSelections)
+    setAggregatedAnnotations(withDemographicFilters)
+  }
+
+  const handleDemographicFilterChange = (key: string, values: string[]) => {
+    const updatedFilters = demographicFilters.map((filter) =>
+      filter.key === key ? { ...filter, selectedValues: values } : filter
+    )
+    const updatedSelections = { ...demographicSelections, [key]: values }
+    setDemographicFilters(updatedFilters)
+    setDemographicSelections(updatedSelections)
+    const withDemographicFilters = applyDemographicFilters(
+      baseAggregatedAnnotations.length > 0 ? baseAggregatedAnnotations : aggregatedAnnotations,
+      updatedSelections
+    )
+    setAggregatedAnnotations(withDemographicFilters)
+    setActiveAnnotation(getVisibleAnnotationIndex(withDemographicFilters, activeAnnotation))
+  }
+
+  const togglePendingColumn = (column: string) => {
+    setPendingDemographicColumns((prev) => {
+      if (prev.includes(column)) {
+        return prev.filter((c) => c !== column)
+      }
+      return [...prev, column]
+    })
+  }
+
+  const toggleAllPendingColumns = () => {
+    if (pendingDemographicColumns.length === availableDemographicColumns.length) {
+      setPendingDemographicColumns([])
+      return
+    }
+    setPendingDemographicColumns(availableDemographicColumns)
+  }
+
+  const handleConfirmDemographics = () => {
+    const sourceAggregatedAnnotations = baseAggregatedAnnotations.length > 0 ? baseAggregatedAnnotations : aggregatedAnnotations
+    if (pendingDemographicColumns.length === 0) {
+      setDemographicFilters([])
+      setDemographicSelections({})
+      setPendingDemographicLabels({})
+      setDemographicSearchTerm('')
+      const resetAggregated = applyDemographicFilters(sourceAggregatedAnnotations, {})
+      setAggregatedAnnotations(resetAggregated)
+      setDemographicModalOpen(false)
+      setActiveAnnotation(getVisibleAnnotationIndex(resetAggregated, activeAnnotation))
+      return
+    }
+
+    const flatAnnotations = sourceAggregatedAnnotations.flat()
+    const filters: DemographicFilter[] = pendingDemographicColumns.map((column) => {
+      const uniqueValues = Array.from(new Set(
+        flatAnnotations
+          .map((annotation) => annotation.demographics?.[column])
+          .filter((value): value is string => !!value)
+      ))
+
+      return {
+        key: column,
+        label: pendingDemographicLabels[column] || column,
+        options: uniqueValues.map((value) => ({ value, label: value })),
+        selectedValues: []
+      }
+    })
+
+    const emptySelections = Object.fromEntries(pendingDemographicColumns.map((column) => [column, []])) as Record<string, string[]>
+
+    setDemographicFilters(filters)
+    setDemographicSelections(emptySelections)
+    setDemographicSearchTerm('')
+    const withDemographicFilters = applyDemographicFilters(sourceAggregatedAnnotations, emptySelections)
+    setAggregatedAnnotations(withDemographicFilters)
+    setActiveAnnotation(getVisibleAnnotationIndex(withDemographicFilters, activeAnnotation))
+    setDemographicModalOpen(false)
   }
 
   // Calculate pagination values
@@ -448,6 +674,169 @@ function App() {
     <>
       {/* Header */}
       <Header />
+
+      <Dialog open={demographicModalOpen} onOpenChange={setDemographicModalOpen}>
+        <DialogContent className="bg-white text-black border border-gray-300 shadow-2xl max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              {demographicModalStep === 'select' ? 'Choose demographic columns' : 'Rename demographic columns'}
+            </DialogTitle>
+            <DialogDescription>
+              {demographicModalStep === 'select'
+                ? 'Pick which CSV columns should become User Demographic filters.'
+                : 'Optionally rename the selected columns to friendly labels.'}
+            </DialogDescription>
+          </DialogHeader>
+
+          {demographicModalStep === 'select' && (
+            <div className="flex flex-col gap-3 overflow-hidden">
+              <div className="flex items-center gap-2">
+                <input
+                  className="flex-1 border p-2 rounded text-sm"
+                  placeholder="Search columns"
+                  value={demographicSearchTerm}
+                  onChange={(event) => setDemographicSearchTerm(event.target.value)}
+                />
+                <Button variant="outline" onClick={toggleAllPendingColumns} className="text-xs px-3 py-2">
+                  {pendingDemographicColumns.length === availableDemographicColumns.length ? 'Clear all' : 'Select all'}
+                </Button>
+              </div>
+
+              <div className="max-h-64 overflow-auto border rounded bg-[#fafafa] p-2 flex flex-col gap-2">
+                {availableDemographicColumns
+                  .filter((column) => column.toLowerCase().includes(demographicSearchTerm.toLowerCase()))
+                  .map((column) => {
+                    const checked = pendingDemographicColumns.includes(column)
+                    return (
+                      <label
+                        key={column}
+                        className="flex items-center gap-2 text-sm cursor-pointer rounded px-2 py-1 hover:bg-[#e9e9e9]"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => togglePendingColumn(column)}
+                          className="accent-black"
+                        />
+                        <span className="truncate" title={column}>{column}</span>
+                      </label>
+                    )
+                  })}
+
+                {availableDemographicColumns
+                  .filter((column) => column.toLowerCase().includes(demographicSearchTerm.toLowerCase()))
+                  .length === 0 && (
+                    <span className="text-xs text-gray-500">
+                      No columns match your search.
+                    </span>
+                  )}
+                {availableDemographicColumns.length === 0 && (
+                  <span className="text-xs text-gray-500">
+                    No additional columns were detected in this CSV.
+                  </span>
+                )}
+              </div>
+              <span className="text-xs text-gray-600">
+                Selected {pendingDemographicColumns.length} / {availableDemographicColumns.length}
+              </span>
+            </div>
+          )}
+
+          {demographicModalStep === 'rename' && (
+            <div className="flex flex-col gap-3 overflow-hidden">
+              <div className="flex-1 overflow-y-auto pr-2 max-h-[55vh]">
+                <div className="flex flex-col gap-3">
+                  {pendingDemographicColumns.map((column) => (
+                    <div key={column} className="flex flex-col gap-1">
+                      <span className="text-xs font-medium text-gray-600">CSV Column: {column}</span>
+                      <input
+                        className="border p-2 rounded"
+                        value={pendingDemographicLabels[column] || ''}
+                        onChange={(event) =>
+                          setPendingDemographicLabels({ ...pendingDemographicLabels, [column]: event.target.value })
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="mt-2">
+            {demographicModalStep === 'rename' && (
+              <Button
+                variant="outline"
+                onClick={() => setDemographicModalStep('select')}
+                className="hover:bg-[#e9e9e9]"
+              >
+                Back
+              </Button>
+            )}
+            <Button
+              disabled={demographicModalStep === 'select' && pendingDemographicColumns.length === 0}
+              onClick={
+                demographicModalStep === 'select'
+                  ? () => setDemographicModalStep('rename')
+                  : handleConfirmDemographics
+              }
+              className="bg-black text-white hover:bg-[#333]"
+            >
+              {demographicModalStep === 'select' ? 'Next' : 'Save'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={execSummaryImportOpen}
+        onOpenChange={(open) => {
+          setExecSummaryImportOpen(open)
+          if (!open) {
+            setExecSummaryImportError(null)
+            setExecSummaryImportText('')
+          }
+        }}
+      >
+        <DialogContent className="bg-white text-black border border-gray-300 shadow-2xl max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Import Executive Summary JSON</DialogTitle>
+            <DialogDescription>
+              Paste JSON with keys: <code>summary</code>, <code>analysis</code>, <code>strengths</code>, <code>improvements</code>.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-2">
+            <textarea
+              ref={execSummaryTextareaRef}
+              value={execSummaryImportText}
+              onChange={(e) => setExecSummaryImportText(e.target.value)}
+              rows={10}
+              placeholder={`{\n  "summary": "...",\n  "analysis": ["..."],\n  "strengths": "...",\n  "improvements": "..."\n}`}
+              className="w-full border rounded p-2 text-sm font-mono bg-white"
+            />
+            {execSummaryImportError && (
+              <span className="text-xs text-red-600">{execSummaryImportError}</span>
+            )}
+          </div>
+
+          <DialogFooter className="mt-2">
+            <Button
+              variant="outline"
+              onClick={() => setExecSummaryImportOpen(false)}
+              className="hover:bg-[#e9e9e9]"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={importExecutiveSummaryFromText}
+              className="bg-black text-white hover:bg-[#333]"
+            >
+              Import
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Body */}
       <ResizablePanelGroup
@@ -541,7 +930,7 @@ function App() {
               <Card className="rounded-xl">
                 <CardHeader className="rounded-t-xl m-2 flex flex-row justify-between items-center bg-white">
                   <div>
-                    Mosque {activeAnnotation + 1} of {aggregatedAnnotations.length}
+                    Question {aggregatedAnnotations.length}
                   </div>
 
                   <div className="flex gap-2">
@@ -620,16 +1009,16 @@ function App() {
                         </CardHeader>
                         <CardContent className="px-3 w-[100%]">
                           {
-                            feedbackFilters.map((filterGroup, index) => (
-                              <>
-                                <div key={index} className="w-[100%] flex justify-between">
+                            feedbackFilters.map((filterGroup) => (
+                              <div key={filterGroup.group} className="flex flex-col">
+                                <div className="w-[100%] flex justify-between">
                                   <span className="text-xs font-medium">{filterGroup.group}</span>
                                   <span className="text-xs font-medium">Total: {filterGroup.groupCount}</span>
                                 </div>
                                 <div className="flex flex-col gap-1 my-2">
                                   {
-                                    filterGroup.filters.map((filter, index) => (
-                                      <div key={index} className="flex justify-between items-center">
+                                    filterGroup.filters.map((filter) => (
+                                      <div key={filter.id} className="flex justify-between items-center">
                                         <CheckboxWithText
                                           id={filter.id}
                                           label={filter.label}
@@ -663,7 +1052,7 @@ function App() {
                                     ))
                                   }
                                 </div>
-                              </>
+                              </div>
                             ))
                           }
                         </CardContent>
@@ -673,35 +1062,29 @@ function App() {
                         <CardHeader className="m-2 p-3 border-1 rounded-lg bg-[#f3f3f3]">
                           <b className="text-xs">User Demographics</b>
                         </CardHeader>
-                        <CardContent className="px-3 w-[100%]">
-                          <div className="w-[100%] flex justify-between">
-                            <span className="text-xs font-medium">Role</span>
-                          </div>
-                          <div className="flex flex-col gap-1 my-2">
-                            <MultiSelect
-                              // className='dark:bg-[#202020] dark:border-[#1b1b1b]'
-                              options={rolesList}
-                              onValueChange={setSelectedRoles}
-                              defaultValue={selectedRoles}
-                              className="bg-[#f3f3f3]"
-                              placeholder="Select Roles"
-                              maxCount={3}
-                            />
-                          </div>
-                          <div className="w-[100%] flex justify-between">
-                            <span className="text-xs font-medium">Tenure</span>
-                          </div>
-                          <div className="flex flex-col gap-1 my-2">
-                            <MultiSelect
-                              // className='dark:bg-[#202020] dark:border-[#1b1b1b]'
-                              options={tenureList}
-                              onValueChange={setSelectedTenures}
-                              defaultValue={selectedTenures}
-                              className="bg-[#f3f3f3]"
-                              placeholder="Select Tenures"
-                              maxCount={3}
-                            />
-                          </div>
+                        <CardContent className="px-3 w-[100%] flex flex-col gap-3">
+                          {demographicFilters.length === 0 && (
+                            <span className="text-xs text-gray-500">
+                              Import a CSV and choose demographic columns to enable filters.
+                            </span>
+                          )}
+                          {demographicFilters.map((filter) => (
+                            <div key={filter.key} className="flex flex-col gap-1 my-1">
+                              <div className="w-[100%] flex justify-between">
+                                <span className="text-xs font-medium">{filter.label}</span>
+                              </div>
+                              <MultiSelect
+                                key={`${filter.key}-${filter.selectedValues.join('|')}`}
+                                options={filter.options}
+                                onValueChange={(values) => handleDemographicFilterChange(filter.key, values)}
+                                defaultValue={filter.selectedValues}
+                                className="bg-[#f3f3f3]"
+                                placeholder="Select items"
+                                maxCount={5}
+                                showSelectedCount
+                              />
+                            </div>
+                          ))}
                         </CardContent>
                       </Card>
                     </div>
@@ -720,67 +1103,92 @@ function App() {
                       <CardTitle>Executive Summary</CardTitle>
                       <CardDescription>View {activeAnnotation + 1}</CardDescription>
                     </div>
-                    <div className='flex gap-2 flex-col md:flex-row'>
-                      <div className='flex items-center gap-2'>
-                        <Ping />
-                        <span className="text-sm">65% Positive</span>
+                    <div className='flex gap-2 flex-col md:flex-row items-start md:items-center'>
+                      <div className='flex gap-2 flex-col md:flex-row'>
+                        <div className='flex items-center gap-2'>
+                          <Ping />
+                          <span className="text-sm">65% Positive</span>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <Ping />
+                          <span className="text-sm">82% Response Rate</span>
+                        </div>
+                        <div className='flex items-center gap-2'>
+                          <Ping />
+                          <span className="text-sm">
+                            {currentAnnotationComments.length} Comments
+                          </span>
+                        </div>
                       </div>
-                      <div className='flex items-center gap-2'>
-                        <Ping />
-                        <span className="text-sm">82% Response Rate</span>
-                      </div>
-                      <div className='flex items-center gap-2'>
-                        <Ping />
-                        <span className="text-sm">
-                          {currentAnnotationComments.length} Comments
-                        </span>
+
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          className="bg-white"
+                          onClick={() => {
+                            setExecSummaryImportError(null)
+                            setExecSummaryImportOpen(true)
+                            setTimeout(() => execSummaryTextareaRef.current?.focus(), 0)
+                          }}
+                        >
+                          Import JSON
+                        </Button>
+                        <Button
+                          variant="outline"
+                          className="bg-white"
+                          onClick={clearExecutiveSummaryForCurrent}
+                          disabled={activeAnnotation === -1 || !getCurrentExecutiveSummary()}
+                        >
+                          Clear
+                        </Button>
                       </div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
-                    <div>
-                      <h2>Key Findings</h2>
-                      <p className='text-gray-600 text-sm'>
-                        Overall positive sentiment (65%) with strong appreciation for modern design elements.
-                        Primary concerns center around functional aspects in the upper floor layout.
-                      </p>
-                    </div>
-                    <div className="border-t border-gray-600 my-3"></div>
-                    <div>
-                      <h2>Critical Analysis</h2>
-                      <ul className='list-inside list-disc text-gray-600 text-sm'>
-                        <li>Strong consensus on exterior design elements, particularly in the facade treament</li>
-                        <li>Mixed feedback on spatial flow, suggesting need for layout optimization</li>
-                        <li>Consistent feedback across different stakeholder groups on sustainability features</li>
-                      </ul>
-                    </div>
+                  {getCurrentExecutiveSummary() && (
+                    <>
+                      <div>
+                        <h2>Key Findings</h2>
+                        <p className='text-gray-600 text-sm'>
+                          {getCurrentExecutiveSummary()!.summary}
+                        </p>
+                      </div>
+                      <div className="border-t border-gray-600 my-3"></div>
+                      <div>
+                        <h2>Critical Analysis</h2>
+                        <ul className='list-inside list-disc text-gray-600 text-sm'>
+                          {getCurrentExecutiveSummary()!.analysis.map((item, idx) => (
+                            <li key={idx}>{item}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </>
+                  )}
 
                 </CardContent>
 
                 <CardFooter>
-                  <div className='flex flex-col gap-2 w-[100%]'>
-                    <div className='flex gap-2 flex-wrap md:flex-nowrap'>
+                  {getCurrentExecutiveSummary() && (
+                    <div className='flex flex-col gap-2 w-[100%]'>
+                      <div className='flex gap-2 flex-wrap md:flex-nowrap'>
 
-                      <div className='bg-[#F4FDF7] text-[#85A389] flex flex-col md:w-1/2 p-2'>
-                        <b>Strengths</b>
-                        <span className='text-sm'>
-                          Modern aesthetic, sustainable materials, natural lighting
-                        </span>
-                      </div>
+                        <div className='bg-[#F4FDF7] text-[#85A389] flex flex-col md:w-1/2 p-2'>
+                          <b>Strengths</b>
+                          <span className='text-sm'>
+                            {getCurrentExecutiveSummary()!.strengths}
+                          </span>
+                        </div>
 
-                      <div className='bg-[#FEF5F5] text-[#CB7D7A] flex flex-col md:w-1/2 p-2'>
-                        <b>Area of Improvements</b>
-                        <span className='text-sm'>
-                          Functional layout, lack of storage, limited natural light
-                        </span>
+                        <div className='bg-[#FEF5F5] text-[#CB7D7A] flex flex-col md:w-1/2 p-2'>
+                          <b>Area of Improvements</b>
+                          <span className='text-sm'>
+                            {getCurrentExecutiveSummary()!.improvements}
+                          </span>
+                        </div>
                       </div>
                     </div>
-
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-400 text-sm">Last Updated: 2 days ago</span>
-                    </div>
-                  </div>
+                  )}
                 </CardFooter>
               </Card>
             }

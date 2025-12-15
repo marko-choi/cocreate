@@ -40,6 +40,7 @@ export interface Annotation {
   width?: number;
   height?: number;
   show?: boolean;
+  demographics?: Record<string, string>;
 }
 
 export interface AnnotationsDto {
@@ -57,4 +58,14 @@ export interface AnnotationsDto {
   selectionsData: string;
   image: string;
   metadata: string;
+
+  // Dynamic Demographic Fields
+  [key: string]: string | undefined;
+}
+
+export interface ExecutiveSummaryJson {
+  summary: string;
+  analysis: string[];
+  strengths: string;
+  improvements: string;
 }
