@@ -339,7 +339,12 @@ function App() {
           const row = annotationsDto[i]
 
           // Skip empty rows
-          if (!row || !row.questionId || !row.selectionsData || !row.image) {
+          // Some exports put all questions into a single row where:
+          // - image is a JSON map of { QIDxxx: url }
+          // - selectionsData is a JSON map of { QIDxxx: SelectionDto[] }
+          // - metadata is a JSON map of { QIDxxx: { width, height, imageScaleFactor } }
+          // In that case `questionId` may be empty. We only require selectionsData + image.
+          if (!row || !row.selectionsData || !row.image) {
             continue
           }
 
@@ -365,54 +370,75 @@ function App() {
               metadataObj = JSON.parse(row.metadata)
             }
 
-            // Extract questionId and normalize it
-            let questionId = row.questionId.replace("QID", "")
-            let questionIdKey = row.questionId // Keep original format for lookup
+            // Parse image column. It may be:
+            // - A single URL string
+            // - A JSON map of { QIDxxx: url }
+            let imagesObj: Record<string, string> | null = null
+            const rawImageValue = `${row.image}`.trim()
+            if (rawImageValue.startsWith("{")) {
+              try {
+                const parsed = JSON.parse(rawImageValue)
+                if (parsed && typeof parsed === "object") imagesObj = parsed as Record<string, string>
+              } catch {
+                imagesObj = null
+              }
+            }
 
-            // Get selections for this questionId
-            let selectionData: SelectionDto[] = selectionsDataObj[questionIdKey] || []
+            const normalizeQidKey = (qid: string) => {
+              const trimmed = (qid || "").trim()
+              if (!trimmed) return ""
+              return trimmed.startsWith("QID") ? trimmed : `QID${trimmed.replace(/^QID/i, "")}`
+            }
 
-            // Get metadata for this questionId
-            let metadata = metadataObj[questionIdKey] || {}
-            let scaleFactor = metadata.imageScaleFactor || 1
-            let imageWidth = metadata.width || 723  // Default from CSV example
-            let imageHeight = metadata.height || 534  // Default from CSV example
+            // Determine which QIDs to expand for this row.
+            let qidKeys: string[] = []
+            const rowQidKey = normalizeQidKey(row.questionId || "")
+            if (rowQidKey) qidKeys = [rowQidKey]
+            else if (imagesObj) qidKeys = Object.keys(imagesObj)
+            else qidKeys = Object.keys(selectionsDataObj)
 
-            // Extract image URL
-            let imagePath = row.image || ""
+            // Fallback if everything is empty (avoid silently dropping)
+            if (qidKeys.length === 0) continue
 
-            // Generate image name from questionId or use a default
-            let imageName = `Question ${questionId}`
+            qidKeys.forEach((qidKey) => {
+              const numericQuestionId = parseInt(qidKey.replace(/^QID/i, "")) || 0
+              const selectionData: SelectionDto[] = selectionsDataObj[qidKey] || []
+              const metadata = metadataObj[qidKey] || {}
+              const scaleFactor = metadata.imageScaleFactor || 1
+              const imageWidth = metadata.width || 723
+              const imageHeight = metadata.height || 534
+              const imagePath = (imagesObj ? imagesObj[qidKey] : rawImageValue) || ""
 
-            annotations.push({
-              imageName: imageName,
-              questionId: parseInt(questionId) || 0,
-              selections: selectionData.map((selection: SelectionDto) => {
-                // Use scaled coordinates (start/end) which match the canvas display size
-                // unscaledStart/unscaledEnd are for the full-size image and won't match the canvas
-                const start = selection.start || { x: 0, y: 0 }
-                const end = selection.end || { x: 0, y: 0 }
+              const imageName = numericQuestionId ? `Question ${numericQuestionId}` : qidKey
 
-                return {
-                  uid: Math.random().toString(36).substring(7),
-                  start: start,
-                  end: end,
-                  functionValue: (selection.functionValue === 'good' || selection.functionValue === 'bad')
-                    ? selection.functionValue
-                    : null,
-                  aestheticValue: (selection.aestheticValue === 'good' || selection.aestheticValue === 'bad')
-                    ? selection.aestheticValue
-                    : null,
-                  comment: selection.comment || "",
-                  show: true
-                }
-              }),
-              image: "",
-              imagePath: imagePath,
-              scaleFactor: scaleFactor,
-              width: imageWidth,
-              height: imageHeight,
-              demographics: demographics,
+              annotations.push({
+                imageName,
+                questionId: numericQuestionId,
+                selections: selectionData.map((selection: SelectionDto) => {
+                  const start = selection.start || { x: 0, y: 0 }
+                  const end = selection.end || { x: 0, y: 0 }
+
+                  return {
+                    uid: Math.random().toString(36).substring(7),
+                    start,
+                    end,
+                    functionValue: (selection.functionValue === 'good' || selection.functionValue === 'bad')
+                      ? selection.functionValue
+                      : null,
+                    aestheticValue: (selection.aestheticValue === 'good' || selection.aestheticValue === 'bad')
+                      ? selection.aestheticValue
+                      : null,
+                    comment: selection.comment || "",
+                    show: true
+                  }
+                }),
+                image: "",
+                imagePath,
+                scaleFactor,
+                width: imageWidth,
+                height: imageHeight,
+                demographics,
+              })
             })
           } catch (error) {
             console.error(`Error parsing row ${i}:`, error, row)
@@ -423,33 +449,22 @@ function App() {
         console.log('Parsed annotations:', annotations)
         setAnnotations(annotations)
 
-        // Create buckets for annotations - group by questionId
-        // First, find all unique questionIds
-        const uniqueQuestionIds = [...new Set(annotations.map(a => a.questionId))].sort((a, b) => a - b)
-        const maxQuestionId = uniqueQuestionIds.length > 0 ? Math.max(...uniqueQuestionIds) : 0
+        // Create buckets for annotations - group by questionId (compact, sorted)
+        const bucketsByQuestionId = new Map<number, Annotation[]>()
 
-        // Create buckets array with enough space
-        const buckets: Annotation[][] = Array.from({ length: Math.max(maxQuestionId, 1) }, () => [])
-
-        annotations.forEach(annotation => {
+        annotations.forEach((annotation) => {
           annotation.selections.forEach(selection => {
             selection.show = checkForIniitalShowEligibility(selection)
             selection.uid = Math.random().toString(36).substring(7)
           })
           annotation.show = true
-          const bucketIndex = annotation.questionId > 0 ? annotation.questionId - 1 : 0
-          if (bucketIndex >= 0 && bucketIndex < buckets.length) {
-            buckets[bucketIndex].push(annotation)
-            console.log(`Added annotation to bucket ${bucketIndex} (questionId: ${annotation.questionId}):`, {
-              imagePath: annotation.imagePath,
-              width: annotation.width,
-              height: annotation.height,
-              selectionsCount: annotation.selections.length
-            })
-          } else {
-            console.warn(`Invalid bucket index ${bucketIndex} for questionId ${annotation.questionId}`)
-          }
+          const key = annotation.questionId || 0
+          if (!bucketsByQuestionId.has(key)) bucketsByQuestionId.set(key, [])
+          bucketsByQuestionId.get(key)!.push(annotation)
         })
+
+        const sortedQuestionIds = Array.from(bucketsByQuestionId.keys()).sort((a, b) => a - b)
+        const buckets: Annotation[][] = sortedQuestionIds.map((qid) => bucketsByQuestionId.get(qid)!)
 
         console.log('Aggregated annotations:', buckets)
         console.log('Bucket summary:', buckets.map((bucket, idx) => ({ index: idx, count: bucket.length, questionId: bucket[0]?.questionId })))
