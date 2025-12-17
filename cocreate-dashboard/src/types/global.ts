@@ -69,3 +69,30 @@ export interface ExecutiveSummaryJson {
   strengths: string;
   improvements: string;
 }
+
+export interface MultiSelectType {
+  value: string;
+  label: string;
+}
+
+export interface FeedbackFilter {
+  label: string;
+  id: string;
+  value: string;
+  fieldName: string;
+  active: boolean;
+}
+
+export interface FeedbackFilterGroup {
+  group: string;
+  groupType: 'value' | 'field';
+  groupCount: number | undefined;
+  filters: FeedbackFilter[];
+}
+
+export interface DemographicFilter {
+  key: string;
+  label: string;
+  options: MultiSelectType[];
+  selectedValues: string[];
+}
