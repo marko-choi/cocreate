@@ -1,4 +1,4 @@
-import Papa from 'papaparse';
+import Papa, { LocalFile } from 'papaparse';
 import { Annotation, AnnotationsDto, Selection, SelectionDto } from '../types/global';
 import { CORE_COLUMNS } from '../constants';
 import { checkForIniitalShowEligibility } from '../utils/selection-utils';
@@ -10,7 +10,7 @@ export interface CsvParseResult {
 
 export const parseCsvFile = (csvFile: File): Promise<CsvParseResult> => {
   return new Promise((resolve, reject) => {
-    Papa.parse(csvFile, {
+    Papa.parse<Record<string, unknown>>(csvFile, {
       header: true,
       complete: function(results: Papa.ParseResult<Record<string, unknown>>) {
         const allColumns: string[] = (results.meta?.fields?.filter((field: string) => !!field)) || [];
@@ -25,8 +25,8 @@ export const parseCsvFile = (csvFile: File): Promise<CsvParseResult> => {
           rows: nonEmptyRows
         });
       },
-      error: function(error: Papa.ParseError) {
-        reject(error);
+      error: function(error: Error, file: LocalFile) {
+        reject(new Error(`Error parsing CSV file: ${error.message} ${file}  `));
       }
     });
   });
@@ -45,7 +45,7 @@ export const importFromCsvData = (
   annotations: Annotation[];
   demographicColumns: string[];
 } => {
-  const demographicColumns = allColumns.filter((column) => !CORE_COLUMNS.includes(column));
+  const demographicColumns = allColumns.filter((column) => !CORE_COLUMNS.includes(column as any));
   const annotationsDto: AnnotationsDto[] = rows as unknown as AnnotationsDto[];
   const annotations: Annotation[] = [];
 
@@ -60,7 +60,7 @@ export const importFromCsvData = (
     try {
       const demographics: Record<string, string> = {};
       allColumns.forEach((key) => {
-        if (CORE_COLUMNS.includes(key)) return;
+        if (CORE_COLUMNS.includes(key as any)) return;
         const value = (row as unknown as Record<string, unknown>)[key];
         if (value !== undefined && value !== null && `${value}`.trim() !== '') {
           demographics[key] = `${value}`;

@@ -3,10 +3,4 @@ export const CORE_COLUMNS = [
   "selectionsData",
   "image",
   "metadata",
-  "StartDate",
-  "EndDate",
-  "Status",
-  "Progress",
-  "RecordedDate",
-  "ResponseId"
 ] as const;

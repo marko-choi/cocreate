@@ -1,17 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Selection } from '../../types/global';
+import { useState, useEffect, useMemo } from 'react';
+import { Selection, Annotation } from '../../types/global';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { cn } from '../../lib/utils';
-import { extractSelectionFieldValue } from '../../utils/selection-utils';
 import { useDashboardContext } from '../../contexts/DashboardContext';
 import { isSelectionContained } from '../../utils/selection-utils';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 
 interface FeedbackCommentsProps {
   activeComment: string | null;
   activeSelection: Selection | null;
   onCommentClick: (uid: string) => void;
+}
+
+interface SelectionWithAnnotation {
+  selection: Selection;
+  annotation: Annotation;
 }
 
 export const FeedbackComments = ({
@@ -21,19 +26,30 @@ export const FeedbackComments = ({
 }: FeedbackCommentsProps) => {
   const dashboard = useDashboardContext();
 
-  // Calculate filtered comments
-  const currentAnnotationComments =
-    dashboard.annotations.activeAnnotation === -1
-      ? dashboard.annotations.aggregatedAnnotations.flat().flatMap(annotation => annotation.selections)
-      : dashboard.annotations.aggregatedAnnotations[dashboard.annotations.activeAnnotation]
-        ?.flatMap(annotation => annotation.selections) ?? [];
+  // Calculate filtered comments with their parent annotations
+  const selectionsWithAnnotations = useMemo(() => {
+    const annotations = dashboard.annotations.activeAnnotation === -1
+      ? dashboard.annotations.aggregatedAnnotations.flat()
+      : dashboard.annotations.aggregatedAnnotations[dashboard.annotations.activeAnnotation] ?? [];
 
-  const filteredComments = currentAnnotationComments
-    .filter((selection) => selection.show !== false)
-    .filter((selection) => {
-      if (!activeSelection) return true;
-      return isSelectionContained(activeSelection, selection);
+    const result: SelectionWithAnnotation[] = [];
+    annotations.forEach((annotation) => {
+      annotation.selections.forEach((selection) => {
+        if (selection.show !== false) {
+          if (!activeSelection || isSelectionContained(activeSelection, selection)) {
+            result.push({ selection, annotation });
+          }
+        }
+      });
     });
+    return result;
+  }, [
+    dashboard.annotations.aggregatedAnnotations,
+    dashboard.annotations.activeAnnotation,
+    activeSelection,
+  ]);
+
+  const filteredComments = selectionsWithAnnotations;
 
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(5);
@@ -78,16 +94,29 @@ export const FeedbackComments = ({
           </Button>
         </div>
 
-        <div className="flex flex-col gap-2">
-          {currentItems.map((selection, index) => {
-            const aestheticValue = extractSelectionFieldValue(selection.aestheticValue);
-            const functionValue = extractSelectionFieldValue(selection.functionValue);
+        <div className="flex flex-col gap-1">
+          {currentItems.map(({ selection, annotation }, index) => {
+            const commentNumber = indexOfFirstItem + index + 1;
+
+            // Helper function to render value with icon or dash
+            const renderValueWithIcon = (value: 'good' | 'bad' | null) => {
+              if (value === 'good') {
+                return <ThumbsUp className="w-4 h-4 text-green-600" />;
+              } else if (value === 'bad') {
+                return <ThumbsDown className="w-4 h-4 text-red-600" />;
+              }
+              return <span>-</span>;
+            };
+
+            // Get demographic columns that are selected for display
+            const demographicFilters = dashboard.demographics.demographicFilters;
+
             return (
               <Button
                 key={selection.uid}
                 size='lg'
                 className={cn(
-                  "flex flex-row justify-start w-[100%] py-3 px-4 min-h-fit",
+                  "flex flex-col items-start w-[100%] py-1.5 px-3 min-h-fit",
                   "hover:bg-[#e7e7e7] hover:cursor-pointer",
                   { "bg-[#F2F2F2]": index % 2 === 0 },
                   { "bg-[#FAFAFA]": index % 2 !== 0 },
@@ -98,19 +127,47 @@ export const FeedbackComments = ({
                 }}
                 onClick={() => onCommentClick(selection.uid)}
               >
-                <div className='flex w-[100%] justify-between gap-2 flex-wrap'>
-                  <div className='flex-1 min-w-0'>
-                    <div className="flex justify-start gap-2 flex-wrap mb-1">
-                      <span>Architect</span> |
-                      <span>{functionValue} <b>Functional</b></span> |
-                      <span>{aestheticValue} <b>Aesthetic</b></span>
+                <div className='flex w-[100%] flex-col'>
+                  {/* Header Row with Comment Number and Timestamp */}
+                  <div className='flex w-[100%] justify-between items-start mb-0.5'>
+                    <div className="font-semibold text-left" style={{ lineHeight: 1.1 }}>
+                      Comment {commentNumber}
                     </div>
-                    <div className="flex justify-start text-sm text-gray-400 break-words">
-                      {selection.comment.slice(0, 40)}
+                    <div className="text-sm text-gray-400 whitespace-nowrap ml-4" style={{ lineHeight: 1.1 }}>
+                      4 days ago
                     </div>
                   </div>
-                  <div className="text-sm text-gray-400 whitespace-nowrap self-start">
-                    4 days ago
+
+                  {/* Row 1: User Demographics - flex wrap for overflow */}
+                  <div className='flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-left mb-0.5' style={{ lineHeight: 1.1 }}>
+                    {demographicFilters.map((filter) => {
+                      const demographicValue = annotation.demographics?.[filter.key];
+                      if (demographicValue) {
+                        return (
+                          <span key={filter.key} className="whitespace-nowrap">
+                            <span className="font-medium">{filter.label}</span>: <span className="text-gray-600">{demographicValue}</span>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })}
+                  </div>
+
+                  {/* Row 2: Annotation Data (Functional, Aesthetic) */}
+                  <div className='flex flex-wrap gap-x-3 gap-y-0.5 text-sm text-left mb-0.5' style={{ lineHeight: 1.1 }}>
+                    <span className="flex items-center gap-1">
+                      Functional: {renderValueWithIcon(selection.functionValue)}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      Aesthetic: {renderValueWithIcon(selection.aestheticValue)}
+                    </span>
+                  </div>
+
+                  {/* Comment Text */}
+                  <div className='flex-1 min-w-0 text-left' style={{ lineHeight: 1.1 }}>
+                    <div className="text-sm text-gray-400 break-words text-left" style={{ lineHeight: 1.1 }}>
+                      {selection.comment}
+                    </div>
                   </div>
                 </div>
               </Button>
