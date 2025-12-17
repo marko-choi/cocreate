@@ -50,19 +50,19 @@ function AppContent({ onActiveSelectionChange }: { onActiveSelectionChange: (sel
   ]);
 
   // Debug: Log when activeAnnotation changes
-  useEffect(() => {
-    if (dashboard.annotations.activeAnnotation !== -1) {
-      const activeAnnotations = dashboard.annotations.aggregatedAnnotations[dashboard.annotations.activeAnnotation];
-      console.log('Active annotation changed:', {
-        activeAnnotation: dashboard.annotations.activeAnnotation,
-        annotationsCount: activeAnnotations?.length || 0,
-        firstAnnotation: activeAnnotations?.[0],
-        imagePath: activeAnnotations?.[0]?.imagePath,
-        width: activeAnnotations?.[0]?.width,
-        height: activeAnnotations?.[0]?.height,
-      });
-    }
-  }, [dashboard.annotations.activeAnnotation, dashboard.annotations.aggregatedAnnotations]);
+  // useEffect(() => {
+  //   if (dashboard.annotations.activeAnnotation !== -1) {
+  //     const activeAnnotations = dashboard.annotations.aggregatedAnnotations[dashboard.annotations.activeAnnotation];
+  //     console.log('Active annotation changed:', {
+  //       activeAnnotation: dashboard.annotations.activeAnnotation,
+  //       annotationsCount: activeAnnotations?.length || 0,
+  //       firstAnnotation: activeAnnotations?.[0],
+  //       imagePath: activeAnnotations?.[0]?.imagePath,
+  //       width: activeAnnotations?.[0]?.width,
+  //       height: activeAnnotations?.[0]?.height,
+  //     });
+  //   }
+  // }, [dashboard.annotations.activeAnnotation, dashboard.annotations.aggregatedAnnotations]);
 
   // Update filter counts when active selection changes
   useEffect(() => {
