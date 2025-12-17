@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import SelectionThumbnail from './components/selection-thumbnail/SelectionThumbnail'
 import { getContainedSelections, isSelectionContained } from './utils/selection-utils'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './components/ui/dialog'
+import { MinusCircle } from 'lucide-react'
 
 interface MultiSelectType {
   value: string;
@@ -182,6 +183,11 @@ function App() {
   const [demographicFilters, setDemographicFilters] = useState<DemographicFilter[]>([])
   const [demographicSelections, setDemographicSelections] = useState<Record<string, string[]>>({})
 
+  // CSV cleanup (virtual tabular grid before demographic selection)
+  const [csvCleanupOpen, setCsvCleanupOpen] = useState<boolean>(false)
+  const [csvCleanupColumns, setCsvCleanupColumns] = useState<string[]>([])
+  const [csvCleanupRows, setCsvCleanupRows] = useState<Record<string, unknown>[]>([])
+
   // Reset to first page when items per page changes
   useEffect(() => {
     setCurrentPage(1);
@@ -317,164 +323,204 @@ function App() {
     input.click();
 }
 
-  const parseCsvFileData = (csvFile: File) => {
+  const resetCsvCleanupState = () => {
+    setCsvCleanupOpen(false)
+    setCsvCleanupColumns([])
+    setCsvCleanupRows([])
+  }
 
-    Papa.parse(csvFile, {
-      header: true,
-      complete: function(results: any) {
-        console.log(results)
-        let annotationsDto: AnnotationsDto[] = results.data
-        let annotations: Annotation[] = []
-        const allColumns: string[] = (results.meta?.fields?.filter((field: string) => !!field)) || []
-        const demographicColumns = allColumns.filter((column) => !CORE_COLUMNS.includes(column))
-        setAvailableDemographicColumns(demographicColumns)
-        setPendingDemographicColumns([])
-        setPendingDemographicLabels(Object.fromEntries(demographicColumns.map((column) => [column, column])))
-        setDemographicModalStep('select')
-        setDemographicModalOpen(demographicColumns.length > 0)
-        setDemographicFilters([])
-        setDemographicSelections({})
+  const removeCsvColumn = (column: string) => {
+    // Prevent removing required columns needed to build annotations.
+    if (column === 'selectionsData' || column === 'image') return
+    setCsvCleanupColumns((prev) => prev.filter((c) => c !== column))
+    setCsvCleanupRows((prev) =>
+      prev.map((row) => {
+        const next = { ...row }
+        delete (next as Record<string, unknown>)[column]
+        return next
+      })
+    )
+  }
 
-        for (let i = 0; i < annotationsDto.length; i++) {
-          const row = annotationsDto[i]
+  const removeCsvRow = (rowIndex: number) => {
+    setCsvCleanupRows((prev) => prev.filter((_, idx) => idx !== rowIndex))
+  }
 
-          // Skip empty rows
-          // Some exports put all questions into a single row where:
-          // - image is a JSON map of { QIDxxx: url }
-          // - selectionsData is a JSON map of { QIDxxx: SelectionDto[] }
-          // - metadata is a JSON map of { QIDxxx: { width, height, imageScaleFactor } }
-          // In that case `questionId` may be empty. We only require selectionsData + image.
-          if (!row || !row.selectionsData || !row.image) {
-            continue
+  const importFromCsvData = (rows: Record<string, unknown>[], allColumns: string[]) => {
+    const demographicColumns = allColumns.filter((column) => !CORE_COLUMNS.includes(column))
+    setAvailableDemographicColumns(demographicColumns)
+    setPendingDemographicColumns([])
+    setPendingDemographicLabels(Object.fromEntries(demographicColumns.map((column) => [column, column])))
+    setDemographicModalStep('select')
+    setDemographicFilters([])
+    setDemographicSelections({})
+
+    const annotationsDto: AnnotationsDto[] = rows as unknown as AnnotationsDto[]
+    const annotations: Annotation[] = []
+
+    for (let i = 0; i < annotationsDto.length; i++) {
+      const row = annotationsDto[i]
+
+      // Skip empty rows
+      // Some exports put all questions into a single row where:
+      // - image is a JSON map of { QIDxxx: url }
+      // - selectionsData is a JSON map of { QIDxxx: SelectionDto[] }
+      // - metadata is a JSON map of { QIDxxx: { width, height, imageScaleFactor } }
+      // In that case `questionId` may be empty. We only require selectionsData + image.
+      if (!row || !row.selectionsData || !row.image) {
+        continue
+      }
+
+      try {
+        const demographics: Record<string, string> = {}
+        allColumns.forEach((key) => {
+          if (CORE_COLUMNS.includes(key)) return
+          const value = (row as unknown as Record<string, unknown>)[key]
+          if (value !== undefined && value !== null && `${value}`.trim() !== '') {
+            demographics[key] = `${value}`
           }
+        })
 
+        // Parse selectionsData - it's a JSON object with questionId as key
+        let selectionsDataObj: Record<string, SelectionDto[]> = {}
+        if (row.selectionsData && row.selectionsData.trim()) {
+          selectionsDataObj = JSON.parse(row.selectionsData)
+        }
+
+        // Parse metadata - it's a JSON object with questionId as key
+        let metadataObj: Record<string, { width?: number; height?: number; imageScaleFactor?: number }> = {}
+        if (row.metadata && row.metadata.trim()) {
+          metadataObj = JSON.parse(row.metadata)
+        }
+
+        // Parse image column. It may be:
+        // - A single URL string
+        // - A JSON map of { QIDxxx: url }
+        let imagesObj: Record<string, string> | null = null
+        const rawImageValue = `${row.image}`.trim()
+        if (rawImageValue.startsWith("{")) {
           try {
-            const demographics: Record<string, string> = {}
-            allColumns.forEach((key) => {
-              if (CORE_COLUMNS.includes(key)) return
-              const value = row[key]
-              if (value !== undefined && value !== null && `${value}`.trim() !== '') {
-                demographics[key] = `${value}`
-              }
-            })
-
-            // Parse selectionsData - it's a JSON object with questionId as key
-            let selectionsDataObj: Record<string, SelectionDto[]> = {}
-            if (row.selectionsData && row.selectionsData.trim()) {
-              selectionsDataObj = JSON.parse(row.selectionsData)
-            }
-
-            // Parse metadata - it's a JSON object with questionId as key
-            let metadataObj: Record<string, { width?: number; height?: number; imageScaleFactor?: number }> = {}
-            if (row.metadata && row.metadata.trim()) {
-              metadataObj = JSON.parse(row.metadata)
-            }
-
-            // Parse image column. It may be:
-            // - A single URL string
-            // - A JSON map of { QIDxxx: url }
-            let imagesObj: Record<string, string> | null = null
-            const rawImageValue = `${row.image}`.trim()
-            if (rawImageValue.startsWith("{")) {
-              try {
-                const parsed = JSON.parse(rawImageValue)
-                if (parsed && typeof parsed === "object") imagesObj = parsed as Record<string, string>
-              } catch {
-                imagesObj = null
-              }
-            }
-
-            const normalizeQidKey = (qid: string) => {
-              const trimmed = (qid || "").trim()
-              if (!trimmed) return ""
-              return trimmed.startsWith("QID") ? trimmed : `QID${trimmed.replace(/^QID/i, "")}`
-            }
-
-            // Determine which QIDs to expand for this row.
-            let qidKeys: string[] = []
-            const rowQidKey = normalizeQidKey(row.questionId || "")
-            if (rowQidKey) qidKeys = [rowQidKey]
-            else if (imagesObj) qidKeys = Object.keys(imagesObj)
-            else qidKeys = Object.keys(selectionsDataObj)
-
-            // Fallback if everything is empty (avoid silently dropping)
-            if (qidKeys.length === 0) continue
-
-            qidKeys.forEach((qidKey) => {
-              const numericQuestionId = parseInt(qidKey.replace(/^QID/i, "")) || 0
-              const selectionData: SelectionDto[] = selectionsDataObj[qidKey] || []
-              const metadata = metadataObj[qidKey] || {}
-              const scaleFactor = metadata.imageScaleFactor || 1
-              const imageWidth = metadata.width || 723
-              const imageHeight = metadata.height || 534
-              const imagePath = (imagesObj ? imagesObj[qidKey] : rawImageValue) || ""
-
-              const imageName = numericQuestionId ? `Question ${numericQuestionId}` : qidKey
-
-              annotations.push({
-                imageName,
-                questionId: numericQuestionId,
-                selections: selectionData.map((selection: SelectionDto) => {
-                  const start = selection.start || { x: 0, y: 0 }
-                  const end = selection.end || { x: 0, y: 0 }
-
-                  return {
-                    uid: Math.random().toString(36).substring(7),
-                    start,
-                    end,
-                    functionValue: (selection.functionValue === 'good' || selection.functionValue === 'bad')
-                      ? selection.functionValue
-                      : null,
-                    aestheticValue: (selection.aestheticValue === 'good' || selection.aestheticValue === 'bad')
-                      ? selection.aestheticValue
-                      : null,
-                    comment: selection.comment || "",
-                    show: true
-                  }
-                }),
-                image: "",
-                imagePath,
-                scaleFactor,
-                width: imageWidth,
-                height: imageHeight,
-                demographics,
-              })
-            })
-          } catch (error) {
-            console.error(`Error parsing row ${i}:`, error, row)
-            // Continue to next row if there's an error
+            const parsed = JSON.parse(rawImageValue)
+            if (parsed && typeof parsed === "object") imagesObj = parsed as Record<string, string>
+          } catch {
+            imagesObj = null
           }
         }
 
-        console.log('Parsed annotations:', annotations)
-        setAnnotations(annotations)
+        const normalizeQidKey = (qid: string) => {
+          const trimmed = (qid || "").trim()
+          if (!trimmed) return ""
+          return trimmed.startsWith("QID") ? trimmed : `QID${trimmed.replace(/^QID/i, "")}`
+        }
 
-        // Create buckets for annotations - group by questionId (compact, sorted)
-        const bucketsByQuestionId = new Map<number, Annotation[]>()
+        // Determine which QIDs to expand for this row.
+        let qidKeys: string[] = []
+        const rowQidKey = normalizeQidKey(row.questionId || "")
+        if (rowQidKey) qidKeys = [rowQidKey]
+        else if (imagesObj) qidKeys = Object.keys(imagesObj)
+        else qidKeys = Object.keys(selectionsDataObj)
 
-        annotations.forEach((annotation) => {
-          annotation.selections.forEach(selection => {
-            selection.show = checkForIniitalShowEligibility(selection)
-            selection.uid = Math.random().toString(36).substring(7)
+        // Fallback if everything is empty (avoid silently dropping)
+        if (qidKeys.length === 0) continue
+
+        qidKeys.forEach((qidKey) => {
+          const numericQuestionId = parseInt(qidKey.replace(/^QID/i, "")) || 0
+          const selectionData: SelectionDto[] = selectionsDataObj[qidKey] || []
+          const metadata = metadataObj[qidKey] || {}
+          const scaleFactor = metadata.imageScaleFactor || 1
+          const imageWidth = metadata.width || 723
+          const imageHeight = metadata.height || 534
+          const imagePath = (imagesObj ? imagesObj[qidKey] : rawImageValue) || ""
+
+          const imageName = numericQuestionId ? `Question ${numericQuestionId}` : qidKey
+
+          annotations.push({
+            imageName,
+            questionId: numericQuestionId,
+            selections: selectionData.map((selection: SelectionDto) => {
+              const start = selection.start || { x: 0, y: 0 }
+              const end = selection.end || { x: 0, y: 0 }
+
+              return {
+                uid: Math.random().toString(36).substring(7),
+                start,
+                end,
+                functionValue: (selection.functionValue === 'good' || selection.functionValue === 'bad')
+                  ? selection.functionValue
+                  : null,
+                aestheticValue: (selection.aestheticValue === 'good' || selection.aestheticValue === 'bad')
+                  ? selection.aestheticValue
+                  : null,
+                comment: selection.comment || "",
+                show: true
+              }
+            }),
+            image: "",
+            imagePath,
+            scaleFactor,
+            width: imageWidth,
+            height: imageHeight,
+            demographics,
           })
-          annotation.show = true
-          const key = annotation.questionId || 0
-          if (!bucketsByQuestionId.has(key)) bucketsByQuestionId.set(key, [])
-          bucketsByQuestionId.get(key)!.push(annotation)
+        })
+      } catch (error) {
+        console.error(`Error parsing row ${i}:`, error, row)
+        // Continue to next row if there's an error
+      }
+    }
+
+    setAnnotations(annotations)
+
+    // Create buckets for annotations - group by questionId (compact, sorted)
+    const bucketsByQuestionId = new Map<number, Annotation[]>()
+
+    annotations.forEach((annotation) => {
+      annotation.selections.forEach(selection => {
+        selection.show = checkForIniitalShowEligibility(selection)
+        selection.uid = Math.random().toString(36).substring(7)
+      })
+      annotation.show = true
+      const key = annotation.questionId || 0
+      if (!bucketsByQuestionId.has(key)) bucketsByQuestionId.set(key, [])
+      bucketsByQuestionId.get(key)!.push(annotation)
+    })
+
+    const sortedQuestionIds = Array.from(bucketsByQuestionId.keys()).sort((a, b) => a - b)
+    const buckets: Annotation[][] = sortedQuestionIds.map((qid) => bucketsByQuestionId.get(qid)!)
+
+    setBaseAggregatedAnnotations(buckets)
+    const filteredBuckets = applyDemographicFilters(buckets, {})
+    setActiveAnnotation(getVisibleAnnotationIndex(filteredBuckets, activeAnnotation))
+    setAggregatedAnnotations(filteredBuckets)
+
+    // After cleanup + import completes, open demographic selection if any demographic columns exist.
+    setDemographicModalOpen(demographicColumns.length > 0)
+  }
+
+  const applyCsvCleanupAndContinue = () => {
+    const cols = [...csvCleanupColumns]
+    const rows = [...csvCleanupRows]
+    resetCsvCleanupState()
+    importFromCsvData(rows, cols)
+  }
+
+  const parseCsvFileData = (csvFile: File) => {
+    Papa.parse(csvFile, {
+      header: true,
+      complete: function(results: Papa.ParseResult<Record<string, unknown>>) {
+        const allColumns: string[] = (results.meta?.fields?.filter((field: string) => !!field)) || []
+        const parsedRows: Record<string, unknown>[] = (results.data || []) as Record<string, unknown>[]
+        const nonEmptyRows = parsedRows.filter((row) => {
+          if (!row || typeof row !== 'object') return false
+          return Object.values(row).some((v) => `${v ?? ''}`.trim() !== '')
         })
 
-        const sortedQuestionIds = Array.from(bucketsByQuestionId.keys()).sort((a, b) => a - b)
-        const buckets: Annotation[][] = sortedQuestionIds.map((qid) => bucketsByQuestionId.get(qid)!)
-
-        console.log('Aggregated annotations:', buckets)
-        console.log('Bucket summary:', buckets.map((bucket, idx) => ({ index: idx, count: bucket.length, questionId: bucket[0]?.questionId })))
-
-        setBaseAggregatedAnnotations(buckets)
-        const filteredBuckets = applyDemographicFilters(buckets, demographicSelections)
-        setActiveAnnotation(getVisibleAnnotationIndex(filteredBuckets, activeAnnotation))
-        setAggregatedAnnotations(filteredBuckets)
+        // Open cleanup grid prior to demographic selection.
+        setCsvCleanupColumns(allColumns)
+        setCsvCleanupRows(nonEmptyRows)
+        setCsvCleanupOpen(true)
       },
-      error: function(error: any) {
+      error: function(error: Papa.ParseError) {
         console.error('Error parsing CSV:', error)
       }
     })
@@ -689,6 +735,136 @@ function App() {
     <>
       {/* Header */}
       <Header />
+
+      <Dialog
+        open={csvCleanupOpen}
+        onOpenChange={(open) => {
+          setCsvCleanupOpen(open)
+          if (!open) resetCsvCleanupState()
+        }}
+      >
+        <DialogContent className="bg-white text-black border border-gray-300 shadow-2xl max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Review CSV (remove rows / columns)</DialogTitle>
+            <DialogDescription>
+              Hover a column header or row number to remove it before choosing demographic columns.
+              <span className="block mt-1 text-xs text-gray-500">
+                Note: <code>selectionsData</code> and <code>image</code> can’t be removed because they’re required for annotations.
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-hidden flex flex-col gap-3">
+            <div className="flex items-center justify-between text-xs text-gray-600">
+              <span>
+                Columns: <b>{csvCleanupColumns.length}</b> · Rows: <b>{csvCleanupRows.length}</b>
+              </span>
+              {csvCleanupRows.length > 50 && (
+                <span className="text-gray-500">Showing first 50 rows</span>
+              )}
+            </div>
+
+            <div className="flex-1 overflow-auto border rounded bg-white">
+              <table className="min-w-max text-xs">
+                <thead className="sticky top-0 z-10 bg-white">
+                  <tr>
+                    <th className="sticky left-0 z-20 bg-white border-b border-r px-2 py-2 text-gray-500">
+                      #
+                    </th>
+                    {csvCleanupColumns.map((column) => {
+                      const isRequired = column === 'selectionsData' || column === 'image'
+                      return (
+                        <th
+                          key={column}
+                          className={cn(
+                            "group relative border-b border-r px-3 py-2 text-left whitespace-nowrap",
+                            isRequired ? "text-gray-700" : "text-gray-900"
+                          )}
+                          title={column}
+                        >
+                          <span className="font-semibold">{column}</span>
+                          {!isRequired && (
+                            <button
+                              type="button"
+                              className={cn(
+                                "absolute right-1 top-1 opacity-0 group-hover:opacity-100 transition-opacity",
+                                "text-red-600 hover:text-red-700"
+                              )}
+                              onClick={() => removeCsvColumn(column)}
+                              aria-label={`Remove column ${column}`}
+                            >
+                              <MinusCircle className="h-4 w-4" />
+                            </button>
+                          )}
+                        </th>
+                      )
+                    })}
+                  </tr>
+                </thead>
+                <tbody>
+                  {csvCleanupRows.slice(0, 50).map((row, rowIndex) => (
+                    <tr key={rowIndex} className="group hover:bg-gray-50">
+                      <td className="sticky left-0 z-10 bg-white border-b border-r px-2 py-2 text-gray-500">
+                        <div className="relative pr-5">
+                          <span>{rowIndex + 1}</span>
+                          <button
+                            type="button"
+                            className={cn(
+                              "absolute right-0 top-1/2 -translate-y-1/2",
+                              "opacity-0 group-hover:opacity-100 transition-opacity",
+                              "text-red-600 hover:text-red-700"
+                            )}
+                            onClick={() => removeCsvRow(rowIndex)}
+                            aria-label={`Remove row ${rowIndex + 1}`}
+                          >
+                            <MinusCircle className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                      {csvCleanupColumns.map((column) => {
+                        const raw = (row as Record<string, unknown>)[column]
+                        const display = raw === undefined || raw === null ? "" : `${raw}`
+                        return (
+                          <td
+                            key={column}
+                            className="border-b border-r px-3 py-2 max-w-[260px] truncate"
+                            title={display}
+                          >
+                            {display}
+                          </td>
+                        )
+                      })}
+                    </tr>
+                  ))}
+                  {csvCleanupRows.length === 0 && (
+                    <tr>
+                      <td
+                        className="px-3 py-6 text-center text-sm text-gray-500"
+                        colSpan={Math.max(1, csvCleanupColumns.length + 1)}
+                      >
+                        No rows to display.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <DialogFooter className="mt-2">
+            <Button variant="outline" onClick={resetCsvCleanupState} className="hover:bg-[#e9e9e9]">
+              Cancel
+            </Button>
+            <Button
+              onClick={applyCsvCleanupAndContinue}
+              disabled={csvCleanupColumns.length === 0 || csvCleanupRows.length === 0}
+              className="bg-black text-white hover:bg-[#333]"
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={demographicModalOpen} onOpenChange={setDemographicModalOpen}>
         <DialogContent className="bg-white text-black border border-gray-300 shadow-2xl max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
