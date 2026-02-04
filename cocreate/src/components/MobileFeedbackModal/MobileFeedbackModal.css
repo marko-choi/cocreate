@@ -15,6 +15,7 @@
   display: flex;
   align-items: flex-end;
   animation: mobile-modal-backdrop-fade-in 0.2s ease-out;
+  touch-action: pan-y;
 }
 
 @keyframes mobile-modal-backdrop-fade-in {
@@ -36,6 +37,7 @@
   flex-direction: column;
   animation: mobile-modal-slide-up 0.3s ease-out;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  touch-action: pan-y;
 }
 
 @keyframes mobile-modal-slide-up {
@@ -55,6 +57,7 @@
   border-radius: 2px;
   margin: 12px auto 8px;
   flex-shrink: 0;
+  touch-action: none;
 }
 
 /* Header */
@@ -101,6 +104,8 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 /* Section within content */
@@ -134,8 +139,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 16px 12px;
+  gap: 6px;
+  padding: 14px 12px;
   background: #f5f5f5;
   border: 2px solid transparent;
   border-radius: 12px;
@@ -144,7 +149,7 @@
   color: #666;
   cursor: pointer;
   transition: all 0.2s;
-  min-height: 80px;
+  min-height: 64px;
 }
 
 .mobile-modal-option:active {
@@ -155,11 +160,6 @@
   background: #e3f2fd;
   border-color: #1976d2;
   color: #1976d2;
-}
-
-.mobile-modal-emoji {
-  font-size: 32px;
-  line-height: 1;
 }
 
 .mobile-modal-option-label {
@@ -271,6 +271,21 @@ body.modal-open {
   }
 }
 
+/* Force bottom sheet on landscape to avoid centered modal */
+@media (orientation: landscape) {
+  .mobile-modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .mobile-modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 20px 20px 0 0;
+    max-height: 95vh;
+  }
+}
+
 /* Small phone adjustments */
 @media (max-width: 375px) {
   .mobile-modal-button-group {
@@ -279,12 +294,8 @@ body.modal-open {
 
   .mobile-modal-option {
     flex-direction: row;
-    justify-content: flex-start;
-    min-height: 60px;
-  }
-
-  .mobile-modal-emoji {
-    font-size: 24px;
+    justify-content: center;
+    min-height: 52px;
   }
 }
 

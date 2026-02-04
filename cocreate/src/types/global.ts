@@ -22,6 +22,7 @@ export interface CircularSelection {
   center: Point;
   radius: number;
   functionValue?: string;
+  aestheticValue?: string;
   comment?: string;
 }
 

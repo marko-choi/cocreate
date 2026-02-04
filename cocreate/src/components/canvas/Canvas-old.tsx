@@ -44,6 +44,7 @@ export interface CircularSelection {
   center: Point;
   radius: number;
   functionValue?: string;
+  aestheticValue?: string;
   comment?: string;
 }
 
@@ -723,7 +724,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     document.body.classList.add('modal-open');
   };
 
-  const handleMobileSave = (feedback: { functionValue: string; comment: string }) => {
+  const handleMobileSave = (feedback: { functionValue: string; aestheticValue: string; comment: string }) => {
     if (activeSelectionIndex === null) return;
     
     setSelections((prev) => {
@@ -731,6 +732,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       newSelections[activeSelectionIndex] = {
         ...newSelections[activeSelectionIndex],
         functionValue: feedback.functionValue,
+        aestheticValue: feedback.aestheticValue,
         comment: feedback.comment,
       };
       return newSelections;

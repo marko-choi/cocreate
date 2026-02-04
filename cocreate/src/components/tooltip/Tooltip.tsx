@@ -2,22 +2,7 @@ import { Delete, Save, ThumbDown, ThumbUp } from "@mui/icons-material";
 import { Button, Divider, IconButton } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { Selection, SelectionCoordinates } from "../canvas/Canvas";
-import { FeedbackConfig } from "../../types/global";
-
-// Function to get feedback configuration from global window object
-const getFeedbackConfig = (): FeedbackConfig => {
-  const defaultConfig: FeedbackConfig = {
-    showFunctionValue: true,
-    showAestheticValue: true,
-    showComment: true
-  };
-
-  if (typeof window !== 'undefined' && (window as any).cocreateFeedbackConfig) {
-    return (window as any).cocreateFeedbackConfig;
-  }
-
-  return defaultConfig;
-};
+import { getFeedbackConfig } from "../../utils/feedbackConfig";
 
 interface TooltipProps {
   index: number;

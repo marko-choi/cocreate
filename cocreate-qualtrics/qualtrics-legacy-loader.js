@@ -90,7 +90,7 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 
 	const qualtricsResources = [
 		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/cocreate-new.js',
-		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-D6HOnyYW.css'
+		'https://marko-choi.github.io/cocreate/cocreate-qualtrics/dist/static/index-CyGmprYM.css'
 	];
 
 	// Fetch CSV configuration if URL is provided
@@ -193,11 +193,24 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 			console.log("[Qualtrics Loader] Updated question text area")
 		}
 
+		let wrapper = document.createElement('div');
+		wrapper.className = 'cocreate-root-wrapper';
+		wrapper.style.width = '100%';
+		wrapper.style.height = '65vh';
+		wrapper.style.minHeight = '50vh';
+		wrapper.style.display = 'flex';
+		wrapper.style.alignItems = 'center';
+		wrapper.style.justifyContent = 'center';
+		wrapper.style.overflow = 'visible';
+
 		let appContainer = document.createElement('div');
 		appContainer.id = `cocreate-root-${questionData.QuestionID}`;
 		appContainer.className = 'cocreate-root';
 		appContainer.dataset.questionId = questionData.QuestionID;
-		questionContainer.insertBefore(appContainer, questionContainer.firstChild);
+		appContainer.style.width = '100%';
+		appContainer.style.height = '100%';
+		wrapper.appendChild(appContainer);
+		questionContainer.insertBefore(wrapper, questionContainer.firstChild);
 		console.log("[Qualtrics Loader] Inserted app container")
 
 		if (appContainer) {
@@ -205,7 +218,6 @@ async function loadReactApp(qualtricsSurveyEngine, csvConfigUrl = null) {
 			appContainer.style.alignItems = 'center';
 			appContainer.style.justifyContent = 'center';
 			appContainer.style.overflow = 'visible';
-			appContainer.style.height = '65vh';
 		}
 
 		try {
