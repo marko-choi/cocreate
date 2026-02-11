@@ -4,11 +4,92 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom";
 import Tooltip from "../tooltip/Tooltip";
 import "./canvas.css";
-import { Point } from "../../types/global";
+import { Point, FeedbackConfig } from "../../types/global";
 import { InstanceId } from "../../App";
 import { isMobileDevice } from "../../utils/mobileDetection";
 import MobileFeedbackModal from "../MobileFeedbackModal/MobileFeedbackModal";
-import { getFeedbackConfig } from "../../utils/feedbackConfig";
+
+// ============================================
+// VERSION VERIFICATION - MOBILE FIX
+// ============================================
+console.log('');
+console.log('═══════════════════════════════════════════');
+console.log('🚀 CoCreate Mobile Fix');
+console.log('📦 Version: 2.0.1-MOBILE-FIX');
+console.log('📅 Build: ' + new Date().toISOString());
+console.log('═══════════════════════════════════════════');
+console.log('');
+
+// Global version markers
+(window as any).__COCREATE_VERSION__ = '2.0.1-MOBILE-FIX';
+(window as any).__COCREATE_MOBILE_FIX_APPLIED__ = true;
+
+// Verification function
+(window as any).checkCoCreateVersion = function() {
+  console.log('CoCreate Version Check:');
+  console.log('  Version:', (window as any).__COCREATE_VERSION__);
+  console.log('  Mobile Fix Applied:', (window as any).__COCREATE_MOBILE_FIX_APPLIED__);
+  console.log('  Window Width:', window.innerWidth);
+  console.log('  Is Mobile:', window.innerWidth <= 768);
+  console.log('  Touch Support:', 'ontouchstart' in window);
+  return {
+    version: (window as any).__COCREATE_VERSION__,
+    mobileFixApplied: (window as any).__COCREATE_MOBILE_FIX_APPLIED__,
+    isMobileWidth: window.innerWidth <= 768,
+    hasTouchSupport: 'ontouchstart' in window
+  };
+};
+
+console.log('💡 Run checkCoCreateVersion() in console to verify setup');
+console.log('');
+// ============================================
+// END VERSION VERIFICATION
+// ============================================
+
+// Function to get feedback configuration from global window object (set by Qualtrics loader)
+const getFeedbackConfig = (): FeedbackConfig => {
+  const defaultConfig: FeedbackConfig = {
+    showFunctionValue: true,
+    showAestheticValue: false,  // Default to false (aesthetics hidden)
+    showComment: true
+  };
+
+  if (typeof window !== 'undefined' && (window as any).cocreateFeedbackConfig) {
+    return (window as any).cocreateFeedbackConfig;
+  }
+
+  return defaultConfig;
+};
+
+export interface SelectionCoordinates {
+  x: number;
+  y: number;
+}
+
+export interface Selection {
+  start: SelectionCoordinates;
+  unscaledStart: SelectionCoordinates;
+  end: SelectionCoordinates;
+  unscaledEnd: SelectionCoordinates;
+  functionValue?: string;
+  aestheticValue?: string;
+  comment?: string;
+}
+
+// Mobile-specific circular selection interface
+export interface CircularSelection {
+  center: Point;
+  radius: number;
+  functionValue?: string;
+  comment?: string;
+}
+
+// Type guard to check if selection is circular
+export function isCircularSelection(
+  selection: Selection | CircularSelection
+): selection is CircularSelection {
+  return 'radius' in selection && 'center' in selection;
+}
 
 export interface SelectionCoordinates {
   x: number;
@@ -35,7 +116,6 @@ export interface ResizeRatio {
 
 const DEFAULT_IMAGE_SRC = "/cocreate/rendering.jpg";
 const MAX_IMAGE_WIDTH = 800;
-const MAX_BACKING_SCALE = 4;
 
 const CANVAS_SELECTIONS_KEY = "cocreate-canvasSelections";
 const CANVAS_SIZE_KEY = "cocreate-canvasSize";
@@ -52,15 +132,17 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   const [isSelecting, setIsSelecting] = useState(false);
   const [selectionStart, setSelectionStart] = useState<Point | null>(null);
   const [selectionEnd, setSelectionEnd] = useState<Point | null>(null);
-  const [selections, setSelections] = useState<Selection[]>([]);
+  const [selections, setSelections] = useState<(Selection | CircularSelection)[]>([]);
   const [tooltipPosition, setTooltipPosition] = useState<Point | null>(null);
   const [activeSelectionIndex, setActiveSelectionIndex] = useState<number | null>(null);
   const [isEnteringFeedback, setIsEnteringFeedback] = useState(false);
   const [allowPictureSelection, setAllowPictureSelection] = useState(true);
   const [tooltipAnchoredToSelection, setTooltipAnchoredToSelection] = useState<boolean>(false);
   const [tooltipIsViewportCoords, setTooltipIsViewportCoords] = useState<boolean>(false);
-  const [isMobile, setIsMobile] = useState<boolean>(() => (typeof window !== "undefined" ? !isMobileDevice() : false));
-  const [showMobileModal, setShowMobileModal] = useState<boolean>(false);
+
+  // Mobile-specific state
+  const [isMobile, setIsMobile] = useState(isMobileDevice());
+  const [showMobileModal, setShowMobileModal] = useState(false);
 
   const [imageSrc, setImageSrc] = useState<string>(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = useState<number>(MAX_IMAGE_WIDTH);
@@ -85,56 +167,20 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     w: typeof window !== "undefined" ? window.innerWidth : 0,
     h: typeof window !== "undefined" ? window.innerHeight : 0,
   }));
-  const backingScale = useMemo(() => {
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    return Math.min(dpr * scale, MAX_BACKING_SCALE);
-  }, [scale, viewportSize]);
-  const canvasPixelWidth = Math.max(1, Math.round(canvasWidth * backingScale));
-  const canvasPixelHeight = Math.max(1, Math.round(canvasHeight * backingScale));
   const [hoveredToolbarButton, setHoveredToolbarButton] = useState<string | null>(null);
   const [toolbarButtonRects, setToolbarButtonRects] = useState<{ [key: string]: DOMRect }>({});
-  const modalOpenedAtRef = useRef<number>(0);
-  const isTwoFingerGestureRef = useRef<boolean>(false);
-  const lastPinchDistanceRef = useRef<number | null>(null);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const shellRef = useRef<HTMLDivElement | null>(null);
 
-  const prepareCanvasContext = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    const targetWidth = Math.max(1, Math.round(canvasWidth * backingScale));
-    const targetHeight = Math.max(1, Math.round(canvasHeight * backingScale));
-
-    if (canvas.width !== targetWidth) {
-      canvas.width = targetWidth;
-    }
-    if (canvas.height !== targetHeight) {
-      canvas.height = targetHeight;
-    }
-
-    canvas.style.width = `${canvasWidth}px`;
-    canvas.style.height = `${canvasHeight}px`;
-    ctx.setTransform(backingScale, 0, 0, backingScale, 0, 0);
-    return ctx;
-  }, [canvasWidth, canvasHeight, backingScale]);
-
-  // Load any saved selections for this instance on mount (rectangular only; circular/mobile selections are ignored)
+  // Load any saved selections for this instance on mount
   useEffect(() => {
     try {
       const savedSelectionsRaw = localStorage.getItem(CANVAS_SELECTIONS_KEY);
       if (!savedSelectionsRaw) return;
       const parsed = JSON.parse(savedSelectionsRaw);
       if (parsed && parsed[instanceId]) {
-        const raw = parsed[instanceId];
-        const rectangularOnly = Array.isArray(raw)
-          ? raw.filter((s: unknown) => s && typeof s === 'object' && !('radius' in s))
-          : [];
-        setSelections(rectangularOnly);
+        setSelections(parsed[instanceId]);
       }
     } catch (error) {
       console.error("[Cocreate] Failed to load saved selections", error);
@@ -180,36 +226,23 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     };
   }, [instanceId]);
 
-  // Mobile detection and UI adjustments
+  // Mobile device detection and responsive handling
   useEffect(() => {
-    const handleMobileCheck = () => {
+    const handleResize = () => {
       const mobile = isMobileDevice();
       setIsMobile(mobile);
       if (mobile) {
+        // Hide desktop-only elements on mobile
         setToolbarVisible(false);
         setMinimapVisible(false);
-        setIsPanMode(false);
-      } else {
-        setShowMobileModal(false);
-        document.body.classList.remove('modal-open');
       }
     };
 
-    handleMobileCheck();
-    window.addEventListener("resize", handleMobileCheck);
-    window.addEventListener("orientationchange", handleMobileCheck);
-    const viewport = window.visualViewport;
-    if (viewport) {
-      viewport.addEventListener("resize", handleMobileCheck);
-    }
+    // Initial check
+    handleResize();
 
-    return () => {
-      window.removeEventListener("resize", handleMobileCheck);
-      window.removeEventListener("orientationchange", handleMobileCheck);
-      if (viewport) {
-        viewport.removeEventListener("resize", handleMobileCheck);
-      }
-    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   // Save selections to localStorage whenever they change
@@ -304,40 +337,37 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
   }, [selections, canvasWidth, canvasHeight, imageScaleFactor, instanceId]);
 
-  const getAvailableSize = () => {
-    const shell = shellRef.current;
-    const shellParent = shell?.parentElement;
-    const parent = containerRef.current?.parentElement;
-    const baseWidth = shell?.clientWidth ?? shellParent?.clientWidth ?? parent?.clientWidth ?? window.innerWidth;
-    const baseHeight = shell?.clientHeight ?? shellParent?.clientHeight ?? parent?.clientHeight ?? window.innerHeight;
-
-    if (shell && typeof window !== "undefined") {
-      const styles = window.getComputedStyle(shell);
-      const paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-      const paddingY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
-      return {
-        maxWidth: Math.max(0, baseWidth - paddingX),
-        maxHeight: Math.max(0, baseHeight - paddingY),
-      };
-    }
-
-    return { maxWidth: baseWidth, maxHeight: baseHeight };
-  };
-
   // Set canvas size based on image dimensions
   const initCanvasDimensions = (img: HTMLImageElement) => {
-    const { maxWidth, maxHeight } = getAvailableSize();
-    const naturalWidth = img.naturalWidth || img.width;
-    const naturalHeight = img.naturalHeight || img.height;
-    if (!naturalWidth || !naturalHeight) return;
 
-    const scaleFactor = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight);
-    const width = naturalWidth * scaleFactor;
-    const height = naturalHeight * scaleFactor;
+    console.log("[Cocreate] Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    console.log("[Cocreate] Window inner height: " + window.innerHeight);
+    const screenHeight = window.innerHeight;
+    const originalImageHeight = img.naturalHeight;
+
+    const imageHeight = img.height;
+    const imageWidth = img.width;
+
+    // Scale width to fit within screen height
+    const height = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
+    const width = height / aspectRatio;
+
+    const scaleFactor = imageHeight / originalImageHeight
+
+    console.log(img)
+    console.log(
+      "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\n" +
+      "Screen Height: " + screenHeight + "\n" +
+      "Image Scale Factor: " + scaleFactor + "\n" +
+      "Aspect Ratio: " + aspectRatio + "\n" +
+      "Resized Canvas Width: " + width + " Resized Canvas Height: " + height + "\n" +
+      "Image Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
+    );
 
     setCanvasWidth(width);
     setCanvasHeight(height);
-    setImageDimensions({ width: naturalWidth, height: naturalHeight });
+    setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
     setImageScaleFactor(scaleFactor);
     // Reset zoom/pan when initializing a new image
     setScale(1);
@@ -345,19 +375,38 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   };
 
   const resizeCanvasDimensions = useCallback((img: HTMLImageElement) => {
-    const { maxWidth, maxHeight } = getAvailableSize();
-    const naturalWidth = img.naturalWidth || img.width;
-    const naturalHeight = img.naturalHeight || img.height;
-    if (!naturalWidth || !naturalHeight) return;
+    // Get screen width and image dimensions
+    const screenHeight = window.outerHeight;
+    const originalImageHeight = img.naturalHeight;
+    const originalImageWidth = img.naturalWidth;
 
-    const scaleFactor = Math.min(maxWidth / naturalWidth, maxHeight / naturalHeight);
-    const width = naturalWidth * scaleFactor;
-    const height = naturalHeight * scaleFactor;
+    const imageHeight = img.height;
+    const imageWidth = img.width;
 
+    // Scale width to fit within screen height
+    const height = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
+    const width = height / aspectRatio;
+    console.log("[Cocreate] Initializing canvas dimensions: " + width + ", " + height);
     setCanvasWidth(width);
     setCanvasHeight(height);
-    setImageScaleFactor(scaleFactor);
-  }, []);
+
+    console.log(
+      "Original Image Width: " + originalImageWidth +
+      "\nOriginal Image Height: " + originalImageHeight +
+      "\nImage Height: " + imageHeight +
+      "\nImage Width: " + imageWidth +
+      "\nResized Canvas Width: " + width +
+      "\nResized Canvas Height: " + height +
+      "\nScreen Height: " + screenHeight +
+      "\nAspect Ratio: " + aspectRatio +
+      "\nImage Scale Factor: " + imageHeight / originalImageHeight +
+      "\nImage Dimensions: " + JSON.stringify(imageDimensions)
+    );
+    if (!imageDimensions) return
+    setImageScaleFactor(img.width / imageDimensions.width );
+
+  }, [imageDimensions]);
 
   const updateImageDimensions = () => {
     const instanceRootContainer = getInstanceRootContainer();
@@ -391,30 +440,12 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     requestAnimationFrame(waitForImage);
   }
 
-  const getInstanceRootContainer = (): HTMLElement | null => {
-    const rootContainers = document.querySelectorAll<HTMLElement>(".cocreate-root");
-    return (
-      Array.from(rootContainers).find(
-        (container) => container.getAttribute("data-question-id") === instanceId
-      ) || null
-    );
-  };
-
-  const syncRootToShellSize = useCallback(() => {
-    const root = getInstanceRootContainer();
-    const shell = shellRef.current;
-    if (!root || !shell) return;
-    const rect = shell.getBoundingClientRect();
-    const width = Math.ceil(rect.width);
-    const height = Math.ceil(rect.height);
-
-    // Override any fixed height/width on the root so it always covers the shell.
-    root.style.height = "auto";
-    root.style.minHeight = `${height}px`;
-    root.style.width = "100%";
-    root.style.minWidth = `${width}px`;
-    root.style.boxSizing = "border-box";
-  }, [instanceId]);
+  const getInstanceRootContainer = () => {
+    const rootContainers = document.querySelectorAll(".cocreate-root")
+    return Array.from(rootContainers).find(
+      (container) => container.getAttribute("data-question-id") === instanceId
+    )
+  }
 
   // imageOffset logic removed; we compute positions via stage transforms
 
@@ -483,11 +514,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }
 
   useEffect(() => {
-    const ctx = prepareCanvasContext();
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    redrawSelections(ctx);
-  }, [selections, activeSelectionIndex, canvasWidth, canvasHeight, imageScaleFactor, backingScale, prepareCanvasContext]);
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext("2d");
+    if (canvas && ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      redrawSelections(ctx);
+    }
+  }, [selections]);
 
   const drawSelection = (
     ctx: CanvasRenderingContext2D,
@@ -522,22 +555,62 @@ const Canvas: React.FC<CanvasProps> = (props) => {
    * @param ctx - The canvas context
    * @param resizedSelections - Optional array of selections to draw. If not provided, the current selections will be used.
    */
-  const redrawSelections = (ctx: CanvasRenderingContext2D, resizedSelections?: Selection[]) => {
+  const redrawSelections = (ctx: CanvasRenderingContext2D, resizedSelections?: (Selection | CircularSelection)[]) => {
     const selectionsToDraw = resizedSelections ?? selections;
     selectionsToDraw.forEach((selection, index) => {
-      const isActive = index === activeSelectionIndex;
-      const { unscaledStart, unscaledEnd } = selection;
-      const startX = unscaledStart.x * imageScaleFactor;
-      const startY = unscaledStart.y * imageScaleFactor;
-      const endX = unscaledEnd.x * imageScaleFactor;
-      const endY = unscaledEnd.y * imageScaleFactor;
-      const x = Math.min(startX, endX);
-      const y = Math.min(startY, endY);
-      const width = Math.abs(endX - startX);
-      const height = Math.abs(endY - startY);
-      if (isActive) {
-        drawSelection(ctx, x, y, width, height, "rgba(25, 118, 210, 0.18)", "#1976d2", 3);
+      if (isCircularSelection(selection)) {
+        // MOBILE: Draw circular selection
+        const centerX = selection.center.x * imageScaleFactor;
+        const centerY = selection.center.y * imageScaleFactor;
+        const scaledRadius = selection.radius;
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, scaledRadius, 0, 2 * Math.PI);
+
+        // Style based on state
+        const isActive = index === activeSelectionIndex;
+        if (selection.functionValue || selection.comment) {
+          // Completed annotation
+          ctx.strokeStyle = '#4CAF50';
+          ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
+          ctx.fill();
+        } else if (isActive) {
+          // Active (being edited)
+          ctx.strokeStyle = '#1976d2';
+          ctx.fillStyle = 'rgba(25, 118, 210, 0.1)';
+          ctx.fill();
+        } else {
+          // Incomplete
+          ctx.strokeStyle = '#ff9800';
+          ctx.setLineDash([5, 5]);
+        }
+
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Draw number badge
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - scaledRadius - 10, 15, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText((index + 1).toString(), centerX, centerY - scaledRadius - 10);
       } else {
+        // DESKTOP: Draw rectangular selection (existing logic)
+        const { unscaledStart, unscaledEnd } = selection;
+        const startX = unscaledStart.x * imageScaleFactor;
+        const startY = unscaledStart.y * imageScaleFactor;
+        const endX = unscaledEnd.x * imageScaleFactor;
+        const endY = unscaledEnd.y * imageScaleFactor;
+        const x = Math.min(startX, endX);
+        const y = Math.min(startY, endY);
+        const width = Math.abs(endX - startX);
+        const height = Math.abs(endY - startY);
         drawSelection(ctx, x, y, width, height);
       }
     });
@@ -552,28 +625,34 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     };
   };
 
-  const toStagePointFromTouch = (touch: Touch | React.Touch, element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      x: (touch.clientX - rect.left) / scale,
-      y: (touch.clientY - rect.top) / scale,
-    };
-  };
-
   const stageToScreenPoint = (p: { x: number; y: number }) => {
     return { x: translate.x + scale * p.x, y: translate.y + scale * p.y };
   };
 
-  const selectionBoundsInStage = (sel: Selection) => {
-    const startX = sel.unscaledStart.x * imageScaleFactor;
-    const startY = sel.unscaledStart.y * imageScaleFactor;
-    const endX = sel.unscaledEnd.x * imageScaleFactor;
-    const endY = sel.unscaledEnd.y * imageScaleFactor;
-    const x = Math.min(startX, endX);
-    const y = Math.min(startY, endY);
-    const width = Math.abs(endX - startX);
-    const height = Math.abs(endY - startY);
-    return { x, y, width, height };
+  const selectionBoundsInStage = (sel: Selection | CircularSelection) => {
+    if (isCircularSelection(sel)) {
+      // For circular selections, return a bounding box
+      const centerX = sel.center.x * imageScaleFactor;
+      const centerY = sel.center.y * imageScaleFactor;
+      const radius = sel.radius;
+      return {
+        x: centerX - radius,
+        y: centerY - radius,
+        width: radius * 2,
+        height: radius * 2,
+      };
+    } else {
+      // Desktop rectangular selection
+      const startX = sel.unscaledStart.x * imageScaleFactor;
+      const startY = sel.unscaledStart.y * imageScaleFactor;
+      const endX = sel.unscaledEnd.x * imageScaleFactor;
+      const endY = sel.unscaledEnd.y * imageScaleFactor;
+      const x = Math.min(startX, endX);
+      const y = Math.min(startY, endY);
+      const width = Math.abs(endX - startX);
+      const height = Math.abs(endY - startY);
+      return { x, y, width, height };
+    }
   };
 
   // Returns true if a picture-wide selection (full canvas) exists
@@ -588,7 +667,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   // };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (isMobile) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -618,212 +696,163 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setIsSelecting(true);
   }
 
-  const findSelectionAtPoint = (p: { x: number; y: number }) => {
-    const hitPadding = 8 / Math.max(scale, 1);
-    return selections.findIndex((sel) => {
-      const { x, y, width, height } = selectionBoundsInStage(sel);
-      return (
-        p.x >= x - hitPadding &&
-        p.x <= x + width + hitPadding &&
-        p.y >= y - hitPadding &&
-        p.y <= y + height + hitPadding
-      );
-    });
-  };
-
-  const clampPointToCanvas = (p: { x: number; y: number }) => {
-    return {
-      x: Math.max(0, Math.min(p.x, canvasWidth)),
-      y: Math.max(0, Math.min(p.y, canvasHeight)),
-    };
-  };
-
-  // Mobile-specific touch handlers
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (showMobileModal) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-      return;
-    }
-    if (!isMobile || isEnteringFeedback) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    if (e.touches.length === 2) {
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dx = t2.clientX - t1.clientX;
-      const dy = t2.clientY - t1.clientY;
-      const distance = Math.hypot(dx, dy);
-
-      isTwoFingerGestureRef.current = true;
-      lastPinchDistanceRef.current = distance;
-      setIsSelecting(false);
-      setSelectionStart(null);
-      setSelectionEnd(null);
-      return;
-    }
-
-    const touch = e.touches[0];
-    if (!touch) return;
-
-    const stagePoint = toStagePointFromTouch(touch, canvas);
-    const tappedIndex = findSelectionAtPoint(stagePoint);
-
-    if (tappedIndex >= 0) {
-      setActiveSelectionIndex(tappedIndex);
-      setShowMobileModal(true);
-      setIsEnteringFeedback(true);
-      modalOpenedAtRef.current = Date.now();
-      document.body.classList.add('modal-open');
-      return;
-    }
-
-    setSelectionStart({ x: stagePoint.x, y: stagePoint.y });
-    setSelectionEnd({ x: stagePoint.x, y: stagePoint.y });
-    setIsSelecting(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (showMobileModal) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-      return;
-    }
-    if (!isMobile) return;
-    if (e.touches.length === 2 && isTwoFingerGestureRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dx = t2.clientX - t1.clientX;
-      const dy = t2.clientY - t1.clientY;
-      const distance = Math.hypot(dx, dy);
-
-      if (!lastPinchDistanceRef.current) {
-        lastPinchDistanceRef.current = distance;
-        return;
-      }
-
-      const scaleDelta = distance / lastPinchDistanceRef.current;
-      const nextScale = Math.min(5, Math.max(0.5, scale * scaleDelta));
-
-      // Zoom around the current midpoint
-      const center = {
-        x: (t1.clientX + t2.clientX) / 2,
-        y: (t1.clientY + t2.clientY) / 2,
-      };
-      const stageCenterX = (center.x - translate.x) / scale;
-      const stageCenterY = (center.y - translate.y) / scale;
-      const nextTranslate = {
-        x: center.x - nextScale * stageCenterX,
-        y: center.y - nextScale * stageCenterY,
-      };
-
-      setTranslate(constrainTranslate(nextTranslate, nextScale));
-      setScale(nextScale);
-
-      lastPinchDistanceRef.current = distance;
-      return;
-    }
-    if (!isSelecting || !selectionStart || isEnteringFeedback) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = prepareCanvasContext();
-    if (!ctx) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-
-    const currentEnd = toStagePointFromTouch(touch, canvas);
-    setSelectionEnd(currentEnd);
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    redrawSelections(ctx);
-
-    const x = Math.min(selectionStart.x, currentEnd.x);
-    const y = Math.min(selectionStart.y, currentEnd.y);
-    const width = Math.abs(currentEnd.x - selectionStart.x);
-    const height = Math.abs(currentEnd.y - selectionStart.y);
-    drawSelection(ctx, x, y, width, height);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (showMobileModal) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-      return;
-    }
-    if (!isMobile) return;
-    if (isTwoFingerGestureRef.current) {
-      if (e.touches.length < 2) {
-        isTwoFingerGestureRef.current = false;
-        lastPinchDistanceRef.current = null;
-      }
-      return;
-    }
-    if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    const dx = selectionEnd.x - selectionStart.x;
-    const dy = selectionEnd.y - selectionStart.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    const tapThreshold = 3 / Math.max(scale, 0.1);
-    const defaultTapSize = 36 / Math.max(scale, 0.1);
-
-    let start = selectionStart;
-    let end = selectionEnd;
-
-    if (distance < tapThreshold) {
-      const half = defaultTapSize / 2;
-      start = { x: selectionStart.x - half, y: selectionStart.y - half };
-      end = { x: selectionStart.x + half, y: selectionStart.y + half };
-    }
-
-    start = clampPointToCanvas(start);
-    end = clampPointToCanvas(end);
-
-    const newIndex = selections.length;
-    createNewSelection(start, end);
-    setActiveSelectionIndex(newIndex);
-    setShowMobileModal(true);
-    setIsEnteringFeedback(true);
-    modalOpenedAtRef.current = Date.now();
-    document.body.classList.add('modal-open');
-
-    setIsSelecting(false);
-    setSelectionStart(null);
-    setSelectionEnd(null);
-  };
-
   const removeEmptyFeedback = () => {
     if (activeSelectionIndex !== null) {
       const selection = selections[activeSelectionIndex];
-      if (!selection.functionValue && !selection.aestheticValue && !selection.comment) {
-        checkForPictureSelection();
-        setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
-        setTooltipPosition(null);
-        setActiveSelectionIndex(null);
+      if (isCircularSelection(selection)) {
+        // Mobile circular selection
+        if (!selection.functionValue && !selection.comment) {
+          setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
+          setShowMobileModal(false);
+          setActiveSelectionIndex(null);
+          document.body.classList.remove('modal-open');
+        }
+      } else {
+        // Desktop rectangular selection
+        if (!selection.functionValue && !selection.aestheticValue && !selection.comment) {
+          checkForPictureSelection();
+          setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
+          setTooltipPosition(null);
+          setActiveSelectionIndex(null);
+        }
       }
+    }
+  }
+
+  // Mobile-specific touch handlers
+  const handleTouchStart = (e: React.TouchEvent) => {
+    console.log('[CoCreate Mobile] Touch start', { isMobile, isEnteringFeedback, showMobileModal });
+
+    // Remove isPanning check - it's a desktop-only feature
+    if (!isMobile || isEnteringFeedback) {
+      console.log('[CoCreate Mobile] Early return from handleTouchStart');
+      return;
+    }
+
+    // Prevent default to avoid conflicts with Qualtrics or other handlers
+    e.preventDefault();
+    e.stopPropagation();
+
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.log('[CoCreate Mobile] No canvas ref');
+      return;
+    }
+
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = (touch.clientX - rect.left - translate.x) / scale;
+    const y = (touch.clientY - rect.top - translate.y) / scale;
+
+    console.log('[CoCreate Mobile] Touch coordinates:', { x, y, translate, scale });
+
+    // Check if tap is on existing selection
+    const tappedIndex = selections.findIndex((sel) => {
+      if (isCircularSelection(sel)) {
+        const centerX = sel.center.x * imageScaleFactor;
+        const centerY = sel.center.y * imageScaleFactor;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance <= sel.radius;
+      }
+      return false;
+    });
+
+    console.log('[CoCreate Mobile] Tapped index:', tappedIndex);
+
+    if (tappedIndex >= 0) {
+      // Edit existing selection
+      console.log('[CoCreate Mobile] Opening existing selection');
+      handleMobileSelectionTap(tappedIndex);
+    } else {
+      // Create new selection
+      console.log('[CoCreate Mobile] Creating new circular selection');
+      createCircularSelection({ x, y });
     }
   };
 
+  const createCircularSelection = (point: Point) => {
+    console.log('[CoCreate Mobile] createCircularSelection called', point);
+
+    const radius = 30; // 30px radius for mobile circles
+
+    const newSelection: CircularSelection = {
+      center: {
+        x: point.x / imageScaleFactor,
+        y: point.y / imageScaleFactor,
+      },
+      radius: radius,
+      functionValue: undefined,
+      comment: undefined,
+    };
+
+    console.log('[CoCreate Mobile] New selection created:', newSelection);
+
+    const newIndex = selections.length;
+
+    // Use callback form to ensure we're working with latest state
+    setSelections(prev => {
+      const updated = [...prev, newSelection];
+      console.log('[CoCreate Mobile] Selections updated, count:', updated.length);
+      return updated;
+    });
+
+    setActiveSelectionIndex(newIndex);
+    console.log('[CoCreate Mobile] Active selection index set to:', newIndex);
+
+    // Use setTimeout to ensure state has updated before showing modal
+    // This helps with React state batching issues
+    setTimeout(() => {
+      console.log('[CoCreate Mobile] Setting showMobileModal to true');
+      setShowMobileModal(true);
+      setIsEnteringFeedback(true);
+
+      // Prevent body scroll
+      document.body.classList.add('modal-open');
+      console.log('[CoCreate Mobile] Modal state updated. showMobileModal should be true');
+    }, 0);
+  };
+
+  const handleMobileSelectionTap = (index: number) => {
+    if (!isMobile) return;
+
+    setActiveSelectionIndex(index);
+    setShowMobileModal(true);
+    setIsEnteringFeedback(true);
+    document.body.classList.add('modal-open');
+  };
+
+  const handleMobileSave = (feedback: { functionValue: string; comment: string }) => {
+    if (activeSelectionIndex === null) return;
+
+    setSelections((prev) => {
+      const newSelections = [...prev];
+      newSelections[activeSelectionIndex] = {
+        ...newSelections[activeSelectionIndex],
+        functionValue: feedback.functionValue,
+        comment: feedback.comment,
+      };
+      return newSelections;
+    });
+
+    setShowMobileModal(false);
+    setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
+    document.body.classList.remove('modal-open');
+  };
+
+  const handleMobileDelete = () => {
+    if (activeSelectionIndex === null) return;
+
+    setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
+    setShowMobileModal(false);
+    setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
+    document.body.classList.remove('modal-open');
+  };
+
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isMobile) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -837,7 +866,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     if (!isSelecting || !selectionStart || isEnteringFeedback) return;
 
-    const ctx = prepareCanvasContext();
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const stagePoint = toStagePointFromEvent(e, canvas);
@@ -845,7 +874,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
     // Update the selection
     setSelectionEnd(currentEnd);
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawSelections(ctx);
 
     const x = Math.min(selectionStart.x, currentEnd.x);
@@ -859,7 +888,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   };
 
   const handleMouseLeave = (e: React.MouseEvent) => {
-    if (isMobile) return;
     if (isPanMode && isPanning) {
       setIsPanning(false);
       panLastRef.current = null;
@@ -868,7 +896,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     if (!isSelecting || !canvasRef.current) return;
 
     const canvas = canvasRef.current;
-    const ctx = prepareCanvasContext();
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Determine the mouse position relative to the canvas (stage coordinates)
@@ -877,8 +905,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const mouseY = stagePoint.y;
 
     // Clamp the mouse position to the canvas boundaries
-    const clampedX = Math.max(0, Math.min(mouseX, canvasWidth));
-    const clampedY = Math.max(0, Math.min(mouseY, canvasHeight));
+    const clampedX = Math.max(0, Math.min(mouseX, canvas.width));
+    const clampedY = Math.max(0, Math.min(mouseY, canvas.height));
 
     // Set the selection end point to the clamped position
     setSelectionEnd({ x: clampedX, y: clampedY });
@@ -890,7 +918,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       const width = clampedX - startX;
       const height = clampedY - startY;
 
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       redrawSelections(ctx);
 
       // Draw the new selection
@@ -919,7 +947,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   }
 
   const handleMouseUp = (e: React.MouseEvent) => {
-    if (isMobile) return;
     if (isPanMode && isPanning) {
       setIsPanning(false);
       panLastRef.current = null;
@@ -940,8 +967,8 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         const canvasElement = canvasRef.current;
         if (!canvasElement) return;
 
-        const width = canvasWidth;
-        const height = canvasHeight;
+        const width = canvasElement.width;
+        const height = canvasElement.height;
         if (!canCreatePictureSelection(width, height)) {
           // If picture-wide already exists, open its feedback at cursor instead
           openPictureSelectionFeedback(e);
@@ -969,7 +996,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setTooltipPosition({ x, y });
     setActiveSelectionIndex(selections.length);
     setTooltipAnchoredToSelection(true);
-    setTooltipIsViewportCoords(false);
 
     setIsSelecting(false);
     setSelectionStart(null);
@@ -982,14 +1008,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
 
-    const width = canvasWidth;
-    const height = canvasHeight;
-    const pictureSelection = selections.find(selection =>
-      selection.start.x === 0 &&
-      selection.start.y === 0 &&
-      selection.end.x === width &&
-      selection.end.y === height
-    );
+    const width = canvasElement.width;
+    const height = canvasElement.height;
+    const pictureSelection = selections.find(selection => {
+      // Only rectangular selections can be picture-wide
+      if (isCircularSelection(selection)) return false;
+      return (
+        selection.start.x === 0 &&
+        selection.start.y === 0 &&
+        selection.end.x === width &&
+        selection.end.y === height
+      );
+    });
     // console.log("Picture-wide selection found: " + JSON.stringify(pictureSelection));
 
     if (pictureSelection) {
@@ -1030,25 +1060,20 @@ const Canvas: React.FC<CanvasProps> = (props) => {
 
 
   const canCreatePictureSelection = (width: number, height: number) => {
-    const pictureWideSelection = selections.filter(selection =>
-      selection.start.x === 0 &&
-      selection.start.y === 0 &&
-      selection.end.x === width &&
-      selection.end.y === height
-    );
+    // Only creates a selection if selections array does not contain a picture-wide selection
+    let pictureWideSelection = selections.filter(selection => {
+      // Only rectangular selections can be picture-wide
+      if (isCircularSelection(selection)) return false;
+      return (
+        selection.start.x === 0 &&
+        selection.start.y === 0 &&
+        selection.end.x === width &&
+        selection.end.y === height
+      );
+    });
     if (pictureWideSelection.length !== 0) return false;
     return true;
   }
-
-  const findPictureSelectionIndex = (width: number, height: number) => {
-    const pictureSelection = selections.find(selection =>
-      selection.start.x === 0 &&
-      selection.start.y === 0 &&
-      selection.end.x === width &&
-      selection.end.y === height
-    );
-    return pictureSelection ? selections.indexOf(pictureSelection) : -1;
-  };
 
   const createNewSelection = (
     selectionStart: SelectionCoordinates,
@@ -1089,32 +1114,6 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     });
   }
 
-  const openPictureSelectionMobile = () => {
-    if (!canvasRef.current) return;
-    const width = canvasWidth;
-    const height = canvasHeight;
-
-    const existingIndex = findPictureSelectionIndex(width, height);
-    if (existingIndex >= 0) {
-      setActiveSelectionIndex(existingIndex);
-      setShowMobileModal(true);
-      setIsEnteringFeedback(true);
-      modalOpenedAtRef.current = Date.now();
-      document.body.classList.add('modal-open');
-      return;
-    }
-
-    if (!canCreatePictureSelection(width, height)) return;
-    createPictureSelection(width, height);
-    const newIndex = selections.length;
-    setActiveSelectionIndex(newIndex);
-    setShowMobileModal(true);
-    setIsEnteringFeedback(true);
-    setAllowPictureSelection(false);
-    modalOpenedAtRef.current = Date.now();
-    document.body.classList.add('modal-open');
-  };
-
 
   const handleEdit = (index: number) => {
     setActiveSelectionIndex(index);
@@ -1139,66 +1138,18 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     setIsEnteringFeedback(false);
   };
 
-  const handleMobileSave = (feedback: { functionValue: string; aestheticValue: string; comment: string }) => {
-    if (activeSelectionIndex === null) return;
-    const feedbackConfig = getFeedbackConfig();
-
-    setSelections((prev) => {
-      const next = [...prev];
-      next[activeSelectionIndex] = {
-        ...next[activeSelectionIndex],
-        functionValue: feedbackConfig.showFunctionValue ? feedback.functionValue : "",
-        aestheticValue: feedbackConfig.showAestheticValue ? feedback.aestheticValue : "",
-        comment: feedbackConfig.showComment ? feedback.comment : "",
-      };
-      return next;
-    });
-
-    setShowMobileModal(false);
-    setActiveSelectionIndex(null);
-    setIsEnteringFeedback(false);
-    setTooltipPosition(null);
-    document.body.classList.remove('modal-open');
-  };
-
-  const handleMobileDelete = () => {
-    if (activeSelectionIndex === null) return;
-    checkForPictureSelection(activeSelectionIndex);
-    setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
-    setShowMobileModal(false);
-    setActiveSelectionIndex(null);
-    setIsEnteringFeedback(false);
-    setTooltipPosition(null);
-    document.body.classList.remove('modal-open');
-  };
-
-  const handleMobileClose = () => {
-    if (Date.now() - modalOpenedAtRef.current < 250) {
-      return;
-    }
-    if (activeSelectionIndex !== null) {
-      const selection = selections[activeSelectionIndex];
-      if (selection && !selection.functionValue && !selection.aestheticValue && !selection.comment) {
-        setSelections((prev) => prev.filter((_, i) => i !== activeSelectionIndex));
-      }
-    }
-    setShowMobileModal(false);
-    setActiveSelectionIndex(null);
-    setIsEnteringFeedback(false);
-    setTooltipPosition(null);
-    document.body.classList.remove('modal-open');
-  };
-
   const checkForPictureSelection = (index?: number) => {
 
     if (allowPictureSelection) return
 
     const selection = selections[index ?? activeSelectionIndex ?? 0];
     const canvas = canvasRef.current;
-    if (!canvas || !selection) return;
+    if (!canvas) return;
 
     const { width, height } = canvas.getBoundingClientRect();
+    // Only check picture-wide for rectangular selections
     if (
+      !isCircularSelection(selection) &&
       selection.start.x === 0 &&
       selection.start.y === 0 &&
       selection.end.x === width &&
@@ -1235,35 +1186,27 @@ const Canvas: React.FC<CanvasProps> = (props) => {
     };
 
     window.addEventListener("resize", handleResize);
-    const viewport = window.visualViewport;
-    if (viewport) {
-      viewport.addEventListener("resize", handleResize);
-    }
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (viewport) {
-        viewport.removeEventListener("resize", handleResize);
-      }
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
 
 
   useEffect(() => {
     if (imageDimensions) {
       setSelections(prevSelections =>
-        prevSelections.map(selection => ({
-          ...selection,
-          start: selection.start,
-          end: selection.end,
-        }))
+        prevSelections.map(selection => {
+          // Only update rectangular selections
+          if (isCircularSelection(selection)) {
+            return selection;  // Keep circular selections unchanged
+          }
+          return {
+            ...selection,
+            start: selection.start,
+            end: selection.end,
+          };
+        })
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-
-  // Keep the Cocreate root sized to the rendered shell to avoid cropping.
-  useEffect(() => {
-    syncRootToShellSize();
-  }, [canvasWidth, canvasHeight, viewportSize, toolbarVisible, minimapVisible, syncRootToShellSize]);
 
   // Boundary constraint helper (keeps content within container and centers when smaller)
   const constrainTranslate = (newTranslate: { x: number; y: number }, newScale: number) => {
@@ -1401,13 +1344,13 @@ const Canvas: React.FC<CanvasProps> = (props) => {
   // }, []);
 
   return (
-    <div className="canvas-shell" ref={shellRef}>
+    <div className="canvas-shell">
       <div
         ref={containerRef}
         className="canvas-container"
         style={{ width: canvasWidth, height: canvasHeight }}
       >
-      {/* Toolbar */}
+      {/* Toolbar - Desktop only */}
       {!isMobile && (
       <div className="zoom-toolbar" style={{ display: toolbarVisible ? "flex" : "none" }}>
         <IconButton
@@ -1487,7 +1430,7 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       </div>
       )}
 
-      {/* Toolbar tooltips via portal */}
+      {/* Toolbar tooltips via portal - Desktop only */}
       {!isMobile && toolbarVisible && hoveredToolbarButton && toolbarButtonRects[hoveredToolbarButton] && (() => {
         const buttonRect = toolbarButtonRects[hoveredToolbarButton];
         const tooltips = {
@@ -1537,30 +1480,29 @@ const Canvas: React.FC<CanvasProps> = (props) => {
           alt="Rendering"
           className="rendering-image"
           style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "contain",
+            maxHeight: "100%",
+            width: "auto",
             display: "block",
           }}
         />
         <canvas
           ref={canvasRef}
-          width={canvasPixelWidth}
-          height={canvasPixelHeight}
+          width={canvasWidth}
+          height={canvasHeight}
           className="canvas"
           style={{
-            width: canvasWidth,
-            height: canvasHeight,
-            cursor: isPanMode ? 'grab' : isEnteringFeedback ? 'default' : 'crosshair',
+            cursor: isMobile ? 'default' : (isPanMode ? 'grab' : isEnteringFeedback ? 'default' : 'crosshair'),
+            touchAction: isMobile ? 'none' : 'auto'
           }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
+          onMouseDown={!isMobile ? handleMouseDown : undefined}
+          onMouseMove={!isMobile ? handleMouseMove : undefined}
+          onMouseUp={!isMobile ? handleMouseUp : undefined}
+          onMouseLeave={!isMobile ? handleMouseLeave : undefined}
+          onTouchStart={isMobile ? handleTouchStart : undefined}
+          onTouchEnd={isMobile ? (e) => {
+            console.log('[CoCreate Mobile] Touch end');
+            e.preventDefault();
+          } : undefined}
         />
       </div>
 
@@ -1600,57 +1542,155 @@ const Canvas: React.FC<CanvasProps> = (props) => {
         );
       })}
 
-      {/* Feedback UI: Mobile modal or desktop tooltip */}
-      {isMobile ? (
-        <MobileFeedbackModal
-          visible={showMobileModal}
-          selection={activeSelectionIndex !== null && selections[activeSelectionIndex]
-            ? selections[activeSelectionIndex]
-            : { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } }}
-          onSave={handleMobileSave}
-          onDelete={handleMobileDelete}
-          onClose={handleMobileClose}
-          onOpenChange={(isOpen) => {
-            if (isOpen) {
+      {/* ========================================== */}
+      {/* TEMPORARY DEBUG UI - Remove after fixing */}
+      {/* ========================================== */}
+      {isMobile && (
+        <div style={{
+          position: 'fixed',
+          top: 10,
+          left: 10,
+          background: 'rgba(0, 0, 0, 0.9)',
+          color: 'white',
+          padding: '12px',
+          zIndex: 999999,
+          fontSize: '11px',
+          fontFamily: 'monospace',
+          borderRadius: '4px',
+          maxWidth: '200px',
+          border: '2px solid #4CAF50'
+        }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '8px', color: '#4CAF50' }}>
+            🔍 DEBUG INFO
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>isMobile:</strong> {String(isMobile)}
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>showModal:</strong> <span style={{
+              color: showMobileModal ? '#4CAF50' : '#f44336',
+              fontWeight: 'bold'
+            }}>{String(showMobileModal)}</span>
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>activeIndex:</strong> {String(activeSelectionIndex)}
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>selections:</strong> {selections.length}
+          </div>
+          <div style={{ marginBottom: '4px' }}>
+            <strong>entering:</strong> {String(isEnteringFeedback)}
+          </div>
+          <div style={{ marginBottom: '8px', paddingTop: '8px', borderTop: '1px solid #666' }}>
+            <strong>Width:</strong> {window.innerWidth}px
+          </div>
+          <button
+            onClick={() => {
+              console.log('🔴 FORCE MODAL BUTTON CLICKED');
+              console.log('  Before - showMobileModal:', showMobileModal);
+              console.log('  Before - activeSelectionIndex:', activeSelectionIndex);
+
+              setShowMobileModal(true);
+              setActiveSelectionIndex(0);
               setIsEnteringFeedback(true);
-            }
-          }}
-          feedbackConfig={getFeedbackConfig()}
-        />
+              document.body.classList.add('modal-open');
+
+              setTimeout(() => {
+                console.log('  After (50ms) - showMobileModal should be true');
+                console.log('  Modal in DOM:', !!document.querySelector('.mobile-modal-backdrop'));
+              }, 50);
+            }}
+            style={{
+              marginTop: '8px',
+              padding: '8px',
+              background: '#f44336',
+              color: 'white',
+              border: 'none',
+              width: '100%',
+              borderRadius: '4px',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              cursor: 'pointer'
+            }}
+          >
+            🚨 FORCE MODAL
+          </button>
+          <div style={{
+            marginTop: '8px',
+            fontSize: '9px',
+            color: '#999',
+            paddingTop: '8px',
+            borderTop: '1px solid #666'
+          }}>
+            Tap image to test normal flow
+          </div>
+        </div>
+      )}
+      {/* ========================================== */}
+      {/* END DEBUG UI */}
+      {/* ========================================== */}
+
+      {/* Conditional Feedback UI: Mobile Modal or Desktop Tooltip */}
+      {isMobile ? (
+        /* MOBILE: Full-screen modal */
+        <>
+          {console.log('[CoCreate Mobile] Render check:', {
+            showMobileModal,
+            activeSelectionIndex,
+            selectionsLength: selections.length,
+            hasSelection: activeSelectionIndex !== null && selections[activeSelectionIndex] !== undefined
+          })}
+          <MobileFeedbackModal
+            visible={showMobileModal}
+            selection={activeSelectionIndex !== null && selections[activeSelectionIndex]
+              ? selections[activeSelectionIndex]
+              : { center: { x: 0, y: 0 }, radius: 0 }}
+            onSave={handleMobileSave}
+            onDelete={handleMobileDelete}
+            onClose={() => {
+              console.log('[CoCreate Mobile] Modal onClose called');
+              setShowMobileModal(false);
+              setIsEnteringFeedback(false);
+              document.body.classList.remove('modal-open');
+            }}
+            feedbackConfig={getFeedbackConfig()}
+          />
+        </>
       ) : (
+        /* DESKTOP: Floating tooltip */
         tooltipPosition && activeSelectionIndex !== null && (() => {
-            let viewportX: number;
-            let viewportY: number;
-            if (tooltipIsViewportCoords) {
-              viewportX = tooltipPosition.x;
-              viewportY = tooltipPosition.y;
-            } else {
-              const screenPos = stageToScreenPoint({ x: tooltipPosition.x, y: tooltipPosition.y });
-              const containerRect = containerRef.current?.getBoundingClientRect();
-              viewportX = (containerRect?.left ?? 0) + screenPos.x;
-              viewportY = (containerRect?.top ?? 0) + screenPos.y;
-            }
-            const tooltipWidth = 250; // matches Tooltip width style
-            const viewportWidth = typeof window !== "undefined" ? window.innerWidth : tooltipWidth;
-            const clampedX = Math.max(0, Math.min(viewportX, viewportWidth - tooltipWidth));
-            const tooltipNode = (
-              <Tooltip
-                index={activeSelectionIndex}
-                x={clampedX}
-                y={viewportY}
-                selection={selections[activeSelectionIndex]}
-                setSelections={setSelections as React.Dispatch<React.SetStateAction<Selection[]>>}
-                setActiveSelectionIndex={setActiveSelectionIndex}
-                setTooltipPosition={setTooltipPosition}
-                setIsEnteringFeedback={setIsEnteringFeedback}
-                onDelete={() => handleDelete(activeSelectionIndex)}
-              />
-            );
-            return createPortal(tooltipNode, document.body);
-          })()
+          let viewportX: number;
+          let viewportY: number;
+          if (tooltipIsViewportCoords) {
+            viewportX = tooltipPosition.x;
+            viewportY = tooltipPosition.y;
+          } else {
+            const screenPos = stageToScreenPoint({ x: tooltipPosition.x, y: tooltipPosition.y });
+            const containerRect = containerRef.current?.getBoundingClientRect();
+            viewportX = (containerRect?.left ?? 0) + screenPos.x;
+            viewportY = (containerRect?.top ?? 0) + screenPos.y;
+          }
+          const tooltipWidth = 250; // matches Tooltip width style
+          const viewportWidth = typeof window !== "undefined" ? window.innerWidth : tooltipWidth;
+          const clampedX = Math.max(0, Math.min(viewportX, viewportWidth - tooltipWidth));
+          const tooltipNode = (
+            <Tooltip
+              index={activeSelectionIndex}
+              x={clampedX}
+              y={viewportY}
+              selection={selections[activeSelectionIndex]}
+              setSelections={setSelections as React.Dispatch<React.SetStateAction<Selection[]>>}
+              setActiveSelectionIndex={setActiveSelectionIndex}
+              setTooltipPosition={setTooltipPosition}
+              setIsEnteringFeedback={setIsEnteringFeedback}
+              onDelete={() => handleDelete(activeSelectionIndex)}
+            />
+          );
+          return createPortal(tooltipNode, document.body);
+        })()
       )}
 
-      {/* Mini-map */}
+      {/* Mini-map - Desktop only */}
       {!isMobile && toolbarVisible && minimapVisible && (
         <div className="minimap" style={{ width: minimap.width, height: minimap.height }}>
           <img
@@ -1671,33 +1711,41 @@ const Canvas: React.FC<CanvasProps> = (props) => {
       )}
       </div>
 
-      {/* External toggles outside of image container */}
+      {/* External toggles outside of image container - Desktop only */}
       {!isMobile && (
-        <div className="canvas-top-right-controls">
-          <IconButton
-            size="small"
-            onClick={() => { setToolbarVisible(v => !v); if (toolbarVisible) setMinimapVisible(false); }}
-            data-tooltip={toolbarVisible ? "Hide toolbar" : "Show toolbar"}
-          >
-            {toolbarVisible ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
-          </IconButton>
-        </div>
-      )}
-
-      {isMobile && (
-        <div className="mobile-picture-wide-control">
-          <button
-            type="button"
-            className="mobile-picture-wide-button"
-            onClick={openPictureSelectionMobile}
-            disabled={isEnteringFeedback || isSelecting}
-          >
-            Annotate Full Image
-          </button>
-        </div>
+      <div className="canvas-top-right-controls">
+        <IconButton
+          size="small"
+          onClick={() => { setToolbarVisible(v => !v); if (toolbarVisible) setMinimapVisible(false); }}
+          data-tooltip={toolbarVisible ? "Hide toolbar" : "Show toolbar"}
+        >
+          {toolbarVisible ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
+        </IconButton>
+      </div>
       )}
     </div>
   );
 };
 
 export default Canvas;
+
+    {/* <div>
+        <span>Coordinates: {mouseCoordinates && JSON.stringify(mouseCoordinates)}</span>
+        <br />
+        <span>Selections: {JSON.stringify(selections)}</span>
+        <br />
+        <span>Active Selection Index: {activeSelectionIndex}</span>
+        <br />
+        <span>isEnteringFeedback: {JSON.stringify(isEnteringFeedback)}</span>
+        <br />
+        <span>allowPictureSelection: {JSON.stringify(allowPictureSelection)}</span>
+        <br />
+        <span>Tooltip Position: {JSON.stringify(tooltipPosition)}</span>
+        <br />
+        <span>Canvas Height & Width: {canvasHeight}, {canvasWidth}</span>
+        <br />
+        <span>Image Dimensions: {JSON.stringify(imageDimensions)}</span>
+        <br />
+        <span>Image Scale Factor: {imageScaleFactor}</span>
+        <br />
+      </div> */}

@@ -14398,7 +14398,7 @@ const Divider = /* @__PURE__ */ reactExports.forwardRef(function Divider2(inProp
 if (Divider) {
   Divider.muiSkipListHighlight = true;
 }
-const getFeedbackConfig = () => {
+const getFeedbackConfig$1 = () => {
   const defaultConfig = {
     showFunctionValue: true,
     showAestheticValue: true,
@@ -14415,7 +14415,7 @@ const Tooltip = (props) => {
   const [aestheticValue, setAestheticValue] = reactExports.useState(selection.aestheticValue || "");
   const [comment2, setComment] = reactExports.useState(selection.comment || "");
   const [isSaveEnabled, setIsSaveEnabled] = reactExports.useState(false);
-  const feedbackConfig = getFeedbackConfig();
+  const feedbackConfig = getFeedbackConfig$1();
   const handleFunctionValue = (value) => {
     if (!annotation) {
       if (functionValue === value) {
@@ -14654,122 +14654,30 @@ const MobileFeedbackModal = ({
   onClose,
   feedbackConfig = {
     showFunctionValue: true,
-    showAestheticValue: true,
+    showAestheticValue: false,
     showComment: true
-  },
-  onOpenChange
+  }
 }) => {
   const [functionValue, setFunctionValue] = reactExports.useState("");
-  const [aestheticValue, setAestheticValue] = reactExports.useState("");
   const [comment2, setComment] = reactExports.useState("");
-  const [modalHeightPx, setModalHeightPx] = reactExports.useState(null);
-  const lastPinchDistanceRef = React.useRef(null);
-  const lastDragYRef = React.useRef(null);
   reactExports.useEffect(() => {
     if (visible && selection) {
       setFunctionValue(selection.functionValue || "");
-      setAestheticValue(selection.aestheticValue || "");
       setComment(selection.comment || "");
     }
   }, [visible, selection]);
-  reactExports.useEffect(() => {
-    onOpenChange == null ? void 0 : onOpenChange(visible);
-  }, [visible, onOpenChange]);
-  reactExports.useEffect(() => {
-    if (!visible) return;
-    const vh = typeof window !== "undefined" ? window.innerHeight : 0;
-    if (!vh) return;
-    const defaultHeight = Math.round(vh * 0.85);
-    setModalHeightPx(defaultHeight);
-  }, [visible]);
-  reactExports.useEffect(() => {
-    if (!visible) return;
-    const handleResize = () => {
-      if (modalHeightPx === null) return;
-      setModalHeightPx((current) => current ? clampHeight(current) : current);
-    };
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("orientationchange", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-    };
-  }, [visible, modalHeightPx]);
   const handleSave = () => {
     onSave({
       functionValue,
-      aestheticValue,
       comment: comment2
     });
     setFunctionValue("");
-    setAestheticValue("");
     setComment("");
   };
   const handleDelete = () => {
     onDelete();
     setFunctionValue("");
-    setAestheticValue("");
     setComment("");
-  };
-  const getPinchDistance = (touches) => {
-    const t1 = touches[0];
-    const t2 = touches[1];
-    const dx = t2.clientX - t1.clientX;
-    const dy = t2.clientY - t1.clientY;
-    return Math.hypot(dx, dy);
-  };
-  const clampHeight = (height2) => {
-    const vh = typeof window !== "undefined" ? window.innerHeight : height2;
-    const minHeight2 = Math.round(vh * 0.35);
-    const maxHeight2 = Math.round(vh * 0.95);
-    return Math.min(maxHeight2, Math.max(minHeight2, height2));
-  };
-  const handleHandleTouchStart = (e) => {
-    if (e.touches.length === 2) {
-      lastPinchDistanceRef.current = getPinchDistance(e.touches);
-      lastDragYRef.current = null;
-      return;
-    }
-    if (e.touches.length === 1) {
-      lastDragYRef.current = e.touches[0].clientY;
-      lastPinchDistanceRef.current = null;
-    }
-  };
-  const handleHandleTouchMove = (e) => {
-    if (modalHeightPx === null) return;
-    if (e.touches.length === 2 && lastPinchDistanceRef.current) {
-      e.preventDefault();
-      const distance = getPinchDistance(e.touches);
-      const scale = distance / lastPinchDistanceRef.current;
-      const nextHeight = clampHeight(modalHeightPx * scale);
-      setModalHeightPx(nextHeight);
-      lastPinchDistanceRef.current = distance;
-      return;
-    }
-    if (e.touches.length === 1 && lastDragYRef.current !== null) {
-      e.preventDefault();
-      const currentY = e.touches[0].clientY;
-      const dy = currentY - lastDragYRef.current;
-      const nextHeight = clampHeight(modalHeightPx - dy);
-      setModalHeightPx(nextHeight);
-      lastDragYRef.current = currentY;
-    }
-  };
-  const handleHandleTouchEnd = () => {
-    lastPinchDistanceRef.current = null;
-    lastDragYRef.current = null;
-  };
-  const handleBackdropTouch = (e) => {
-    if (e.touches.length > 1 && e.cancelable) {
-      e.preventDefault();
-    }
-    e.stopPropagation();
-  };
-  const handleModalTouch = (e) => {
-    if (e.touches.length > 1 && e.cancelable) {
-      e.preventDefault();
-    }
-    e.stopPropagation();
   };
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) {
@@ -14777,121 +14685,119 @@ const MobileFeedbackModal = ({
     }
   };
   if (!visible) return null;
-  const ratingOptions = [
-    { value: "good", label: "Good" },
-    { value: "bad", label: "Bad" }
+  const functionOptions = [
+    { value: "good", label: "Good", emoji: "👍" },
+    { value: "neutral", label: "Neutral", emoji: "😐" },
+    { value: "bad", label: "Bad", emoji: "👎" }
   ];
-  const hasFunctionValue = feedbackConfig.showFunctionValue && !!functionValue;
-  const hasAestheticValue = feedbackConfig.showAestheticValue && !!aestheticValue;
-  const hasCommentValue = feedbackConfig.showComment && !!comment2;
-  const isSaveEnabled = hasFunctionValue || hasAestheticValue || hasCommentValue;
-  return /* @__PURE__ */ jsxRuntimeExports.jsx(
-    "div",
-    {
-      className: "mobile-modal-backdrop",
-      onClick: handleBackdropClick,
-      onTouchStart: handleBackdropTouch,
-      onTouchMove: handleBackdropTouch,
-      onTouchEnd: handleBackdropTouch,
-      children: /* @__PURE__ */ jsxRuntimeExports.jsxs(
-        "div",
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mobile-modal-backdrop", onClick: handleBackdropClick, children: /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mobile-modal-handle" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-header", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { children: "Add Feedback" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
         {
-          className: "mobile-modal",
-          style: modalHeightPx ? { height: `${modalHeightPx}px`, maxHeight: `${modalHeightPx}px` } : void 0,
-          onTouchStart: handleModalTouch,
-          onTouchMove: handleModalTouch,
-          onTouchEnd: handleModalTouch,
-          children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(
-              "div",
-              {
-                className: "mobile-modal-handle",
-                onTouchStart: handleHandleTouchStart,
-                onTouchMove: handleHandleTouchMove,
-                onTouchEnd: handleHandleTouchEnd,
-                onTouchCancel: handleHandleTouchEnd
-              }
-            ),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-header", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { children: "Add Feedback" }),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  className: "mobile-modal-close",
-                  onClick: onClose,
-                  "aria-label": "Close",
-                  children: "×"
-                }
-              )
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-content", children: [
-              feedbackConfig.showFunctionValue && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-section", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "mobile-modal-label", children: "How does this area function?" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mobile-modal-button-group", children: ratingOptions.map((option) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
-                  {
-                    className: `mobile-modal-option ${functionValue === option.value ? "active" : ""}`,
-                    onClick: () => setFunctionValue(option.value),
-                    children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mobile-modal-option-label", children: option.label })
-                  },
-                  option.value
-                )) })
-              ] }),
-              feedbackConfig.showAestheticValue && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-section", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "mobile-modal-label", children: "How does this area look?" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mobile-modal-button-group", children: ratingOptions.map((option) => /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "button",
-                  {
-                    className: `mobile-modal-option ${aestheticValue === option.value ? "active" : ""}`,
-                    onClick: () => setAestheticValue(option.value),
-                    children: /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mobile-modal-option-label", children: option.label })
-                  },
-                  `aesthetic-${option.value}`
-                )) })
-              ] }),
-              feedbackConfig.showComment && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-section", children: [
-                /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "mobile-modal-label", htmlFor: "comment-input", children: "Additional comments (optional)" }),
-                /* @__PURE__ */ jsxRuntimeExports.jsx(
-                  "textarea",
-                  {
-                    id: "comment-input",
-                    className: "mobile-modal-textarea",
-                    value: comment2,
-                    onChange: (e) => setComment(e.target.value),
-                    placeholder: "Share your thoughts...",
-                    rows: 4
-                  }
-                )
-              ] })
-            ] }),
-            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-footer", children: [
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  className: "mobile-modal-button mobile-modal-button-delete",
-                  onClick: handleDelete,
-                  children: "Delete"
-                }
-              ),
-              /* @__PURE__ */ jsxRuntimeExports.jsx(
-                "button",
-                {
-                  className: "mobile-modal-button mobile-modal-button-save",
-                  onClick: handleSave,
-                  disabled: !isSaveEnabled,
-                  children: "Save"
-                }
-              )
-            ] })
-          ]
+          className: "mobile-modal-close",
+          onClick: onClose,
+          "aria-label": "Close",
+          children: "×"
         }
       )
-    }
-  );
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-content", children: [
+      feedbackConfig.showFunctionValue && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-section", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "mobile-modal-label", children: "How does this area function?" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mobile-modal-button-group", children: functionOptions.map((option) => /* @__PURE__ */ jsxRuntimeExports.jsxs(
+          "button",
+          {
+            className: `mobile-modal-option ${functionValue === option.value ? "active" : ""}`,
+            onClick: () => setFunctionValue(option.value),
+            children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mobile-modal-emoji", children: option.emoji }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "mobile-modal-option-label", children: option.label })
+            ]
+          },
+          option.value
+        )) })
+      ] }),
+      feedbackConfig.showComment && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-section", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("label", { className: "mobile-modal-label", htmlFor: "comment-input", children: "Additional comments (optional)" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "textarea",
+          {
+            id: "comment-input",
+            className: "mobile-modal-textarea",
+            value: comment2,
+            onChange: (e) => setComment(e.target.value),
+            placeholder: "Share your thoughts...",
+            rows: 4
+          }
+        )
+      ] })
+    ] }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mobile-modal-footer", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          className: "mobile-modal-button mobile-modal-button-delete",
+          onClick: handleDelete,
+          children: "Delete"
+        }
+      ),
+      /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
+        {
+          className: "mobile-modal-button mobile-modal-button-save",
+          onClick: handleSave,
+          disabled: !functionValue && !comment2,
+          children: "Save"
+        }
+      )
+    ] })
+  ] }) });
 };
+console.log("");
+console.log("═══════════════════════════════════════════");
+console.log("🚀 CoCreate Mobile Fix");
+console.log("📦 Version: 2.0.1-MOBILE-FIX");
+console.log("📅 Build: " + (/* @__PURE__ */ new Date()).toISOString());
+console.log("═══════════════════════════════════════════");
+console.log("");
+window.__COCREATE_VERSION__ = "2.0.1-MOBILE-FIX";
+window.__COCREATE_MOBILE_FIX_APPLIED__ = true;
+window.checkCoCreateVersion = function() {
+  console.log("CoCreate Version Check:");
+  console.log("  Version:", window.__COCREATE_VERSION__);
+  console.log("  Mobile Fix Applied:", window.__COCREATE_MOBILE_FIX_APPLIED__);
+  console.log("  Window Width:", window.innerWidth);
+  console.log("  Is Mobile:", window.innerWidth <= 768);
+  console.log("  Touch Support:", "ontouchstart" in window);
+  return {
+    version: window.__COCREATE_VERSION__,
+    mobileFixApplied: window.__COCREATE_MOBILE_FIX_APPLIED__,
+    isMobileWidth: window.innerWidth <= 768,
+    hasTouchSupport: "ontouchstart" in window
+  };
+};
+console.log("💡 Run checkCoCreateVersion() in console to verify setup");
+console.log("");
+const getFeedbackConfig = () => {
+  const defaultConfig = {
+    showFunctionValue: true,
+    showAestheticValue: false,
+    // Default to false (aesthetics hidden)
+    showComment: true
+  };
+  if (typeof window !== "undefined" && window.cocreateFeedbackConfig) {
+    return window.cocreateFeedbackConfig;
+  }
+  return defaultConfig;
+};
+function isCircularSelection(selection) {
+  return "radius" in selection && "center" in selection;
+}
 const DEFAULT_IMAGE_SRC = "/cocreate/rendering.jpg";
 const MAX_IMAGE_WIDTH = 800;
-const MAX_BACKING_SCALE = 4;
 const CANVAS_SELECTIONS_KEY = "cocreate-canvasSelections";
 const CANVAS_SIZE_KEY = "cocreate-canvasSize";
 const QUESTION_IDS_KEY = "cocreate-questionIds";
@@ -14909,7 +14815,7 @@ const Canvas = (props) => {
   const [allowPictureSelection, setAllowPictureSelection] = reactExports.useState(true);
   const [tooltipAnchoredToSelection, setTooltipAnchoredToSelection] = reactExports.useState(false);
   const [tooltipIsViewportCoords, setTooltipIsViewportCoords] = reactExports.useState(false);
-  const [isMobile, setIsMobile] = reactExports.useState(() => typeof window !== "undefined" ? !isMobileDevice() : false);
+  const [isMobile, setIsMobile] = reactExports.useState(isMobileDevice());
   const [showMobileModal, setShowMobileModal] = reactExports.useState(false);
   const [imageSrc, setImageSrc] = reactExports.useState(DEFAULT_IMAGE_SRC);
   const [canvasWidth, setCanvasWidth] = reactExports.useState(MAX_IMAGE_WIDTH);
@@ -14927,47 +14833,17 @@ const Canvas = (props) => {
     w: typeof window !== "undefined" ? window.innerWidth : 0,
     h: typeof window !== "undefined" ? window.innerHeight : 0
   }));
-  const backingScale = reactExports.useMemo(() => {
-    const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    return Math.min(dpr * scale, MAX_BACKING_SCALE);
-  }, [scale, viewportSize]);
-  const canvasPixelWidth = Math.max(1, Math.round(canvasWidth * backingScale));
-  const canvasPixelHeight = Math.max(1, Math.round(canvasHeight * backingScale));
   const [hoveredToolbarButton, setHoveredToolbarButton] = reactExports.useState(null);
   const [toolbarButtonRects, setToolbarButtonRects] = reactExports.useState({});
-  const modalOpenedAtRef = reactExports.useRef(0);
-  const isTwoFingerGestureRef = reactExports.useRef(false);
-  const lastPinchDistanceRef = reactExports.useRef(null);
   const containerRef = reactExports.useRef(null);
   const stageRef = reactExports.useRef(null);
-  const shellRef = reactExports.useRef(null);
-  const prepareCanvasContext = reactExports.useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return null;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-    const targetWidth = Math.max(1, Math.round(canvasWidth * backingScale));
-    const targetHeight = Math.max(1, Math.round(canvasHeight * backingScale));
-    if (canvas.width !== targetWidth) {
-      canvas.width = targetWidth;
-    }
-    if (canvas.height !== targetHeight) {
-      canvas.height = targetHeight;
-    }
-    canvas.style.width = `${canvasWidth}px`;
-    canvas.style.height = `${canvasHeight}px`;
-    ctx.setTransform(backingScale, 0, 0, backingScale, 0, 0);
-    return ctx;
-  }, [canvasWidth, canvasHeight, backingScale]);
   reactExports.useEffect(() => {
     try {
       const savedSelectionsRaw = localStorage.getItem(CANVAS_SELECTIONS_KEY);
       if (!savedSelectionsRaw) return;
       const parsed = JSON.parse(savedSelectionsRaw);
       if (parsed && parsed[instanceId]) {
-        const raw = parsed[instanceId];
-        const rectangularOnly = Array.isArray(raw) ? raw.filter((s) => s && typeof s === "object" && !("radius" in s)) : [];
-        setSelections(rectangularOnly);
+        setSelections(parsed[instanceId]);
       }
     } catch (error) {
       console.error("[Cocreate] Failed to load saved selections", error);
@@ -15003,32 +14879,17 @@ const Canvas = (props) => {
     };
   }, [instanceId]);
   reactExports.useEffect(() => {
-    const handleMobileCheck = () => {
+    const handleResize = () => {
       const mobile = isMobileDevice();
       setIsMobile(mobile);
       if (mobile) {
         setToolbarVisible(false);
         setMinimapVisible(false);
-        setIsPanMode(false);
-      } else {
-        setShowMobileModal(false);
-        document.body.classList.remove("modal-open");
       }
     };
-    handleMobileCheck();
-    window.addEventListener("resize", handleMobileCheck);
-    window.addEventListener("orientationchange", handleMobileCheck);
-    const viewport = window.visualViewport;
-    if (viewport) {
-      viewport.addEventListener("resize", handleMobileCheck);
-    }
-    return () => {
-      window.removeEventListener("resize", handleMobileCheck);
-      window.removeEventListener("orientationchange", handleMobileCheck);
-      if (viewport) {
-        viewport.removeEventListener("resize", handleMobileCheck);
-      }
-    };
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
   reactExports.useEffect(() => {
     console.log("[CoCreate] Saving to localStorage - selections count:", selections.length);
@@ -15098,51 +14959,46 @@ const Canvas = (props) => {
     window.dispatchEvent(selectionsEvent);
     console.log("[CoCreate] ✅ Dispatched localStorageUpdated for selections");
   }, [selections, canvasWidth, canvasHeight, imageScaleFactor, instanceId]);
-  const getAvailableSize = () => {
-    var _a;
-    const shell = shellRef.current;
-    const shellParent = shell == null ? void 0 : shell.parentElement;
-    const parent = (_a = containerRef.current) == null ? void 0 : _a.parentElement;
-    const baseWidth = (shell == null ? void 0 : shell.clientWidth) ?? (shellParent == null ? void 0 : shellParent.clientWidth) ?? (parent == null ? void 0 : parent.clientWidth) ?? window.innerWidth;
-    const baseHeight = (shell == null ? void 0 : shell.clientHeight) ?? (shellParent == null ? void 0 : shellParent.clientHeight) ?? (parent == null ? void 0 : parent.clientHeight) ?? window.innerHeight;
-    if (shell && typeof window !== "undefined") {
-      const styles = window.getComputedStyle(shell);
-      const paddingX = parseFloat(styles.paddingLeft) + parseFloat(styles.paddingRight);
-      const paddingY = parseFloat(styles.paddingTop) + parseFloat(styles.paddingBottom);
-      return {
-        maxWidth: Math.max(0, baseWidth - paddingX),
-        maxHeight: Math.max(0, baseHeight - paddingY)
-      };
-    }
-    return { maxWidth: baseWidth, maxHeight: baseHeight };
-  };
   const initCanvasDimensions = (img) => {
-    const { maxWidth: maxWidth2, maxHeight: maxHeight2 } = getAvailableSize();
-    const naturalWidth = img.naturalWidth || img.width;
-    const naturalHeight = img.naturalHeight || img.height;
-    if (!naturalWidth || !naturalHeight) return;
-    const scaleFactor = Math.min(maxWidth2 / naturalWidth, maxHeight2 / naturalHeight);
-    const width2 = naturalWidth * scaleFactor;
-    const height2 = naturalHeight * scaleFactor;
+    console.log("[Cocreate] Initializing canvas dimensions: " + img.naturalWidth + ", " + img.naturalHeight);
+    console.log("[Cocreate] Window inner height: " + window.innerHeight);
+    const screenHeight = window.innerHeight;
+    const originalImageHeight = img.naturalHeight;
+    const imageHeight = img.height;
+    const imageWidth = img.width;
+    const height2 = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
+    const width2 = height2 / aspectRatio;
+    const scaleFactor = imageHeight / originalImageHeight;
+    console.log(img);
+    console.log(
+      "Image Width: " + imageWidth + " Image Height: " + imageHeight + "\nScreen Height: " + screenHeight + "\nImage Scale Factor: " + scaleFactor + "\nAspect Ratio: " + aspectRatio + "\nResized Canvas Width: " + width2 + " Resized Canvas Height: " + height2 + "\nImage Dimensions: " + img.naturalWidth + ", " + img.naturalHeight
+    );
     setCanvasWidth(width2);
     setCanvasHeight(height2);
-    setImageDimensions({ width: naturalWidth, height: naturalHeight });
+    setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
     setImageScaleFactor(scaleFactor);
     setScale(1);
     setTranslate({ x: 0, y: 0 });
   };
   const resizeCanvasDimensions = reactExports.useCallback((img) => {
-    const { maxWidth: maxWidth2, maxHeight: maxHeight2 } = getAvailableSize();
-    const naturalWidth = img.naturalWidth || img.width;
-    const naturalHeight = img.naturalHeight || img.height;
-    if (!naturalWidth || !naturalHeight) return;
-    const scaleFactor = Math.min(maxWidth2 / naturalWidth, maxHeight2 / naturalHeight);
-    const width2 = naturalWidth * scaleFactor;
-    const height2 = naturalHeight * scaleFactor;
+    const screenHeight = window.outerHeight;
+    const originalImageHeight = img.naturalHeight;
+    const originalImageWidth = img.naturalWidth;
+    const imageHeight = img.height;
+    const imageWidth = img.width;
+    const height2 = Math.min(screenHeight, imageHeight);
+    const aspectRatio = imageHeight / imageWidth;
+    const width2 = height2 / aspectRatio;
+    console.log("[Cocreate] Initializing canvas dimensions: " + width2 + ", " + height2);
     setCanvasWidth(width2);
     setCanvasHeight(height2);
-    setImageScaleFactor(scaleFactor);
-  }, []);
+    console.log(
+      "Original Image Width: " + originalImageWidth + "\nOriginal Image Height: " + originalImageHeight + "\nImage Height: " + imageHeight + "\nImage Width: " + imageWidth + "\nResized Canvas Width: " + width2 + "\nResized Canvas Height: " + height2 + "\nScreen Height: " + screenHeight + "\nAspect Ratio: " + aspectRatio + "\nImage Scale Factor: " + imageHeight / originalImageHeight + "\nImage Dimensions: " + JSON.stringify(imageDimensions)
+    );
+    if (!imageDimensions) return;
+    setImageScaleFactor(img.width / imageDimensions.width);
+  }, [imageDimensions]);
   const updateImageDimensions = () => {
     const instanceRootContainer = getInstanceRootContainer();
     if (!instanceRootContainer) {
@@ -15174,21 +15030,8 @@ const Canvas = (props) => {
     const rootContainers = document.querySelectorAll(".cocreate-root");
     return Array.from(rootContainers).find(
       (container) => container.getAttribute("data-question-id") === instanceId
-    ) || null;
+    );
   };
-  const syncRootToShellSize = reactExports.useCallback(() => {
-    const root = getInstanceRootContainer();
-    const shell = shellRef.current;
-    if (!root || !shell) return;
-    const rect = shell.getBoundingClientRect();
-    const width2 = Math.ceil(rect.width);
-    const height2 = Math.ceil(rect.height);
-    root.style.height = "auto";
-    root.style.minHeight = `${height2}px`;
-    root.style.width = "100%";
-    root.style.minWidth = `${width2}px`;
-    root.style.boxSizing = "border-box";
-  }, [instanceId]);
   const initializeCanvas = () => {
     var _a, _b, _c;
     console.log("[Cocreate] Initializing canvas dimensions");
@@ -15237,11 +15080,13 @@ const Canvas = (props) => {
     }
   };
   reactExports.useEffect(() => {
-    const ctx = prepareCanvasContext();
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    redrawSelections(ctx);
-  }, [selections, activeSelectionIndex, canvasWidth, canvasHeight, imageScaleFactor, backingScale, prepareCanvasContext]);
+    const canvas = canvasRef.current;
+    const ctx = canvas == null ? void 0 : canvas.getContext("2d");
+    if (canvas && ctx) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      redrawSelections(ctx);
+    }
+  }, [selections]);
   const drawSelection = (ctx, x, y, width2, height2, fillStyle = "rgba(200, 200, 200, 0.3)", strokeStyle = "white", lineWidth = 2, radius = 15) => {
     ctx.fillStyle = fillStyle;
     ctx.strokeStyle = strokeStyle;
@@ -15259,19 +15104,47 @@ const Canvas = (props) => {
   const redrawSelections = (ctx, resizedSelections) => {
     const selectionsToDraw = selections;
     selectionsToDraw.forEach((selection, index) => {
-      const isActive = index === activeSelectionIndex;
-      const { unscaledStart, unscaledEnd } = selection;
-      const startX = unscaledStart.x * imageScaleFactor;
-      const startY = unscaledStart.y * imageScaleFactor;
-      const endX = unscaledEnd.x * imageScaleFactor;
-      const endY = unscaledEnd.y * imageScaleFactor;
-      const x = Math.min(startX, endX);
-      const y = Math.min(startY, endY);
-      const width2 = Math.abs(endX - startX);
-      const height2 = Math.abs(endY - startY);
-      if (isActive) {
-        drawSelection(ctx, x, y, width2, height2, "rgba(25, 118, 210, 0.18)", "#1976d2", 3);
+      if (isCircularSelection(selection)) {
+        const centerX = selection.center.x * imageScaleFactor;
+        const centerY = selection.center.y * imageScaleFactor;
+        const scaledRadius = selection.radius;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, scaledRadius, 0, 2 * Math.PI);
+        const isActive = index === activeSelectionIndex;
+        if (selection.functionValue || selection.comment) {
+          ctx.strokeStyle = "#4CAF50";
+          ctx.fillStyle = "rgba(76, 175, 80, 0.2)";
+          ctx.fill();
+        } else if (isActive) {
+          ctx.strokeStyle = "#1976d2";
+          ctx.fillStyle = "rgba(25, 118, 210, 0.1)";
+          ctx.fill();
+        } else {
+          ctx.strokeStyle = "#ff9800";
+          ctx.setLineDash([5, 5]);
+        }
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = ctx.strokeStyle;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY - scaledRadius - 10, 15, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.fillStyle = "white";
+        ctx.font = "bold 12px Arial";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText((index + 1).toString(), centerX, centerY - scaledRadius - 10);
       } else {
+        const { unscaledStart, unscaledEnd } = selection;
+        const startX = unscaledStart.x * imageScaleFactor;
+        const startY = unscaledStart.y * imageScaleFactor;
+        const endX = unscaledEnd.x * imageScaleFactor;
+        const endY = unscaledEnd.y * imageScaleFactor;
+        const x = Math.min(startX, endX);
+        const y = Math.min(startY, endY);
+        const width2 = Math.abs(endX - startX);
+        const height2 = Math.abs(endY - startY);
         drawSelection(ctx, x, y, width2, height2);
       }
     });
@@ -15283,29 +15156,33 @@ const Canvas = (props) => {
       y: (e.clientY - rect.top) / scale
     };
   };
-  const toStagePointFromTouch = (touch, element) => {
-    const rect = element.getBoundingClientRect();
-    return {
-      x: (touch.clientX - rect.left) / scale,
-      y: (touch.clientY - rect.top) / scale
-    };
-  };
   const stageToScreenPoint = (p) => {
     return { x: translate.x + scale * p.x, y: translate.y + scale * p.y };
   };
   const selectionBoundsInStage = (sel) => {
-    const startX = sel.unscaledStart.x * imageScaleFactor;
-    const startY = sel.unscaledStart.y * imageScaleFactor;
-    const endX = sel.unscaledEnd.x * imageScaleFactor;
-    const endY = sel.unscaledEnd.y * imageScaleFactor;
-    const x = Math.min(startX, endX);
-    const y = Math.min(startY, endY);
-    const width2 = Math.abs(endX - startX);
-    const height2 = Math.abs(endY - startY);
-    return { x, y, width: width2, height: height2 };
+    if (isCircularSelection(sel)) {
+      const centerX = sel.center.x * imageScaleFactor;
+      const centerY = sel.center.y * imageScaleFactor;
+      const radius = sel.radius;
+      return {
+        x: centerX - radius,
+        y: centerY - radius,
+        width: radius * 2,
+        height: radius * 2
+      };
+    } else {
+      const startX = sel.unscaledStart.x * imageScaleFactor;
+      const startY = sel.unscaledStart.y * imageScaleFactor;
+      const endX = sel.unscaledEnd.x * imageScaleFactor;
+      const endY = sel.unscaledEnd.y * imageScaleFactor;
+      const x = Math.min(startX, endX);
+      const y = Math.min(startY, endY);
+      const width2 = Math.abs(endX - startX);
+      const height2 = Math.abs(endY - startY);
+      return { x, y, width: width2, height: height2 };
+    }
   };
   const handleMouseDown = (e) => {
-    if (isMobile) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (isPanMode) {
@@ -15328,175 +15205,125 @@ const Canvas = (props) => {
     setSelectionEnd({ x: stagePoint.x, y: stagePoint.y });
     setIsSelecting(true);
   };
-  const findSelectionAtPoint = (p) => {
-    const hitPadding = 8 / Math.max(scale, 1);
-    return selections.findIndex((sel) => {
-      const { x, y, width: width2, height: height2 } = selectionBoundsInStage(sel);
-      return p.x >= x - hitPadding && p.x <= x + width2 + hitPadding && p.y >= y - hitPadding && p.y <= y + height2 + hitPadding;
-    });
-  };
-  const clampPointToCanvas = (p) => {
-    return {
-      x: Math.max(0, Math.min(p.x, canvasWidth)),
-      y: Math.max(0, Math.min(p.y, canvasHeight))
-    };
-  };
-  const handleTouchStart = (e) => {
-    if (showMobileModal) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-      return;
-    }
-    if (!isMobile || isEnteringFeedback) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    if (e.touches.length === 2) {
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dx = t2.clientX - t1.clientX;
-      const dy = t2.clientY - t1.clientY;
-      const distance = Math.hypot(dx, dy);
-      isTwoFingerGestureRef.current = true;
-      lastPinchDistanceRef.current = distance;
-      setIsSelecting(false);
-      setSelectionStart(null);
-      setSelectionEnd(null);
-      return;
-    }
-    const touch = e.touches[0];
-    if (!touch) return;
-    const stagePoint = toStagePointFromTouch(touch, canvas);
-    const tappedIndex = findSelectionAtPoint(stagePoint);
-    if (tappedIndex >= 0) {
-      setActiveSelectionIndex(tappedIndex);
-      setShowMobileModal(true);
-      setIsEnteringFeedback(true);
-      modalOpenedAtRef.current = Date.now();
-      document.body.classList.add("modal-open");
-      return;
-    }
-    setSelectionStart({ x: stagePoint.x, y: stagePoint.y });
-    setSelectionEnd({ x: stagePoint.x, y: stagePoint.y });
-    setIsSelecting(true);
-  };
-  const handleTouchMove = (e) => {
-    if (showMobileModal) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-      return;
-    }
-    if (!isMobile) return;
-    if (e.touches.length === 2 && isTwoFingerGestureRef.current) {
-      e.preventDefault();
-      e.stopPropagation();
-      const t1 = e.touches[0];
-      const t2 = e.touches[1];
-      const dx = t2.clientX - t1.clientX;
-      const dy = t2.clientY - t1.clientY;
-      const distance = Math.hypot(dx, dy);
-      if (!lastPinchDistanceRef.current) {
-        lastPinchDistanceRef.current = distance;
-        return;
-      }
-      const scaleDelta = distance / lastPinchDistanceRef.current;
-      const nextScale = Math.min(5, Math.max(0.5, scale * scaleDelta));
-      const center = {
-        x: (t1.clientX + t2.clientX) / 2,
-        y: (t1.clientY + t2.clientY) / 2
-      };
-      const stageCenterX = (center.x - translate.x) / scale;
-      const stageCenterY = (center.y - translate.y) / scale;
-      const nextTranslate = {
-        x: center.x - nextScale * stageCenterX,
-        y: center.y - nextScale * stageCenterY
-      };
-      setTranslate(constrainTranslate(nextTranslate, nextScale));
-      setScale(nextScale);
-      lastPinchDistanceRef.current = distance;
-      return;
-    }
-    if (!isSelecting || !selectionStart || isEnteringFeedback) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = prepareCanvasContext();
-    if (!ctx) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const currentEnd = toStagePointFromTouch(touch, canvas);
-    setSelectionEnd(currentEnd);
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    redrawSelections(ctx);
-    const x = Math.min(selectionStart.x, currentEnd.x);
-    const y = Math.min(selectionStart.y, currentEnd.y);
-    const width2 = Math.abs(currentEnd.x - selectionStart.x);
-    const height2 = Math.abs(currentEnd.y - selectionStart.y);
-    drawSelection(ctx, x, y, width2, height2);
-  };
-  const handleTouchEnd = (e) => {
-    if (showMobileModal) {
-      if (e.cancelable) {
-        e.preventDefault();
-      }
-      e.stopPropagation();
-      return;
-    }
-    if (!isMobile) return;
-    if (isTwoFingerGestureRef.current) {
-      if (e.touches.length < 2) {
-        isTwoFingerGestureRef.current = false;
-        lastPinchDistanceRef.current = null;
-      }
-      return;
-    }
-    if (!isSelecting || !selectionStart || !selectionEnd || !canvasRef.current) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const dx = selectionEnd.x - selectionStart.x;
-    const dy = selectionEnd.y - selectionStart.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const tapThreshold = 3 / Math.max(scale, 0.1);
-    const defaultTapSize = 36 / Math.max(scale, 0.1);
-    let start = selectionStart;
-    let end = selectionEnd;
-    if (distance < tapThreshold) {
-      const half = defaultTapSize / 2;
-      start = { x: selectionStart.x - half, y: selectionStart.y - half };
-      end = { x: selectionStart.x + half, y: selectionStart.y + half };
-    }
-    start = clampPointToCanvas(start);
-    end = clampPointToCanvas(end);
-    const newIndex = selections.length;
-    createNewSelection(start, end);
-    setActiveSelectionIndex(newIndex);
-    setShowMobileModal(true);
-    setIsEnteringFeedback(true);
-    modalOpenedAtRef.current = Date.now();
-    document.body.classList.add("modal-open");
-    setIsSelecting(false);
-    setSelectionStart(null);
-    setSelectionEnd(null);
-  };
   const removeEmptyFeedback = () => {
     if (activeSelectionIndex !== null) {
       const selection = selections[activeSelectionIndex];
-      if (!selection.functionValue && !selection.aestheticValue && !selection.comment) {
-        checkForPictureSelection();
-        setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
-        setTooltipPosition(null);
-        setActiveSelectionIndex(null);
+      if (isCircularSelection(selection)) {
+        if (!selection.functionValue && !selection.comment) {
+          setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
+          setShowMobileModal(false);
+          setActiveSelectionIndex(null);
+          document.body.classList.remove("modal-open");
+        }
+      } else {
+        if (!selection.functionValue && !selection.aestheticValue && !selection.comment) {
+          checkForPictureSelection();
+          setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
+          setTooltipPosition(null);
+          setActiveSelectionIndex(null);
+        }
       }
     }
   };
+  const handleTouchStart = (e) => {
+    console.log("[CoCreate Mobile] Touch start", { isMobile, isEnteringFeedback, showMobileModal });
+    if (!isMobile || isEnteringFeedback) {
+      console.log("[CoCreate Mobile] Early return from handleTouchStart");
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.log("[CoCreate Mobile] No canvas ref");
+      return;
+    }
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const x = (touch.clientX - rect.left - translate.x) / scale;
+    const y = (touch.clientY - rect.top - translate.y) / scale;
+    console.log("[CoCreate Mobile] Touch coordinates:", { x, y, translate, scale });
+    const tappedIndex = selections.findIndex((sel) => {
+      if (isCircularSelection(sel)) {
+        const centerX = sel.center.x * imageScaleFactor;
+        const centerY = sel.center.y * imageScaleFactor;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        return distance <= sel.radius;
+      }
+      return false;
+    });
+    console.log("[CoCreate Mobile] Tapped index:", tappedIndex);
+    if (tappedIndex >= 0) {
+      console.log("[CoCreate Mobile] Opening existing selection");
+      handleMobileSelectionTap(tappedIndex);
+    } else {
+      console.log("[CoCreate Mobile] Creating new circular selection");
+      createCircularSelection({ x, y });
+    }
+  };
+  const createCircularSelection = (point) => {
+    console.log("[CoCreate Mobile] createCircularSelection called", point);
+    const radius = 30;
+    const newSelection = {
+      center: {
+        x: point.x / imageScaleFactor,
+        y: point.y / imageScaleFactor
+      },
+      radius,
+      functionValue: void 0,
+      comment: void 0
+    };
+    console.log("[CoCreate Mobile] New selection created:", newSelection);
+    const newIndex = selections.length;
+    setSelections((prev2) => {
+      const updated = [...prev2, newSelection];
+      console.log("[CoCreate Mobile] Selections updated, count:", updated.length);
+      return updated;
+    });
+    setActiveSelectionIndex(newIndex);
+    console.log("[CoCreate Mobile] Active selection index set to:", newIndex);
+    setTimeout(() => {
+      console.log("[CoCreate Mobile] Setting showMobileModal to true");
+      setShowMobileModal(true);
+      setIsEnteringFeedback(true);
+      document.body.classList.add("modal-open");
+      console.log("[CoCreate Mobile] Modal state updated. showMobileModal should be true");
+    }, 0);
+  };
+  const handleMobileSelectionTap = (index) => {
+    if (!isMobile) return;
+    setActiveSelectionIndex(index);
+    setShowMobileModal(true);
+    setIsEnteringFeedback(true);
+    document.body.classList.add("modal-open");
+  };
+  const handleMobileSave = (feedback) => {
+    if (activeSelectionIndex === null) return;
+    setSelections((prev2) => {
+      const newSelections = [...prev2];
+      newSelections[activeSelectionIndex] = {
+        ...newSelections[activeSelectionIndex],
+        functionValue: feedback.functionValue,
+        comment: feedback.comment
+      };
+      return newSelections;
+    });
+    setShowMobileModal(false);
+    setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
+    document.body.classList.remove("modal-open");
+  };
+  const handleMobileDelete = () => {
+    if (activeSelectionIndex === null) return;
+    setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
+    setShowMobileModal(false);
+    setActiveSelectionIndex(null);
+    setIsEnteringFeedback(false);
+    document.body.classList.remove("modal-open");
+  };
   const handleMouseMove = (e) => {
-    if (isMobile) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     if (isPanMode && isPanning && panLastRef.current) {
@@ -15507,12 +15334,12 @@ const Canvas = (props) => {
       return;
     }
     if (!isSelecting || !selectionStart || isEnteringFeedback) return;
-    const ctx = prepareCanvasContext();
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const stagePoint = toStagePointFromEvent(e, canvas);
     const currentEnd = { x: stagePoint.x, y: stagePoint.y };
     setSelectionEnd(currentEnd);
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawSelections(ctx);
     const x = Math.min(selectionStart.x, currentEnd.x);
     const y = Math.min(selectionStart.y, currentEnd.y);
@@ -15522,7 +15349,6 @@ const Canvas = (props) => {
     checkIfMouseIsInsideCanvas(e);
   };
   const handleMouseLeave = (e) => {
-    if (isMobile) return;
     if (isPanMode && isPanning) {
       setIsPanning(false);
       panLastRef.current = null;
@@ -15530,20 +15356,20 @@ const Canvas = (props) => {
     }
     if (!isSelecting || !canvasRef.current) return;
     const canvas = canvasRef.current;
-    const ctx = prepareCanvasContext();
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
     const stagePoint = toStagePointFromEvent(e, canvas);
     const mouseX = stagePoint.x;
     const mouseY = stagePoint.y;
-    const clampedX = Math.max(0, Math.min(mouseX, canvasWidth));
-    const clampedY = Math.max(0, Math.min(mouseY, canvasHeight));
+    const clampedX = Math.max(0, Math.min(mouseX, canvas.width));
+    const clampedY = Math.max(0, Math.min(mouseY, canvas.height));
     setSelectionEnd({ x: clampedX, y: clampedY });
     if (selectionStart) {
       const startX = selectionStart.x;
       const startY = selectionStart.y;
       const width2 = clampedX - startX;
       const height2 = clampedY - startY;
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       redrawSelections(ctx);
       drawSelection(ctx, startX, startY, width2, height2);
       handleMouseUp(e);
@@ -15564,7 +15390,6 @@ const Canvas = (props) => {
     return false;
   };
   const handleMouseUp = (e) => {
-    if (isMobile) return;
     if (isPanMode && isPanning) {
       setIsPanning(false);
       panLastRef.current = null;
@@ -15577,8 +15402,8 @@ const Canvas = (props) => {
       if (!isEnteringFeedback && allowPictureSelection) {
         const canvasElement = canvasRef.current;
         if (!canvasElement) return;
-        const width2 = canvasWidth;
-        const height2 = canvasHeight;
+        const width2 = canvasElement.width;
+        const height2 = canvasElement.height;
         if (!canCreatePictureSelection(width2, height2)) {
           openPictureSelectionFeedback(e);
           setIsSelecting(false);
@@ -15602,7 +15427,6 @@ const Canvas = (props) => {
     setTooltipPosition({ x, y });
     setActiveSelectionIndex(selections.length);
     setTooltipAnchoredToSelection(true);
-    setTooltipIsViewportCoords(false);
     setIsSelecting(false);
     setSelectionStart(null);
     setSelectionEnd(null);
@@ -15612,11 +15436,12 @@ const Canvas = (props) => {
     setIsEnteringFeedback(true);
     const canvasElement = canvasRef.current;
     if (!canvasElement) return;
-    const width2 = canvasWidth;
-    const height2 = canvasHeight;
-    const pictureSelection = selections.find(
-      (selection) => selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2
-    );
+    const width2 = canvasElement.width;
+    const height2 = canvasElement.height;
+    const pictureSelection = selections.find((selection) => {
+      if (isCircularSelection(selection)) return false;
+      return selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2;
+    });
     if (pictureSelection) {
       const pictureSelectionIndex = selections.indexOf(pictureSelection);
       const mouseCoordinates2 = { x: e.clientX, y: e.clientY };
@@ -15638,17 +15463,12 @@ const Canvas = (props) => {
     setTooltipAnchoredToSelection(false);
   };
   const canCreatePictureSelection = (width2, height2) => {
-    const pictureWideSelection = selections.filter(
-      (selection) => selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2
-    );
+    let pictureWideSelection = selections.filter((selection) => {
+      if (isCircularSelection(selection)) return false;
+      return selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2;
+    });
     if (pictureWideSelection.length !== 0) return false;
     return true;
-  };
-  const findPictureSelectionIndex = (width2, height2) => {
-    const pictureSelection = selections.find(
-      (selection) => selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2
-    );
-    return pictureSelection ? selections.indexOf(pictureSelection) : -1;
   };
   const createNewSelection = (selectionStart2, selectionEnd2) => {
     const newSelection = {
@@ -15683,29 +15503,6 @@ const Canvas = (props) => {
       return next2;
     });
   };
-  const openPictureSelectionMobile = () => {
-    if (!canvasRef.current) return;
-    const width2 = canvasWidth;
-    const height2 = canvasHeight;
-    const existingIndex = findPictureSelectionIndex(width2, height2);
-    if (existingIndex >= 0) {
-      setActiveSelectionIndex(existingIndex);
-      setShowMobileModal(true);
-      setIsEnteringFeedback(true);
-      modalOpenedAtRef.current = Date.now();
-      document.body.classList.add("modal-open");
-      return;
-    }
-    if (!canCreatePictureSelection(width2, height2)) return;
-    createPictureSelection(width2, height2);
-    const newIndex = selections.length;
-    setActiveSelectionIndex(newIndex);
-    setShowMobileModal(true);
-    setIsEnteringFeedback(true);
-    setAllowPictureSelection(false);
-    modalOpenedAtRef.current = Date.now();
-    document.body.classList.add("modal-open");
-  };
   const handleEdit = (index) => {
     setActiveSelectionIndex(index);
     setIsEnteringFeedback(true);
@@ -15723,58 +15520,13 @@ const Canvas = (props) => {
     setActiveSelectionIndex(null);
     setIsEnteringFeedback(false);
   };
-  const handleMobileSave = (feedback) => {
-    if (activeSelectionIndex === null) return;
-    const feedbackConfig = getFeedbackConfig();
-    setSelections((prev2) => {
-      const next2 = [...prev2];
-      next2[activeSelectionIndex] = {
-        ...next2[activeSelectionIndex],
-        functionValue: feedbackConfig.showFunctionValue ? feedback.functionValue : "",
-        aestheticValue: feedbackConfig.showAestheticValue ? feedback.aestheticValue : "",
-        comment: feedbackConfig.showComment ? feedback.comment : ""
-      };
-      return next2;
-    });
-    setShowMobileModal(false);
-    setActiveSelectionIndex(null);
-    setIsEnteringFeedback(false);
-    setTooltipPosition(null);
-    document.body.classList.remove("modal-open");
-  };
-  const handleMobileDelete = () => {
-    if (activeSelectionIndex === null) return;
-    checkForPictureSelection(activeSelectionIndex);
-    setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
-    setShowMobileModal(false);
-    setActiveSelectionIndex(null);
-    setIsEnteringFeedback(false);
-    setTooltipPosition(null);
-    document.body.classList.remove("modal-open");
-  };
-  const handleMobileClose = () => {
-    if (Date.now() - modalOpenedAtRef.current < 250) {
-      return;
-    }
-    if (activeSelectionIndex !== null) {
-      const selection = selections[activeSelectionIndex];
-      if (selection && !selection.functionValue && !selection.aestheticValue && !selection.comment) {
-        setSelections((prev2) => prev2.filter((_, i) => i !== activeSelectionIndex));
-      }
-    }
-    setShowMobileModal(false);
-    setActiveSelectionIndex(null);
-    setIsEnteringFeedback(false);
-    setTooltipPosition(null);
-    document.body.classList.remove("modal-open");
-  };
   const checkForPictureSelection = (index) => {
     if (allowPictureSelection) return;
     const selection = selections[index ?? activeSelectionIndex ?? 0];
     const canvas = canvasRef.current;
-    if (!canvas || !selection) return;
+    if (!canvas) return;
     const { width: width2, height: height2 } = canvas.getBoundingClientRect();
-    if (selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2) {
+    if (!isCircularSelection(selection) && selection.start.x === 0 && selection.start.y === 0 && selection.end.x === width2 && selection.end.y === height2) {
       setAllowPictureSelection(true);
     }
   };
@@ -15787,31 +15539,24 @@ const Canvas = (props) => {
       setViewportSize({ w: window.innerWidth, h: window.innerHeight });
     };
     window.addEventListener("resize", handleResize);
-    const viewport = window.visualViewport;
-    if (viewport) {
-      viewport.addEventListener("resize", handleResize);
-    }
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      if (viewport) {
-        viewport.removeEventListener("resize", handleResize);
-      }
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, [imageDimensions]);
   reactExports.useEffect(() => {
     if (imageDimensions) {
       setSelections(
-        (prevSelections) => prevSelections.map((selection) => ({
-          ...selection,
-          start: selection.start,
-          end: selection.end
-        }))
+        (prevSelections) => prevSelections.map((selection) => {
+          if (isCircularSelection(selection)) {
+            return selection;
+          }
+          return {
+            ...selection,
+            start: selection.start,
+            end: selection.end
+          };
+        })
       );
     }
   }, [imageScaleFactor, imageDimensions]);
-  reactExports.useEffect(() => {
-    syncRootToShellSize();
-  }, [canvasWidth, canvasHeight, viewportSize, toolbarVisible, minimapVisible, syncRootToShellSize]);
   const constrainTranslate = (newTranslate, newScale) => {
     if (!containerRef.current) return newTranslate;
     const container = containerRef.current;
@@ -15911,7 +15656,7 @@ const Canvas = (props) => {
       }
     };
   }, [canvasWidth, canvasHeight, scale, translate]);
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-shell", ref: shellRef, children: [
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "canvas-shell", children: [
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
@@ -16054,9 +15799,8 @@ const Canvas = (props) => {
                     alt: "Rendering",
                     className: "rendering-image",
                     style: {
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "contain",
+                      maxHeight: "100%",
+                      width: "auto",
                       display: "block"
                     }
                   }
@@ -16065,22 +15809,22 @@ const Canvas = (props) => {
                   "canvas",
                   {
                     ref: canvasRef,
-                    width: canvasPixelWidth,
-                    height: canvasPixelHeight,
+                    width: canvasWidth,
+                    height: canvasHeight,
                     className: "canvas",
                     style: {
-                      width: canvasWidth,
-                      height: canvasHeight,
-                      cursor: isPanMode ? "grab" : isEnteringFeedback ? "default" : "crosshair"
+                      cursor: isMobile ? "default" : isPanMode ? "grab" : isEnteringFeedback ? "default" : "crosshair",
+                      touchAction: isMobile ? "none" : "auto"
                     },
-                    onMouseDown: handleMouseDown,
-                    onMouseMove: handleMouseMove,
-                    onMouseUp: handleMouseUp,
-                    onMouseLeave: handleMouseLeave,
-                    onTouchStart: handleTouchStart,
-                    onTouchMove: handleTouchMove,
-                    onTouchEnd: handleTouchEnd,
-                    onTouchCancel: handleTouchEnd
+                    onMouseDown: !isMobile ? handleMouseDown : void 0,
+                    onMouseMove: !isMobile ? handleMouseMove : void 0,
+                    onMouseUp: !isMobile ? handleMouseUp : void 0,
+                    onMouseLeave: !isMobile ? handleMouseLeave : void 0,
+                    onTouchStart: isMobile ? handleTouchStart : void 0,
+                    onTouchEnd: isMobile ? (e) => {
+                      console.log("[CoCreate Mobile] Touch end");
+                      e.preventDefault();
+                    } : void 0
                   }
                 )
               ]
@@ -16124,53 +15868,155 @@ const Canvas = (props) => {
               index
             );
           }),
-          isMobile ? /* @__PURE__ */ jsxRuntimeExports.jsx(
-            MobileFeedbackModal,
-            {
-              visible: showMobileModal,
-              selection: activeSelectionIndex !== null && selections[activeSelectionIndex] ? selections[activeSelectionIndex] : { start: { x: 0, y: 0 }, end: { x: 0, y: 0 } },
-              onSave: handleMobileSave,
-              onDelete: handleMobileDelete,
-              onClose: handleMobileClose,
-              onOpenChange: (isOpen) => {
-                if (isOpen) {
-                  setIsEnteringFeedback(true);
-                }
-              },
-              feedbackConfig: getFeedbackConfig()
-            }
-          ) : tooltipPosition && activeSelectionIndex !== null && (() => {
-            var _a;
-            let viewportX;
-            let viewportY;
-            if (tooltipIsViewportCoords) {
-              viewportX = tooltipPosition.x;
-              viewportY = tooltipPosition.y;
-            } else {
-              const screenPos = stageToScreenPoint({ x: tooltipPosition.x, y: tooltipPosition.y });
-              const containerRect = (_a = containerRef.current) == null ? void 0 : _a.getBoundingClientRect();
-              viewportX = ((containerRect == null ? void 0 : containerRect.left) ?? 0) + screenPos.x;
-              viewportY = ((containerRect == null ? void 0 : containerRect.top) ?? 0) + screenPos.y;
-            }
-            const tooltipWidth = 250;
-            const viewportWidth = typeof window !== "undefined" ? window.innerWidth : tooltipWidth;
-            const clampedX = Math.max(0, Math.min(viewportX, viewportWidth - tooltipWidth));
-            const tooltipNode = /* @__PURE__ */ jsxRuntimeExports.jsx(
-              Tooltip,
+          isMobile && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: {
+            position: "fixed",
+            top: 10,
+            left: 10,
+            background: "rgba(0, 0, 0, 0.9)",
+            color: "white",
+            padding: "12px",
+            zIndex: 999999,
+            fontSize: "11px",
+            fontFamily: "monospace",
+            borderRadius: "4px",
+            maxWidth: "200px",
+            border: "2px solid #4CAF50"
+          }, children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { fontWeight: "bold", marginBottom: "8px", color: "#4CAF50" }, children: "🔍 DEBUG INFO" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "isMobile:" }),
+              " ",
+              String(isMobile)
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "showModal:" }),
+              " ",
+              /* @__PURE__ */ jsxRuntimeExports.jsx("span", { style: {
+                color: showMobileModal ? "#4CAF50" : "#f44336",
+                fontWeight: "bold"
+              }, children: String(showMobileModal) })
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "activeIndex:" }),
+              " ",
+              String(activeSelectionIndex)
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "selections:" }),
+              " ",
+              selections.length
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "4px" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "entering:" }),
+              " ",
+              String(isEnteringFeedback)
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { style: { marginBottom: "8px", paddingTop: "8px", borderTop: "1px solid #666" }, children: [
+              /* @__PURE__ */ jsxRuntimeExports.jsx("strong", { children: "Width:" }),
+              " ",
+              window.innerWidth,
+              "px"
+            ] }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
               {
-                index: activeSelectionIndex,
-                x: clampedX,
-                y: viewportY,
-                selection: selections[activeSelectionIndex],
-                setSelections,
-                setActiveSelectionIndex,
-                setTooltipPosition,
-                setIsEnteringFeedback,
-                onDelete: () => handleDelete(activeSelectionIndex)
+                onClick: () => {
+                  console.log("🔴 FORCE MODAL BUTTON CLICKED");
+                  console.log("  Before - showMobileModal:", showMobileModal);
+                  console.log("  Before - activeSelectionIndex:", activeSelectionIndex);
+                  setShowMobileModal(true);
+                  setActiveSelectionIndex(0);
+                  setIsEnteringFeedback(true);
+                  document.body.classList.add("modal-open");
+                  setTimeout(() => {
+                    console.log("  After (50ms) - showMobileModal should be true");
+                    console.log("  Modal in DOM:", !!document.querySelector(".mobile-modal-backdrop"));
+                  }, 50);
+                },
+                style: {
+                  marginTop: "8px",
+                  padding: "8px",
+                  background: "#f44336",
+                  color: "white",
+                  border: "none",
+                  width: "100%",
+                  borderRadius: "4px",
+                  fontSize: "11px",
+                  fontWeight: "bold",
+                  cursor: "pointer"
+                },
+                children: "🚨 FORCE MODAL"
               }
-            );
-            return reactDomExports.createPortal(tooltipNode, document.body);
-          })(),
+            ),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: {
+              marginTop: "8px",
+              fontSize: "9px",
+              color: "#999",
+              paddingTop: "8px",
+              borderTop: "1px solid #666"
+            }, children: "Tap image to test normal flow" })
+          ] }),
+          isMobile ? (
+            /* MOBILE: Full-screen modal */
+            /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+              console.log("[CoCreate Mobile] Render check:", {
+                showMobileModal,
+                activeSelectionIndex,
+                selectionsLength: selections.length,
+                hasSelection: activeSelectionIndex !== null && selections[activeSelectionIndex] !== void 0
+              }),
+              /* @__PURE__ */ jsxRuntimeExports.jsx(
+                MobileFeedbackModal,
+                {
+                  visible: showMobileModal,
+                  selection: activeSelectionIndex !== null && selections[activeSelectionIndex] ? selections[activeSelectionIndex] : { center: { x: 0, y: 0 }, radius: 0 },
+                  onSave: handleMobileSave,
+                  onDelete: handleMobileDelete,
+                  onClose: () => {
+                    console.log("[CoCreate Mobile] Modal onClose called");
+                    setShowMobileModal(false);
+                    setIsEnteringFeedback(false);
+                    document.body.classList.remove("modal-open");
+                  },
+                  feedbackConfig: getFeedbackConfig()
+                }
+              )
+            ] })
+          ) : (
+            /* DESKTOP: Floating tooltip */
+            tooltipPosition && activeSelectionIndex !== null && (() => {
+              var _a;
+              let viewportX;
+              let viewportY;
+              if (tooltipIsViewportCoords) {
+                viewportX = tooltipPosition.x;
+                viewportY = tooltipPosition.y;
+              } else {
+                const screenPos = stageToScreenPoint({ x: tooltipPosition.x, y: tooltipPosition.y });
+                const containerRect = (_a = containerRef.current) == null ? void 0 : _a.getBoundingClientRect();
+                viewportX = ((containerRect == null ? void 0 : containerRect.left) ?? 0) + screenPos.x;
+                viewportY = ((containerRect == null ? void 0 : containerRect.top) ?? 0) + screenPos.y;
+              }
+              const tooltipWidth = 250;
+              const viewportWidth = typeof window !== "undefined" ? window.innerWidth : tooltipWidth;
+              const clampedX = Math.max(0, Math.min(viewportX, viewportWidth - tooltipWidth));
+              const tooltipNode = /* @__PURE__ */ jsxRuntimeExports.jsx(
+                Tooltip,
+                {
+                  index: activeSelectionIndex,
+                  x: clampedX,
+                  y: viewportY,
+                  selection: selections[activeSelectionIndex],
+                  setSelections,
+                  setActiveSelectionIndex,
+                  setTooltipPosition,
+                  setIsEnteringFeedback,
+                  onDelete: () => handleDelete(activeSelectionIndex)
+                }
+              );
+              return reactDomExports.createPortal(tooltipNode, document.body);
+            })()
+          ),
           !isMobile && toolbarVisible && minimapVisible && /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "minimap", style: { width: minimap.width, height: minimap.height }, children: [
             /* @__PURE__ */ jsxRuntimeExports.jsx(
               "img",
@@ -16206,16 +16052,6 @@ const Canvas = (props) => {
         },
         "data-tooltip": toolbarVisible ? "Hide toolbar" : "Show toolbar",
         children: toolbarVisible ? /* @__PURE__ */ jsxRuntimeExports.jsx(VisibilityOff, { fontSize: "small" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Visibility, { fontSize: "small" })
-      }
-    ) }),
-    isMobile && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "mobile-picture-wide-control", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-      "button",
-      {
-        type: "button",
-        className: "mobile-picture-wide-button",
-        onClick: openPictureSelectionMobile,
-        disabled: isEnteringFeedback || isSelecting,
-        children: "Annotate Full Image"
       }
     ) })
   ] });
